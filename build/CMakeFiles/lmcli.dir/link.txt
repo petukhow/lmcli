@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/lmcli.dir/link.d CMakeFiles/lmcli.dir/src/main.cpp.o -o lmcli  /usr/lib64/libcurl.so
