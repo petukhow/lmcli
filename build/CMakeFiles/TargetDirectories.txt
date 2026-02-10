@@ -1,3 +1,0 @@
-/home/invaldea/dev/test/lmcli/build/CMakeFiles/lmcli.dir
-/home/invaldea/dev/test/lmcli/build/CMakeFiles/edit_cache.dir
-/home/invaldea/dev/test/lmcli/build/CMakeFiles/rebuild_cache.dir
