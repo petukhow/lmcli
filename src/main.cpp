@@ -1,19 +1,16 @@
-#include <cstddef>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <curl/curl.h>
 #include "../include/config.h"
 #include "../include/message.h"
 #include "../include/groq.h"
+#include "../include/utils.h"
 #include "../include/json.hpp"
+#include <curl/curl.h>
+#include <iostream>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
 
 using json = nlohmann::json;
-
-bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
-    return conversation.size() >= limit;
-}
 
 int main() {
     json config = loadConfig("../config.json");

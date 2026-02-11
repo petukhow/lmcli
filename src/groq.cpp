@@ -1,5 +1,5 @@
-#include "../include/groq.h"
 #include "../include/json.hpp"
+#include "../include/groq.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
