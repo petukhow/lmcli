@@ -1,3 +1,4 @@
+#include "../include/anthropic.h"
 #include "../include/config.h"
 #include "../include/message.h"
 #include "../include/groq.h"
@@ -27,7 +28,7 @@ int main() {
         for (size_t i = 0; i < config["providers"]["openai-compatible"].size(); i++) {
             std::cout << config["providers"]["openai-compatible"][i]["name"].get<std::string>() << "\n";
         }   
-        if (config["providers"].contains("Anthropic")) {
+        if (config["providers"].contains("anthropic")) {
             std::cout << "Anthropic" << "\n";
         }
 
@@ -46,9 +47,13 @@ int main() {
                 break;
             }
         }
-        // else if (provider_name == "Anthropic") {
-        //     is_valid_name = true;
-        // }
+        if (providerName == "Anthropic") {
+            provider = std::make_unique<Anthropic>(config["providers"]["anthropic"]["api_key"].get<std::string>(),
+                config["providers"]["anthropic"]["api_url"].get<std::string>(),
+                    config["providers"]["anthropic"]["model"].get<std::string>(),
+                        config["system_prompt"].get<std::string>(), config["limit"].get<size_t>());
+            isValidName = true;
+        }
         if (isValidName) break;
     }
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
