@@ -30,6 +30,10 @@ struct Message {
         std::string content;
     };
 
+bool limit_exceeded(const std::vector<Message>& conversation, size_t limit) {
+    return conversation.size() >= limit;
+}
+
 static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     std::string* response = static_cast<std::string*>(userdata);
     response->append(ptr, size * nmemb);
@@ -97,6 +101,7 @@ int main() {
 
     json config = loadConfig("../config.json");
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
+    size_t limit_messages = config["limit"];
 
     while (true) {
         std::cout << "Prompt (or '/exit' to end the conversation): ";
@@ -114,6 +119,10 @@ int main() {
 
         std::cout << answer.content << "\n";
 
+        if (limit_exceeded(conversation, limit_messages)) {
+                conversation.erase(conversation.begin() + 1); // erases user's message
+                conversation.erase(conversation.begin() + 1); // erases model's answer
+        }
     }
 
     return 0;
