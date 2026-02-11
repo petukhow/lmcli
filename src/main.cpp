@@ -5,7 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-
+#include "message.h"
 
 using json = nlohmann::json;
 
@@ -24,11 +24,6 @@ json loadConfig(const std::string& filepath) {
     json parsed = json::parse(str);
     return parsed;
 }
-
-struct Message {
-        std::string role;
-        std::string content;
-    };
 
 bool limit_exceeded(const std::vector<Message>& conversation, size_t limit) {
     return conversation.size() >= limit;
