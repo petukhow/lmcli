@@ -81,7 +81,7 @@ Message makeRequest(const json& config, const std::vector<Message>& userMessages
         };
         try {
             json parsed = json::parse(rawResponse);
-            response.content = parsed["choices"][0]["message"]["content"];
+            response.content = parsed["choices"][0]["message"]["content"].get<std::string>();
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << "\n";
             response.content = "";
@@ -96,11 +96,12 @@ int main() {
     Message answer;
 
     json config = loadConfig("../config.json");
+    conversation.push_back({"system", config["system_prompt"].get<std::string>()});
 
     while (true) {
-        std::cout << "Prompt (or 'exit121' to end the conversation): ";
+        std::cout << "Prompt (or '/exit' to end the conversation): ";
         std::getline(std::cin, prompt.content);
-        if (prompt.content == "exit121") break; // "121" to prevent any accidental breaks
+        if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
 
         answer = makeRequest(config, conversation);
