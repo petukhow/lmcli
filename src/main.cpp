@@ -1,13 +1,12 @@
-#include "../include/anthropic.h"
 #include "../include/config.h"
 #include "../include/message.h"
-#include "../include/groq.h"
 #include "../include/utils.h"
 #include "../include/json.hpp"
+#include "../include/selectprovider.h"
+#include "../include/provider.h"
 #include <curl/curl.h>
 #include <iostream>
 #include <cstddef>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -16,46 +15,12 @@ using json = nlohmann::json;
 int main() {
     json config = loadConfig("../config.json");
     std::vector<Message> conversation;
-    std::unique_ptr<Provider> provider;
+    std::unique_ptr<Provider> provider = selectProvider(config);
     std::string providerName;
     Message prompt;
     Message answer;
     bool isValidName = false; 
 
-    while (true) {
-        std::cout << "Pick a provider from the list below (/exit to leave):" << "\n";
-
-        for (size_t i = 0; i < config["providers"]["openai-compatible"].size(); i++) {
-            std::cout << config["providers"]["openai-compatible"][i]["name"].get<std::string>() << "\n";
-        }   
-        if (config["providers"].contains("anthropic")) {
-            std::cout << "Anthropic" << "\n";
-        }
-
-        std::cout << "> ";
-        std::getline(std::cin, providerName);
-        if (providerName == "/exit") break;
-
-        isValidName = false;
-        for (size_t i = 0; i < config["providers"]["openai-compatible"].size(); i++) {
-            if (providerName == config["providers"]["openai-compatible"][i]["name"].get<std::string>()) {
-                provider = std::make_unique<Groq>(config["providers"]["openai-compatible"][i]["api_key"].get<std::string>(),
-         config["providers"]["openai-compatible"][i]["api_url"].get<std::string>(),
-            config["providers"]["openai-compatible"][i]["model"].get<std::string>(),
-     config["system_prompt"].get<std::string>(), config["limit"].get<size_t>());
-                isValidName = true;
-                break;
-            }
-        }
-        if (providerName == "Anthropic") {
-            provider = std::make_unique<Anthropic>(config["providers"]["anthropic"]["api_key"].get<std::string>(),
-                config["providers"]["anthropic"]["api_url"].get<std::string>(),
-                    config["providers"]["anthropic"]["model"].get<std::string>(),
-                        config["system_prompt"].get<std::string>(), config["limit"].get<size_t>());
-            isValidName = true;
-        }
-        if (isValidName) break;
-    }
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
 
