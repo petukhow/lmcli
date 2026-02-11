@@ -3,30 +3,13 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
 #include <curl/curl.h>
+#include "../include/config.h"
 #include "../include/message.h"
 #include "../include/groq.h"
 #include "../include/json.hpp"
 
 using json = nlohmann::json;
-
-json loadConfig(const std::string& filepath) {
-    std::ifstream file(filepath);
-    std::string str;
-
-    if (file) {
-        std::ostringstream ss;
-        ss << file.rdbuf(); // Read file buffer into the stringstream
-        str = ss.str();     // Convert stringstream to std::string
-    } else {
-        // Handle file opening error
-        std::cerr << "Error: Could not open the file." << std::endl;
-    }
-    json parsed = json::parse(str);
-    return parsed;
-}
 
 bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
     return conversation.size() >= limit;
