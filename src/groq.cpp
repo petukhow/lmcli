@@ -33,7 +33,6 @@ Message Groq::sendRequest(const std::vector<Message>& conversation) const {
         
     if (curl) {
         headers = curl_slist_append(headers, "Content-Type: application/json");
-        // headers = curl_slist_append(headers, "anthropic-version: 2023-06-01");
         headers = curl_slist_append(headers, x_api_key.c_str());
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
