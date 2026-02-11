@@ -2,13 +2,13 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include "../include/json.hpp"
-#include <curl/curl.h>
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <curl/curl.h>
 #include "../include/message.h"
 #include "../include/groq.h"
+#include "../include/json.hpp"
 
 using json = nlohmann::json;
 
@@ -28,7 +28,7 @@ json loadConfig(const std::string& filepath) {
     return parsed;
 }
 
-bool limit_exceeded(const std::vector<Message>& conversation, size_t limit) {
+bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
     return conversation.size() >= limit;
 }
 
@@ -36,10 +36,10 @@ int main() {
     json config = loadConfig("../config.json");
     std::vector<Message> conversation;
     std::unique_ptr<Provider> provider;
-    std::string provider_name;
+    std::string providerName;
     Message prompt;
     Message answer;
-    bool is_valid_name = false; 
+    bool isValidName = false; 
 
     while (true) {
         std::cout << "Pick a provider from the list below (/exit to leave):" << "\n";
@@ -52,24 +52,24 @@ int main() {
         }
 
         std::cout << "> ";
-        std::getline(std::cin, provider_name);
-        if (provider_name == "/exit") break;
+        std::getline(std::cin, providerName);
+        if (providerName == "/exit") break;
 
-        is_valid_name = false;
+        isValidName = false;
         for (size_t i = 0; i < config["providers"]["openai-compatible"].size(); i++) {
-            if (provider_name == config["providers"]["openai-compatible"][i]["name"].get<std::string>()) {
+            if (providerName == config["providers"]["openai-compatible"][i]["name"].get<std::string>()) {
                 provider = std::make_unique<Groq>(config["providers"]["openai-compatible"][i]["api_key"].get<std::string>(),
          config["providers"]["openai-compatible"][i]["api_url"].get<std::string>(),
             config["providers"]["openai-compatible"][i]["model"].get<std::string>(),
      config["system_prompt"].get<std::string>(), config["limit"].get<size_t>());
-                is_valid_name = true;
+                isValidName = true;
                 break;
             }
         }
         // else if (provider_name == "Anthropic") {
         //     is_valid_name = true;
         // }
-        if (is_valid_name) break;
+        if (isValidName) break;
     }
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
@@ -90,7 +90,7 @@ int main() {
 
         std::cout << answer.content << "\n";
 
-        if (limit_exceeded(conversation, limit_messages)) {
+        if (limitExceeded(conversation, limit_messages)) {
                 conversation.erase(conversation.begin() + 1); // erases user's message
                 conversation.erase(conversation.begin() + 1); // erases model's answer
         }
