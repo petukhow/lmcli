@@ -1,4 +1,5 @@
 #include <iostream>
+#pragma once
 
 struct Message {
     std::string role;

@@ -1,9 +1,10 @@
 #include <iostream>
 #include <vector>
 #include "message.h"
+#pragma once
 
 class Provider {
-private:
+protected:
     std::string api_key;
     std::string api_url;
     std::string model;
