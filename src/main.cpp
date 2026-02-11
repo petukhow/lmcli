@@ -5,7 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "message.h"
+#include "../include/message.h"
 
 using json = nlohmann::json;
 
