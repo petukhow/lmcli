@@ -1,9 +1,9 @@
 #pragma once
 #include "provider.h"
 
-class Groq : public Provider {
+class OpenAICompatible : public Provider {
 public:
-    Groq(const std::string& api_key, const std::string& api_url,
+    OpenAICompatible(const std::string& api_key, const std::string& api_url,
             const std::string& model, const std::string& system_prompt, size_t limit)
         : Provider(api_key, api_url, model, system_prompt, limit) {}
     

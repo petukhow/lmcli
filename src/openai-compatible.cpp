@@ -1,5 +1,5 @@
 #include "../include/json.hpp"
-#include "../include/groq.h"
+#include "../include/openai-compatible.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
@@ -11,7 +11,7 @@ static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata
     return size * nmemb;
 }
 
-Message Groq::sendRequest(const std::vector<Message>& conversation) const {
+Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     struct curl_slist* headers = NULL;
     std::string rawResponse;

@@ -6,4 +6,4 @@
 
 using json = nlohmann::json;
 
-std::unique_ptr<Provider> selectProvider(const json& config);
+std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config);
