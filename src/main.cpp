@@ -15,11 +15,8 @@ using json = nlohmann::json;
 int main() {
     json config = loadConfig("../config.json");
     std::vector<Message> conversation;
-    std::unique_ptr<Provider> provider = selectProvider(config);
-    std::string providerName;
     Message prompt;
     Message answer;
-    bool isValidName = false; 
 
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
@@ -30,7 +27,7 @@ int main() {
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
 
-        answer = provider->sendRequest(conversation);
+        answer = selectProvider(config)->sendRequest(conversation);
         if (answer.content == "") {
             std::cout << "Something went wrong. Try again." << "\n";
             conversation.pop_back();
