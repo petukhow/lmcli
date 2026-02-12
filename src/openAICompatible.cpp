@@ -1,5 +1,5 @@
 #include "../include/json.hpp"
-#include "../include/openai-compatible.h"
+#include "../include/openAICompatible.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;

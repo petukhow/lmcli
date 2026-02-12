@@ -20,3 +20,8 @@ json loadAccounts(const std::string& filepath) {
     json parsed = json::parse(str);
     return parsed;
 }
+
+void saveAccounts(const std::string& filepath, const json& accounts) {
+    std::ofstream accountsList(filepath);
+    accountsList << accounts.dump(4);
+}

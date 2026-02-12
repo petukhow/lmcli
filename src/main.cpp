@@ -1,10 +1,10 @@
+#include "../include/selectAccount.h"
 #include "../include/config.h"
 #include "../include/providers.h"
 #include "../include/accounts.h"
 #include "../include/message.h"
 #include "../include/utils.h"
 #include "../include/json.hpp"
-#include "../include/selectaccount.h"
 #include <curl/curl.h>
 #include <iostream>
 #include <cstddef>
@@ -15,7 +15,6 @@ using json = nlohmann::json;
 
 int main() {
     json config = loadConfig("../config.json");
-    json providers = loadProviders("../providers.json");
     json accounts = loadAccounts("../accounts.json");
     auto provider = selectAccount(accounts, config);
     std::vector<Message> conversation;

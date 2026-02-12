@@ -1,6 +1,6 @@
-#include "../include/selectaccount.h"
+#include "../include/selectAccount.h"
 #include "../include/provider.h"
-#include "../include/openai-compatible.h"
+#include "../include/openAICompatible.h"
 #include "../include/anthropic.h"
 #include "../include/json.hpp"
 #include <iostream>
@@ -25,7 +25,7 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
         for (const auto& itprovider : accounts["accounts"]) {
             if (itprovider["name"].get<std::string>() == providerName) {
                 if (itprovider["type"].get<std::string>() == "anthropic") {
-                   provider = std::make_unique<Anthropic>(
+                    provider = std::make_unique<Anthropic>(
                     itprovider["api_key"].get<std::string>(),
                     itprovider["api_url"].get<std::string>(),
                     itprovider["model"].get<std::string>(),
