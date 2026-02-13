@@ -57,7 +57,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     }
     try {
         json parsed = json::parse(rawResponse);
-        response.content = parsed["choices"][0]["message"]["text"].get<std::string>();
+        response.content = parsed["content"][0]["text"].get<std::string>();
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         response.content = "";

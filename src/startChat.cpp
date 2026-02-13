@@ -19,9 +19,9 @@ void startChat() {
 
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
-
+    std::cout << "Prompt (or '/exit' to end the conversation): \n";
     while (true) {
-        std::cout << "Prompt (or '/exit' to end the conversation): ";
+        std::cout << "> ";
         std::getline(std::cin, prompt.content);
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
