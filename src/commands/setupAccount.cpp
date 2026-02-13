@@ -1,7 +1,7 @@
-#include "../include/setupAccount.h"
-#include "../include/accounts.h"
-#include "../include/json.hpp"
-#include "../include/config.h"
+#include "setupAccount.h"
+#include "accounts.h"
+#include "json.hpp"
+#include "config.h"
 #include <iostream>
 
 using json = nlohmann::json;

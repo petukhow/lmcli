@@ -1,6 +1,9 @@
 config.json
 accounts.json
 providers.json
+
 build/
+.cache/
+.vscode/
 
 

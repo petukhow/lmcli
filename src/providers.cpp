@@ -1,5 +1,5 @@
-#include "../include/providers.h"
-#include "../include/json.hpp"
+#include "providers.h"
+#include "json.hpp"
 #include <iostream>
 #include <fstream>
 

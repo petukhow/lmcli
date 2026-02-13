@@ -1,4 +1,4 @@
-#include "../include/startChat.h"
+#include "startChat.h"
 #include <curl/curl.h>
 
 int main() {

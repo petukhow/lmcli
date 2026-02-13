@@ -1,11 +1,11 @@
-#include "../include/startChat.h"
-#include "../include/json.hpp"
-#include "../include/selectAccount.h"
-#include "../include/config.h"
-#include "../include/providers.h"
-#include "../include/accounts.h"
-#include "../include/message.h"
-#include "../include/utils.h"
+#include "startChat.h"
+#include "json.hpp"
+#include "selectAccount.h"
+#include "config.h"
+#include "providers.h"
+#include "accounts.h"
+#include "message.h"
+#include "utils.h"
 
 using json = nlohmann::json;
 

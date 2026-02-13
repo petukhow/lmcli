@@ -1,5 +1,5 @@
-#include "../include/accounts.h"
-#include "../include/json.hpp"
+#include "accounts.h"
+#include "json.hpp"
 #include <iostream>
 #include <fstream>
 

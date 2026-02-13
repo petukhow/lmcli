@@ -1,6 +1,6 @@
-#include "../include/json.hpp"
-#include "../include/anthropic.h"
-#include "../include/config.h"
+#include "json.hpp"
+#include "anthropic.h"
+#include "config.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;

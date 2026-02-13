@@ -1,8 +1,8 @@
-#include "../include/selectAccount.h"
-#include "../include/provider.h"
-#include "../include/openAICompatible.h"
-#include "../include/anthropic.h"
-#include "../include/json.hpp"
+#include "selectAccount.h"
+#include "provider.h"
+#include "openAICompatible.h"
+#include "anthropic.h"
+#include "json.hpp"
 #include <iostream>
 
 using json = nlohmann::json;

@@ -1,5 +1,5 @@
-#include "../include/config.h"
-#include "../include/json.hpp"
+#include "config.h"
+#include "json.hpp"
 #include <iostream>
 #include <fstream>
 
