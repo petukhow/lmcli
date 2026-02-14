@@ -1,4 +1,4 @@
-#include "startChat.h"
+#include "commands.h"
 #include "json.hpp"
 #include "selectAccount.h"
 #include "config.h"
@@ -9,7 +9,7 @@
 
 using json = nlohmann::json;
 
-void startChat() {
+void start() {
     json config = loadConfig("../config.json");
     json accounts = loadAccounts("../accounts.json");
     auto provider = selectAccount(accounts, config);

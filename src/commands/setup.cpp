@@ -1,4 +1,4 @@
-#include "setupAccount.h"
+#include "commands.h"
 #include "accounts.h"
 #include "json.hpp"
 #include "config.h"
@@ -6,7 +6,7 @@
 
 using json = nlohmann::json;
 
-void setupAccount(json& providers) {
+void setup(json& providers) {
     std::string providerName; // user's choose
     json accounts = loadAccounts("../accounts.json");
     json newAccount; // user's new account
