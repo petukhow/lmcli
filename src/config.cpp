@@ -2,11 +2,13 @@
 #include "json.hpp"
 #include <iostream>
 #include <fstream>
+#include "utils.h"
 
 using json = nlohmann::json;
 
 json loadConfig(const std::string& filepath) {
-    std::ifstream file(filepath);
+    std::string fullPath = getConfigPath(filepath);
+    std::ifstream file(fullPath);
     std::string str;
 
     if (file) {

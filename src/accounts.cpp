@@ -2,11 +2,13 @@
 #include "json.hpp"
 #include <iostream>
 #include <fstream>
+#include "utils.h"
 
 using json = nlohmann::json;
 
 json loadAccounts(const std::string& filepath) {
-    std::ifstream file(filepath);
+    std::string fullPath = getConfigPath(filepath);
+    std::ifstream file(fullPath);
     std::string str;
 
     if (file) {
@@ -22,6 +24,7 @@ json loadAccounts(const std::string& filepath) {
 }
 
 void saveAccounts(const std::string& filepath, const json& accounts) {
-    std::ofstream accountsList(filepath);
+    std::string fullPath = getConfigPath(filepath);
+    std::ofstream accountsList(fullPath);
     accountsList << accounts.dump(4);
 }

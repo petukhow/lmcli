@@ -5,3 +5,11 @@
 bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
     return conversation.size() >= limit;
 }
+
+std::string getConfigPath(const std::string& filename) {
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return "./" + filename;  // Fallback to current directory
+    }
+    return std::string(home) + "/.config/lmcli/" + filename;
+}

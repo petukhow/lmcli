@@ -25,8 +25,14 @@ void start() {
         std::getline(std::cin, prompt.content);
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
+        
+        try {
+            answer = provider->sendRequest(conversation);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+        }
 
-        answer = provider->sendRequest(conversation);
         if (answer.content == "") {
             std::cout << "Something went wrong. Try again." << "\n";
             conversation.pop_back();
