@@ -1,6 +1,5 @@
 #include "commands.h"
 #include <iostream>
-#include <curl/curl.h>
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {

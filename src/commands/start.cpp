@@ -10,8 +10,8 @@
 using json = nlohmann::json;
 
 void start() {
-    json config = loadConfig("../config.json");
-    json accounts = loadAccounts("../accounts.json");
+    json config = loadConfig("config.json");
+    json accounts = loadAccounts("accounts.json");
     auto provider = selectAccount(accounts, config);
     std::vector<Message> conversation;
     Message prompt;

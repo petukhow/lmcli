@@ -10,6 +10,7 @@ json loadConfig(const std::string& filepath) {
     std::string fullPath = getConfigPath(filepath);
     std::ifstream file(fullPath);
     std::string str;
+    json parsed = {};
 
     if (file) {
         std::ostringstream ss;
@@ -18,7 +19,8 @@ json loadConfig(const std::string& filepath) {
     } else {
         // Handle file opening error
         std::cerr << "Error: Could not open the file." << std::endl;
+        return parsed;
     }
-    json parsed = json::parse(str);
+    parsed = json::parse(str);
     return parsed;
 }

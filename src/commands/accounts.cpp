@@ -6,7 +6,7 @@
 using json = nlohmann::json;
 
 void accounts() {
-    json accounts = loadAccounts("../accounts.json");
+    json accounts = loadAccounts("accounts.json");
 
     for (const auto& account : accounts["accounts"]) {
         std::cout << "-- " << account["name"].get<std::string>() << "\n";
