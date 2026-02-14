@@ -1,8 +1,10 @@
 #pragma once
 #include "providers.h"
 
-void setup(json& providers);
+void setup();
 
 void start();
 
 void accounts();
+
+void help();

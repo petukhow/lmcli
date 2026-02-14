@@ -6,9 +6,11 @@
 
 using json = nlohmann::json;
 
-void setup(json& providers) {
-    std::string providerName; // user's choose
-    json accountsData = loadAccounts("../accounts.json");
+void setup() {
+    json providers = loadProviders("../providers.json");
+    json accounts = loadAccounts("../accounts.json");
+
+    std::string providerName; // user's choose    
     json newAccount; // user's new account
 
     // config settings
@@ -21,9 +23,11 @@ void setup(json& providers) {
     std::string apiKey;
     std::string userModel;
 
-    std::cout << "Pick a provider or /exit to leave:" << "\n";
+    std::cout << "Pick a provider to setup or /exit to leave:" << "\n";
 
-    accounts(); // returns accounts list
+    for (const auto& provider : providers["providers"]) {
+        std::cout << "-- " << provider["name"].get<std::string>() << "\n";
+    }
 
     std::cout << "> ";
     std::getline(std::cin, providerName);
@@ -52,8 +56,8 @@ void setup(json& providers) {
                 {"model", userModel}
             };
 
-            accountsData["accounts"].push_back(newAccount);
-            saveAccounts("../accounts.json", accountsData);
+            accounts["accounts"].push_back(newAccount);
+            saveAccounts("../accounts.json", accounts);
         }
         
     }
