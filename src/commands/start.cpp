@@ -12,23 +12,24 @@ using json = nlohmann::json;
 void start() {
     json config = loadConfig("config.json");
     json accounts = loadAccounts("accounts.json");
-    auto provider = selectAccount(accounts, config);
     std::vector<Message> conversation;
     Message prompt;
     Message answer;
 
-    if (provider == nullptr) {
-            std::cerr << "No provider selected. Try again.";
-            return;
-        }
-
     if (config.empty()) {
-        std::cerr << "Config doesn't exist. Run 'lmcli setup' to create.";
+        std::cerr << "Config doesn't exist. Run 'lmcli setup' to create.\n";
         return;
     }
+
+    auto provider = selectAccount(accounts, config);
+    
+    if (provider == nullptr) {
+        std::cerr << "No provider selected. Try again.\n";
+        return;
+    }
+
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
-
 
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
 
