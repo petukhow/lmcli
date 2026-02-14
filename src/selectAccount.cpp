@@ -16,8 +16,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
         while (true) {
             std::cout << "Pick an account from the list below (/exit to leave):" << "\n";
 
-            for (const auto& provider : accounts["accounts"]) {
-                std::cout << "-- " << provider["name"].get<std::string>() << "\n";
+            for (const auto& account : accounts["accounts"]) {
+                std::cout << "-- " << account["name"].get<std::string>() << "\n";
             }   
 
             std::cout << "> ";
@@ -34,6 +34,7 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                             config["system_prompt"].get<std::string>(),
                             config["limit"].get<size_t>()
                         );
+                        break;
                     }
                     else if (itprovider["type"].get<std::string>() == "openai-compatible") {
                         provider = std::make_unique<OpenAICompatible>(
@@ -43,8 +44,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                             config["system_prompt"].get<std::string>(),
                             config["limit"].get<size_t>()
                         );
+                        break;
                     }
-                    break;
                 }
             }
             

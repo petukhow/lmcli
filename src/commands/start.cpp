@@ -17,21 +17,22 @@ void start() {
     Message prompt;
     Message answer;
 
+    if (provider == nullptr) {
+            std::cerr << "No provider selected. Try again.";
+            return;
+        }
+
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
+
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, prompt.content);
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
-        
-        try {
-            answer = provider->sendRequest(conversation);
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
-        }
+
+        answer = provider->sendRequest(conversation);
 
         if (answer.content == "") {
             std::cout << "Something went wrong. Try again." << "\n";
