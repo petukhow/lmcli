@@ -22,8 +22,14 @@ void start() {
             return;
         }
 
+    if (config.empty()) {
+        std::cerr << "Config doesn't exist. Run 'lmcli setup' to create.";
+        return;
+    }
     conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     size_t limit_messages = config["limit"].get<size_t>();
+
+
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
 
     while (true) {

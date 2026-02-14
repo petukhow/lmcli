@@ -57,7 +57,7 @@ void setup() {
             };
 
             accounts["accounts"].push_back(newAccount);
-            saveAccounts("../accounts.json", accounts);
+            saveAccounts("accounts.json", accounts);
         }
         
     }
