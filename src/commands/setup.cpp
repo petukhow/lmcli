@@ -8,7 +8,7 @@ using json = nlohmann::json;
 
 void setup(json& providers) {
     std::string providerName; // user's choose
-    json accounts = loadAccounts("../accounts.json");
+    json accountsData = loadAccounts("../accounts.json");
     json newAccount; // user's new account
 
     // config settings
@@ -23,9 +23,7 @@ void setup(json& providers) {
 
     std::cout << "Pick a provider or /exit to leave:" << "\n";
 
-    for (const auto& provider : providers["providers"]) {
-        std::cout << "-- " << provider["name"].get<std::string>() << "\n";
-    }
+    accounts(); // returns accounts list
 
     std::cout << "> ";
     std::getline(std::cin, providerName);
@@ -54,8 +52,8 @@ void setup(json& providers) {
                 {"model", userModel}
             };
 
-            accounts["accounts"].push_back(newAccount);
-            saveAccounts("../accounts.json", accounts);
+            accountsData["accounts"].push_back(newAccount);
+            saveAccounts("../accounts.json", accountsData);
         }
         
     }
