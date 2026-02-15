@@ -57,7 +57,6 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             } else {
                 break;
             }
-            break;
         }
     } else {
         std::cout << "No accounts configured. Run 'lmcli setup' to add one.\n";

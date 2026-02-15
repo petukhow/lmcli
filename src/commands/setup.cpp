@@ -1,5 +1,6 @@
 #include "commands.h"
 #include "accounts.h"
+#include "providers.h"
 #include "json.hpp"
 #include "config.h"
 #include <iostream>
@@ -42,7 +43,8 @@ void setup() {
             defaultUrl = provider["default_api_url"].get<std::string>();
             defaultModel = provider["default_model"].get<std::string>();
 
-            std::cout << "Enter account name (If empty, it'll be named as a provider name): ";
+            std::cout << "Enter account name (Default: "
+                << provider["name"].get<std::string>() << "): ";
             std::getline(std::cin, accountName);
             if (accountName == "") accountName = provider["name"].get<std::string>();
             
@@ -53,7 +55,7 @@ void setup() {
                 continue;
             }
 
-            std::cout << "Enter model (default: " << defaultModel << "): ";
+            std::cout << "Enter model (Default: " << defaultModel << "): ";
             std::getline(std::cin, userModel);
             if (userModel == "") userModel = defaultModel;
 

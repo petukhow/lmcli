@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "openAICompatible.h"
 #include <curl/curl.h>
+#include <iostream>
 
 using json = nlohmann::json;
 

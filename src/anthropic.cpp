@@ -3,6 +3,7 @@
 #include "config.h"
 #include "utils.h"
 #include <curl/curl.h>
+#include <iostream>
 
 using json = nlohmann::json;
 

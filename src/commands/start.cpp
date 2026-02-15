@@ -6,6 +6,7 @@
 #include "accounts.h"
 #include "message.h"
 #include "utils.h"
+#include <iostream>
 
 using json = nlohmann::json;
 

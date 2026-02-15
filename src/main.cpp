@@ -28,6 +28,10 @@ int main(int argc, char* argv[]) {
     else if (command == "help") {
         help();
     }
+    else if (command == "init") {
+        init();
+    }
+
     else {
         std::cerr << "Unknown command: " << command << "\n";
         std::cerr << "See 'lmcli help' for available commands.\n";
