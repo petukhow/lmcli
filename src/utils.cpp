@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
 bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
     return conversation.size() >= limit;
@@ -24,21 +25,21 @@ std::string getConfigDir() {
     return std::string(home) + "/.config/lmcli/";
 }
 
-void createFileIfNotExists(const std::string& path, const std::string& content) {
-    if (std::filesystem::exists(path)) {
-        std::cout << "⚠ " << path << " already exists, skipping\n";
+void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
+    if (std::filesystem::exists(configDir)) {
+        std::cout << "⚠ " << configDir << " already exists, skipping\n";
         return;
     }
     
     // Create the file
-    std::ofstream file(path);
+    std::ofstream file(configDir);
     if (!file.is_open()) {
-        std::cerr << "Error: Could not create " << path << "\n";
+        std::cerr << "Error: Could not create " << configDir << "\n";
         return;
     }
     
-    file << content;
-    std::cout << "✓ Created " << path << "\n";
+    file << fileTemplate;
+    std::cout << "✓ Created " << configDir << "\n";
 }
 size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     std::string* response = static_cast<std::string*>(userdata);
