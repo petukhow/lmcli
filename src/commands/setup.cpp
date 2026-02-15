@@ -59,6 +59,8 @@ void setup() {
             std::cout << "Enter model (Default: " << defaultModel << "): ";
             std::getline(std::cin, userModel);
             if (userModel == "") userModel = defaultModel;
+
+            break;
         }
             newAccount = {
                 {"type", type},
