@@ -1,16 +1,10 @@
 #include "json.hpp"
 #include "anthropic.h"
 #include "config.h"
+#include "utils.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
-
-static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    std::string* response = static_cast<std::string*>(userdata);
-    response->append(ptr, size * nmemb);
-
-    return size * nmemb;
-}
 
 Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "x-api-key: " + api_key;
@@ -20,11 +14,11 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     Message response;
     CURLcode result;
     CURL *curl;
-    
+
     curl = curl_easy_init();
 
     requestBody["model"] = model;
-    requestBody["max_tokens"] = 1024;
+    requestBody["max_tokens"] = max_tokens;
     requestBody["messages"] = json::array();
     requestBody["system"] = system_prompt;
 
@@ -48,7 +42,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, api_url.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &rawResponse);
 
         result = curl_easy_perform(curl);

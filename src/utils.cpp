@@ -13,3 +13,10 @@ std::string getConfigPath(const std::string& filename) {
     }
     return std::string(home) + "/.config/lmcli/" + filename;
 }
+
+size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    std::string* response = static_cast<std::string*>(userdata);
+    response->append(ptr, size * nmemb);
+
+    return size * nmemb;
+}

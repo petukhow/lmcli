@@ -32,17 +32,26 @@ void setup() {
     std::cout << "> ";
     std::getline(std::cin, providerName);
 
+    if (providerName == "/exit") {
+        return;
+    }
+
     for (const auto& provider : providers["providers"]) {
         if (provider["name"].get<std::string>() == providerName) {
             type = provider["type"].get<std::string>();
             defaultUrl = provider["default_api_url"].get<std::string>();
             defaultModel = provider["default_model"].get<std::string>();
 
-            std::cout << "Enter account name: ";
+            std::cout << "Enter account name (If empty, it'll be named as a provider name): ";
             std::getline(std::cin, accountName);
-
+            if (accountName == "") accountName = provider["name"].get<std::string>();
+            
             std::cout << "Enter API key: ";
             std::getline(std::cin, apiKey);
+            if (apiKey.empty()) {
+                std::cerr << "API key cannot be empty.\n";
+                continue;
+            }
 
             std::cout << "Enter model (default: " << defaultModel << "): ";
             std::getline(std::cin, userModel);
@@ -59,14 +68,10 @@ void setup() {
             accounts["accounts"].push_back(newAccount);
             saveAccounts("accounts.json", accounts);
             break;
-        }
-        
+        } 
     }
 
     if (newAccount.empty()) {
         std::cout << "Unknown provider. Try again.\n";
     }
-    
-    
-
 }

@@ -1,15 +1,9 @@
 #include "json.hpp"
+#include "utils.h"
 #include "openAICompatible.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
-
-static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    std::string* response = static_cast<std::string*>(userdata);
-    response->append(ptr, size * nmemb);
-
-    return size * nmemb;
-}
 
 Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
@@ -23,7 +17,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     curl = curl_easy_init();
 
     requestBody["model"] = model;
-    requestBody["max_tokens"] = 1024;
+    requestBody["max_tokens"] = max_tokens;
     requestBody["messages"] = json::array();
 
     for (size_t i = 0; i < conversation.size(); i++) {
@@ -42,7 +36,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, api_url.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &rawResponse);
 
         result = curl_easy_perform(curl);

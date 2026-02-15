@@ -32,7 +32,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                             itprovider["api_url"].get<std::string>(),
                             itprovider["model"].get<std::string>(),
                             config["system_prompt"].get<std::string>(),
-                            config["limit"].get<size_t>()
+                            config["limit"].get<size_t>(),
+                            config["max_tokens"].get<size_t>()
                         );
                         break;
                     }
@@ -42,7 +43,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                             itprovider["api_url"].get<std::string>(),
                             itprovider["model"].get<std::string>(),
                             config["system_prompt"].get<std::string>(),
-                            config["limit"].get<size_t>()
+                            config["limit"].get<size_t>(),
+                            config["max_tokens"].get<size_t>()
                         );
                         break;
                     }
@@ -55,6 +57,7 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             } else {
                 break;
             }
+            break;
         }
     } else {
         std::cout << "No accounts configured. Run 'lmcli setup' to add one.\n";
