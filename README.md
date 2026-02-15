@@ -31,6 +31,7 @@ cd lmcli
 mkdir build && cd build
 cmake ..
 make
+sudo make install 
 ```
 
 The binary will be located at `build/bin/lmcli`.
