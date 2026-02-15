@@ -26,7 +26,7 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 
 ### Building from source
 ```bash
-git clone https://github.com/YOUR_USERNAME/lmcli.git
+git clone https://github.com/petukhow/lmcli.git
 cd lmcli
 mkdir build && cd build
 cmake ..
