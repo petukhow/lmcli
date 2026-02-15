@@ -43,6 +43,7 @@ void setup() {
             defaultUrl = provider["default_api_url"].get<std::string>();
             defaultModel = provider["default_model"].get<std::string>();
 
+        while (true) {
             std::cout << "Enter account name (Default: "
                 << provider["name"].get<std::string>() << "): ";
             std::getline(std::cin, accountName);
@@ -58,7 +59,7 @@ void setup() {
             std::cout << "Enter model (Default: " << defaultModel << "): ";
             std::getline(std::cin, userModel);
             if (userModel == "") userModel = defaultModel;
-
+        }
             newAccount = {
                 {"type", type},
                 {"name", accountName},

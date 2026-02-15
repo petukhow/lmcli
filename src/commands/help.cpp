@@ -9,6 +9,7 @@ void help() {
     std::cout << "  start       Start a chat session with a selected account\n";
     std::cout << "  setup       Add a new provider account\n";
     std::cout << "  accounts    List all configured accounts\n";
+    std::cout << "  init        Initialize config directory and files\n";
     std::cout << "  help        Show this help message\n\n";
     std::cout << "EXAMPLES:\n";
     std::cout << "  lmcli              # Start chat (default)\n";
