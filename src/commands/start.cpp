@@ -42,7 +42,7 @@ void start() {
         answer = provider->sendRequest(conversation);
 
         if (answer.content == "") {
-            std::cout << "Request failed. PLease try again." << "\n";
+            std::cout << "Request failed. Please try again." << "\n";
             conversation.pop_back();
             continue;
         }

@@ -55,7 +55,6 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
         curl_easy_cleanup(curl);
     } else {
         response.content = "";
-
     }
     try {
         json parsed = json::parse(rawResponse);
