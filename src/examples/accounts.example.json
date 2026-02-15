@@ -1,0 +1,25 @@
+{
+    "accounts": [
+    {
+      "name": "my-anthropic",
+      "type": "anthropic",
+      "api_key": "your_key",
+      "api_url": "https://api.anthropic.com/v1/messages",
+      "model": "claude-sonnet-4-20250514"
+    },
+    {
+      "name": "my-groq",
+      "type": "openai-compatible",
+      "api_key": "your_key",
+      "api_url": "https://api.groq.com/openai/v1/chat/completions",
+      "model": "llama-3.3-70b-versatile"
+    },
+    {
+      "name": "my-openai",
+      "type": "openai-compatible",
+      "api_key": "your_key",
+      "api_url": "https://api.openai.com/v1/chat/completions",
+      "model": "gpt-5.2"
+    }
+    ]
+}

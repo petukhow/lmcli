@@ -1,5 +1,5 @@
 {
-  "providers": [
+    "providers": [
     {
       "name": "Anthropic",
       "type": "anthropic",
@@ -18,5 +18,5 @@
       "default_api_url": "https://api.openai.com/v1/chat/completions",
       "default_model": "gpt-5.2"
     }
-  ]
+    ]
 }
