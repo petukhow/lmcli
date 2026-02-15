@@ -22,12 +22,14 @@ target_link_libraries(lmcli PRIVATE
     CURL::libcurl
 )
 
-if(MSVC)
+if (MSVC)
     target_compile_options(lmcli PRIVATE /W4)
-else()
+else ()
     target_compile_options(lmcli PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+endif ()
 
 set_target_properties(lmcli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+install(TARGETS lmcli DESTINATION bin)
