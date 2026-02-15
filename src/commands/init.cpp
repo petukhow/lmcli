@@ -9,7 +9,7 @@ void init() {
     std::string configDir = getConfigDir();
 
     try {
-        std::filesystem::create_directory(configDir);
+        std::filesystem::create_directories(configDir);
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return;
