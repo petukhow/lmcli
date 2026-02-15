@@ -14,5 +14,5 @@ void help() {
     std::cout << "  lmcli              # Start chat (default)\n";
     std::cout << "  lmcli start        # Start chat\n";
     std::cout << "  lmcli setup        # Add new account\n";
-    std::cout << "  lmcli accounts     # List accounts\n\n";
+    std::cout << "  lmcli accounts     # List all accounts\n\n";
 }

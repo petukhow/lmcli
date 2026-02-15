@@ -18,7 +18,7 @@ json loadConfig(const std::string& filepath) {
         str = ss.str();     // Convert stringstream to std::string
     } else {
         // Handle file opening error
-        std::cerr << "Error: Could not open the file." << std::endl;
+        std::cerr << "Error: Could not open file: " << fullPath << "\n";
         return parsed;
     }
     parsed = json::parse(str);

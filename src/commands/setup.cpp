@@ -10,7 +10,7 @@ void setup() {
     json providers = loadProviders("providers.json");
     json accounts = loadAccounts("accounts.json");
 
-    std::string providerName; // user's choose    
+    std::string providerName; // user's choice    
     json newAccount; // user's new account
 
     // config settings
@@ -23,7 +23,7 @@ void setup() {
     std::string apiKey;
     std::string userModel;
 
-    std::cout << "Pick a provider to setup or /exit to leave:" << "\n";
+    std::cout << "Select a provider to set up (type '/exit' to quit):\n";
 
     for (const auto& provider : providers["providers"]) {
         std::cout << "-- " << provider["name"].get<std::string>() << "\n";
@@ -58,6 +58,7 @@ void setup() {
 
             accounts["accounts"].push_back(newAccount);
             saveAccounts("accounts.json", accounts);
+            break;
         }
         
     }

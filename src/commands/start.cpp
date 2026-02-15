@@ -17,14 +17,14 @@ void start() {
     Message answer;
 
     if (config.empty()) {
-        std::cerr << "Config doesn't exist. Run 'lmcli setup' to create.\n";
+        std::cerr << "Config file not found. Run 'lmcli setup' to create it.\n";
         return;
     }
 
     auto provider = selectAccount(accounts, config);
     
     if (provider == nullptr) {
-        std::cerr << "No provider selected. Try again.\n";
+        std::cerr << "No provider selected.\n";
         return;
     }
 
@@ -42,7 +42,7 @@ void start() {
         answer = provider->sendRequest(conversation);
 
         if (answer.content == "") {
-            std::cout << "Something went wrong. Try again." << "\n";
+            std::cout << "Request failed. PLease try again." << "\n";
             conversation.pop_back();
             continue;
         }

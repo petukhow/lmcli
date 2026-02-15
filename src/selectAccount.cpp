@@ -14,7 +14,7 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
     // Check if accounts array exists and is not empty
     if (accounts.contains("accounts") && !accounts["accounts"].empty()) {
         while (true) {
-            std::cout << "Pick an account from the list below (/exit to leave):" << "\n";
+            std::cout << "Select an account from the list below (type '/exit' to quit):\n";
 
             for (const auto& account : accounts["accounts"]) {
                 std::cout << "-- " << account["name"].get<std::string>() << "\n";
@@ -57,7 +57,7 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             }
         }
     } else {
-        std::cout << "Looks like you have no accounts registered. Register it with 'lmcli setup' command in terminal.\n";
+        std::cout << "No accounts configured. Run 'lmcli setup' to add one.\n";
     }
     
     return provider;

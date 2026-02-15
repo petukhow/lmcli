@@ -25,6 +25,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     requestBody["model"] = model;
     requestBody["max_tokens"] = 1024;
     requestBody["messages"] = json::array();
+
     for (size_t i = 0; i < conversation.size(); i++) {
         requestBody["messages"].push_back({{"content",
              conversation[i].content}, {"role", conversation[i].role}});
@@ -52,6 +53,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
         curl_easy_cleanup(curl);
     } else {
         response.content = "";
+
     }
     try {
         json parsed = json::parse(rawResponse);
