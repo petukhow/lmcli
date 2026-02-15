@@ -26,9 +26,16 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     requestBody["model"] = model;
     requestBody["max_tokens"] = 1024;
     requestBody["messages"] = json::array();
+    requestBody["system"] = system_prompt;
+
     for (size_t i = 0; i < conversation.size(); i++) {
-        requestBody["messages"].push_back({{"content",
-            conversation[i].content}, {"role", conversation[i].role}});
+        if (conversation[i].role == "system") {
+            continue;
+        }
+        requestBody["messages"].push_back({
+            {"content", conversation[i].content},
+            {"role", conversation[i].role}
+        });
     }
 
     std::string body = requestBody.dump();
