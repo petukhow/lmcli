@@ -59,9 +59,3 @@ void createFileIfNotExists(const std::string& configDir, const std::string& file
     file << fileTemplate;
     std::cout << "✓ Created " << configDir << "\n";
 }
-size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    std::string* response = static_cast<std::string*>(userdata);
-    response->append(ptr, size * nmemb);
-
-    return size * nmemb;
-}

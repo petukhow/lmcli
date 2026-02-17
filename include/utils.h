@@ -11,8 +11,6 @@ std::string getConfigPath(const std::string& filename);
 
 std::string getConfigDir();
 
-size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-
 void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate);
 
 std::string getSystemDataPath();

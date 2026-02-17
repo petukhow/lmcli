@@ -35,3 +35,10 @@ curl_slist* CurlSlist::get() const {
 CurlSlist::~CurlSlist() {
     curl_slist_free_all(headers);
 }
+
+size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    std::string* response = static_cast<std::string*>(userdata);
+    response->append(ptr, size * nmemb);
+
+    return size * nmemb;
+}

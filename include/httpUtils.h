@@ -27,3 +27,5 @@ public:
     CurlSlist& operator=(const CurlSlist&) = delete;
     ~CurlSlist();
 };
+
+size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
