@@ -43,37 +43,37 @@ void setup() {
             defaultUrl = provider["default_api_url"].get<std::string>();
             defaultModel = provider["default_model"].get<std::string>();
 
-        while (true) {
-            std::cout << "Enter account name (Default: "
-                << provider["name"].get<std::string>() << "): ";
-            std::getline(std::cin, accountName);
-            if (accountName == "") accountName = provider["name"].get<std::string>();
-            
-            std::cout << "Enter API key: ";
-            std::getline(std::cin, apiKey);
-            if (apiKey.empty()) {
-                std::cerr << "API key cannot be empty.\n";
-                continue;
+            while (true) {
+                std::cout << "Enter account name (Default: "
+                    << provider["name"].get<std::string>() << "): ";
+                std::getline(std::cin, accountName);
+                if (accountName == "") accountName = provider["name"].get<std::string>();
+                
+                std::cout << "Enter API key: ";
+                std::getline(std::cin, apiKey);
+                if (apiKey.empty()) {
+                    std::cerr << "API key cannot be empty.\n";
+                    continue;
+                }
+
+                std::cout << "Enter model (Default: " << defaultModel << "): ";
+                std::getline(std::cin, userModel);
+                if (userModel == "") userModel = defaultModel;
+
+                break;
             }
+                newAccount = {
+                    {"type", type},
+                    {"name", accountName},
+                    {"api_key", apiKey},
+                    {"api_url", defaultUrl},
+                    {"model", userModel}
+                };
 
-            std::cout << "Enter model (Default: " << defaultModel << "): ";
-            std::getline(std::cin, userModel);
-            if (userModel == "") userModel = defaultModel;
-
-            break;
-        }
-            newAccount = {
-                {"type", type},
-                {"name", accountName},
-                {"api_key", apiKey},
-                {"api_url", defaultUrl},
-                {"model", userModel}
-            };
-
-            accounts["accounts"].push_back(newAccount);
-            saveAccounts("accounts.json", accounts);
-            break;
-        } 
+                accounts["accounts"].push_back(newAccount);
+                saveAccounts("accounts.json", accounts);
+                break;
+            } 
     }
 
     if (newAccount.empty()) {

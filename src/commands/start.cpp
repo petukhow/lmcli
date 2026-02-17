@@ -52,8 +52,8 @@ void start() {
         std::cout << answer.content << "\n";
 
         if (limitExceeded(conversation, limit_messages)) {
-                conversation.erase(conversation.begin() + 1); // erases user's message
-                conversation.erase(conversation.begin() + 1); // erases model's answer
+            conversation.erase(conversation.begin() + 1); // erases user's message
+            conversation.erase(conversation.begin() + 1); // erases model's answer
         }
     }
 }
