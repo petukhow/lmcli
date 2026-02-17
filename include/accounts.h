@@ -1,8 +1,6 @@
 #pragma once
 #include "json.hpp"
 
-using json = nlohmann::json;
+nlohmann::json loadAccounts(const std::string& filepath);
 
-json loadAccounts(const std::string& filepath);
-
-void saveAccounts(const std::string& filepath, const json& accounts);
+void saveAccounts(const std::string& filepath, const nlohmann::json& accounts);

@@ -3,7 +3,6 @@
 #include "constants.h"
 #include "providers.h"
 #include "json.hpp"
-#include "config.h"
 #include <iostream>
 
 using json = nlohmann::json;

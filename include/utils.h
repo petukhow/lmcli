@@ -1,9 +1,6 @@
 #pragma once
 #include "message.h"
 #include <vector>
-#include "json.hpp"
-
-using json = nlohmann::json;
 
 bool limitExceeded(const std::vector<Message>& conversation, size_t limit);
 

@@ -1,5 +1,4 @@
 #include "json.hpp"
-#include "utils.h"
 #include "httpUtils.h"
 #include "openAICompatible.h"
 #include <curl/curl.h>
@@ -41,8 +40,8 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     result = curl_easy_perform(curl.get());
     
     if (result != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(result));
+        std::cerr << "curl_easy_perform() failed: %s\n";
+        curl_easy_strerror(result);
     } 
 
     try {

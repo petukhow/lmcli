@@ -3,6 +3,4 @@
 #include "provider.h"
 #include "json.hpp"
 
-using json = nlohmann::json;
-
-std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config);
+std::unique_ptr<Provider> selectAccount(const nlohmann::json& accounts, const nlohmann::json& config);

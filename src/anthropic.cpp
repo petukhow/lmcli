@@ -1,8 +1,6 @@
 #include "json.hpp"
 #include "httpUtils.h"
 #include "anthropic.h"
-#include "config.h"
-#include "utils.h"
 #include <curl/curl.h>
 #include <iostream>
 
@@ -47,8 +45,8 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     result = curl_easy_perform(curl.get());
 
     if (result != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(result));
+        std::cerr << "curl_easy_perform() failed: %s\n";
+        curl_easy_strerror(result);
     } 
 
     try {
