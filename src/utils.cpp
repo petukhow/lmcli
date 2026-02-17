@@ -1,5 +1,7 @@
 #include "utils.h"
 #include "message.h"
+#include <cstring>
+#include <string>
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -23,6 +25,22 @@ std::string getConfigDir() {
         return "./"; // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/";
+}
+
+std::string getSystemDataPath() {
+    // const char* dataDirs = std::getenv("XDG_DATA_DIRS");
+    // if (!dataDirs) {
+    //     return "/usr/share/lmcli/"; // Fallback to system path
+    // }
+
+    // std::string dirsStr = dataDirs;
+    // size_t colon = dirsStr.find(':');
+
+    // std::string firstDataDir = (colon == std::string::npos) ? dirsStr : dirsStr.substr(0, colon);
+    // return firstDataDir + "/lmcli/";
+
+    // search through XDG_DATA_DIRS entries instead of hardcoding
+    return "/usr/share/lmcli/";
 }
 
 void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {

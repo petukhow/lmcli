@@ -9,7 +9,7 @@
 using json = nlohmann::json;
 
 void setup() {
-    json providers = loadProviders(PROVIDERS_FILE);
+    json providers = loadProviders();
     json accounts = loadAccounts(ACCOUNTS_FILE);
 
     std::string providerName; // user's choice    

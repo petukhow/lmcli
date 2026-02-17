@@ -1,4 +1,5 @@
 #include "providers.h"
+#include "constants.h"
 #include "json.hpp"
 #include <iostream>
 #include <fstream>
@@ -6,8 +7,8 @@
 
 using json = nlohmann::json;
 
-json loadProviders(const std::string& filepath) {
-    std::string fullPath = getConfigPath(filepath);
+json loadProviders() {
+    std::string fullPath = getSystemDataPath() + PROVIDERS_FILE;
     std::ifstream file(fullPath);
     std::string str;
     json parsed = {};

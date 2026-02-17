@@ -3,4 +3,4 @@
 
 using json = nlohmann::json;
 
-json loadProviders(const std::string& filepath);
+json loadProviders();

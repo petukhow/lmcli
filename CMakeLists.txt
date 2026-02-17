@@ -33,3 +33,4 @@ set_target_properties(lmcli PROPERTIES
 )
 
 install(TARGETS lmcli DESTINATION bin)
+install(FILES data/providers.json DESTINATION /usr/share/lmcli)

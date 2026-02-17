@@ -14,12 +14,18 @@ using json = nlohmann::json;
 void start() {
     json config = loadConfig(CONFIG_FILE);
     json accounts = loadAccounts(ACCOUNTS_FILE);
+    json providers = loadProviders();
     std::vector<Message> conversation;
     Message prompt;
     Message answer;
 
     if (config.empty()) {
-        std::cerr << "Config file not found. Run 'lmcli setup' to create it.\n";
+        std::cerr << "Config files not found. Run 'lmcli setup' to create.\n";
+        return;
+    }
+
+    if (providers.empty()) {
+        std::cerr << "Providers config doesn't exist. Your installation may be broken.\n";
         return;
     }
 

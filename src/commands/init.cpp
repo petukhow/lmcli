@@ -24,30 +24,7 @@ void init() {
     const char* accountsTemplate = R"({
         "accounts": []
     })";
-    const char* providersTemplate = R"({
-        "providers": [
-            {
-            "name": "Anthropic",
-            "type": "anthropic",
-            "default_api_url": "https://api.anthropic.com/v1/messages",
-            "default_model": "claude-sonnet-4-20250514"
-            },
-            {
-            "name": "OpenAI",
-            "type": "openai-compatible",
-            "default_api_url": "https://api.openai.com/v1/chat/completions",
-            "default_model": "gpt-4"
-            },
-            {
-           "name": "Groq",
-            "type": "openai-compatible",
-            "default_api_url": "https://api.groq.com/openai/v1/chat/completions",
-            "default_model": "llama-3.3-70b-versatile"
-            }
-            ]
-        })";
-
-    createFileIfNotExists(configDir + PROVIDERS_FILE, providersTemplate);
+    
     createFileIfNotExists(configDir + CONFIG_FILE, configTemplate);
     createFileIfNotExists(configDir + ACCOUNTS_FILE, accountsTemplate);
 
