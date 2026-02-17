@@ -1,5 +1,6 @@
 #include "commands.h"
 #include "accounts.h"
+#include "constants.h"
 #include "providers.h"
 #include "json.hpp"
 #include "config.h"
@@ -8,8 +9,8 @@
 using json = nlohmann::json;
 
 void setup() {
-    json providers = loadProviders("providers.json");
-    json accounts = loadAccounts("accounts.json");
+    json providers = loadProviders(PROVIDERS_FILE);
+    json accounts = loadAccounts(ACCOUNTS_FILE);
 
     std::string providerName; // user's choice    
     json newAccount; // user's new account
@@ -71,7 +72,7 @@ void setup() {
                 };
 
                 accounts["accounts"].push_back(newAccount);
-                saveAccounts("accounts.json", accounts);
+                saveAccounts(ACCOUNTS_FILE, accounts);
                 break;
             } 
     }

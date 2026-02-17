@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "json.hpp"
 #include "selectAccount.h"
+#include "constants.h"
 #include "config.h"
 #include "providers.h"
 #include "accounts.h"
@@ -11,8 +12,8 @@
 using json = nlohmann::json;
 
 void start() {
-    json config = loadConfig("config.json");
-    json accounts = loadAccounts("accounts.json");
+    json config = loadConfig(CONFIG_FILE);
+    json accounts = loadAccounts(ACCOUNTS_FILE);
     std::vector<Message> conversation;
     Message prompt;
     Message answer;

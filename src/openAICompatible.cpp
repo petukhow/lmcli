@@ -1,6 +1,6 @@
 #include "json.hpp"
 #include "utils.h"
-#include "httpsUtils.h"
+#include "httpUtils.h"
 #include "openAICompatible.h"
 #include <curl/curl.h>
 #include <iostream>
@@ -41,17 +41,11 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     curl_easy_setopt(curl.get(), CURLOPT_VERBOSE, 1L);
 
     result = curl_easy_perform(curl.get());
-
-    std::cerr << "about to perform\n";
-    std::cerr << "CURLcode: " << result << "\n";
-    std::cerr << "RAW: [" << rawResponse << "]\n";
-
+    
     if (result != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
         curl_easy_strerror(result));
     } 
-
-    std::cerr << "RAW: " << rawResponse << "\n";
 
     try {
         json parsed = json::parse(rawResponse);

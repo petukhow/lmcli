@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "utils.h"
 #include "commands.h"
 #include <iostream>
@@ -46,9 +47,9 @@ void init() {
             ]
         })";
 
-    createFileIfNotExists(configDir + "providers.json", providersTemplate);
-    createFileIfNotExists(configDir + "config.json", configTemplate);
-    createFileIfNotExists(configDir + "accounts.json", accountsTemplate);
+    createFileIfNotExists(configDir + PROVIDERS_FILE, providersTemplate);
+    createFileIfNotExists(configDir + CONFIG_FILE, configTemplate);
+    createFileIfNotExists(configDir + ACCOUNTS_FILE, accountsTemplate);
 
     std::cout << "\n✓ Initialization complete!\n";
     std::cout << "Next steps:\n";
