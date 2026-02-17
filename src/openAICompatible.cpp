@@ -38,8 +38,6 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, curlWriteCallback);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &rawResponse);
 
-    curl_easy_setopt(curl.get(), CURLOPT_VERBOSE, 1L);
-
     result = curl_easy_perform(curl.get());
     
     if (result != CURLE_OK) {
