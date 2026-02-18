@@ -50,10 +50,11 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
             response.content = parsed["error"]["message"];
             response.isFailed = true;
         } else {
-            response.content = parsed["content"][0]["text"].get<std::string>();
+            response.content = parsed["choices"][0]["message"]["content"].get<std::string>();
         }
     } catch (const std::exception& e) {
         response.content = "";
+        response.isFailed = true;
     }
 
     return response;

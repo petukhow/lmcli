@@ -33,7 +33,6 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
         std::cerr << "No accounts configured. Run 'lmcli setup' to add one.\n";
         return nullptr;
     }
-    std::cerr << "provider is: " << (provider == nullptr ? "null" : "not null") << "\n";
 
     return provider;
 }

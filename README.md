@@ -28,10 +28,9 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 ```bash
 git clone https://github.com/petukhow/lmcli.git
 cd lmcli
-mkdir build && cd build
-cmake ..
-make
-sudo cmake --install .
+cmake -B build
+cmake --build build
+sudo cmake --install build
 ```
 
 The binary will be located at `build/bin/lmcli`.

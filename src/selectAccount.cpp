@@ -23,7 +23,6 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             if (providerName == "/exit") break;
 
             for (const auto& acc : accounts["accounts"]) {
-                std::cerr << "comparing: '" << acc["name"].get<std::string>() << "' with '" << providerName << "'\n";
                 if (acc["name"].get<std::string>() == providerName) {
                     provider = Provider::create(acc, config);
                     break;
