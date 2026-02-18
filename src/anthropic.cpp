@@ -45,16 +45,21 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     result = curl_easy_perform(curl.get());
 
     if (result != CURLE_OK) {
-        std::cerr << "curl_easy_perform() failed: %s\n";
+        std::cerr << "curl_easy_perform() failed:\n";
         curl_easy_strerror(result);
     } 
 
     try {
         json parsed = json::parse(rawResponse);
-        response.content = parsed["content"][0]["text"].get<std::string>();
+        if (parsed.contains("error")) {
+            response.content = parsed["error"]["message"];
+            response.isFailed = true;
+        } else {
+            response.content = parsed["content"][0]["text"].get<std::string>();
+        }
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
         response.content = "";
+        response.isFailed = true;
     }
 
     return response;

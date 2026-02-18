@@ -4,4 +4,5 @@
 struct Message {
     std::string role;
     std::string content;
+    bool isFailed = false;
 };

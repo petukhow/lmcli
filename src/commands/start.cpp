@@ -49,8 +49,8 @@ void start() {
 
         answer = provider->sendRequest(conversation);
 
-        if (answer.content == "") {
-            std::cout << "Request failed. Please try again." << "\n";
+        if (answer.isFailed) {
+            std::cout << "Request failed: " << answer.content << "\n";
             conversation.pop_back();
             continue;
         }

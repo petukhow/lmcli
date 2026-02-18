@@ -1,7 +1,5 @@
 #include "selectAccount.h"
 #include "provider.h"
-#include "openAICompatible.h"
-#include "anthropic.h"
 #include "json.hpp"
 #include <iostream>
 
@@ -25,29 +23,10 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             if (providerName == "/exit") break;
 
             for (const auto& acc : accounts["accounts"]) {
+                std::cerr << "comparing: '" << acc["name"].get<std::string>() << "' with '" << providerName << "'\n";
                 if (acc["name"].get<std::string>() == providerName) {
-                    if (acc["type"].get<std::string>() == "anthropic") {
-                        provider = std::make_unique<Anthropic>(
-                            acc["api_key"].get<std::string>(),
-                            acc["api_url"].get<std::string>(),
-                            acc["model"].get<std::string>(),
-                            config["system_prompt"].get<std::string>(),
-                            config["limit"].get<size_t>(),
-                            config["max_tokens"].get<size_t>()
-                        );
-                        break;
-                    }
-                    else if (acc["type"].get<std::string>() == "openai-compatible") {
-                        provider = std::make_unique<OpenAICompatible>(
-                            acc["api_key"].get<std::string>(),
-                            acc["api_url"].get<std::string>(),
-                            acc["model"].get<std::string>(),
-                            config["system_prompt"].get<std::string>(),
-                            config["limit"].get<size_t>(),
-                            config["max_tokens"].get<size_t>()
-                        );
-                        break;
-                    }
+                    provider = Provider::create(acc, config);
+                    break;
                 }
             }
             
@@ -56,11 +35,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                 continue;
             } else {
                 break;
-            }
-        }
-    } else {
-        std::cout << "No accounts configured. Run 'lmcli setup' to add one.\n";
+                }
+        }     
     }
-    
     return provider;
 }
