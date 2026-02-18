@@ -2,7 +2,6 @@
 #include "httpUtils.h"
 #include "openAICompatible.h"
 #include <curl/curl.h>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -12,17 +11,16 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     std::string rawResponse;
     json requestBody;
     Message response;
-    CURLcode result;
     Curl curl;
 
     requestBody["model"] = model;
     requestBody["max_tokens"] = max_tokens;
     requestBody["messages"] = json::array();
 
-    for (size_t i = 0; i < conversation.size(); i++) {
+    for (const auto& msg : conversation) {
         requestBody["messages"].push_back({
-            {"content", conversation[i].content},
-            {"role", conversation[i].role}
+            {"content", msg.content},
+            {"role", msg.role}
         });
     }
 
@@ -31,18 +29,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
-    curl_easy_setopt(curl.get(), CURLOPT_URL, api_url.c_str());
-    curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.c_str());
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, curlWriteCallback);
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &rawResponse);
-
-    result = curl_easy_perform(curl.get());
-    
-    if (result != CURLE_OK) {
-        std::cerr << "curl_easy_perform() failed:\n";
-        curl_easy_strerror(result);
-    } 
+    Provider::performRequest(body, headers, curl, rawResponse);
 
     try {
         json parsed = json::parse(rawResponse);

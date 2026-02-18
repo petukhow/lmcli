@@ -1,3 +1,4 @@
+#include "httpUtils.h"
 #include "openAICompatible.h"
 #include "anthropic.h"
 #include "provider.h"
@@ -35,4 +36,22 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     }
 
     return provider;
+}
+
+void Provider::performRequest(const std::string& body, const CurlSlist& headers,
+        Curl& curl, std::string& rawResponse) const {
+    CURLcode result;
+
+    curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
+    curl_easy_setopt(curl.get(), CURLOPT_URL, api_url.c_str());
+    curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.c_str());
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, curlWriteCallback);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &rawResponse);
+
+    result = curl_easy_perform(curl.get());
+
+    if (result != CURLE_OK) {
+        std::cerr << "curl_easy_perform() failed:\n";
+        std::cerr << curl_easy_strerror(result) << "\n";
+    }
 }

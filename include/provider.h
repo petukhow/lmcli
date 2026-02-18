@@ -1,11 +1,15 @@
+#include <curl/curl.h>
 #include <memory>
 #include <string>
+#include "httpUtils.h"
 #include "json.hpp"
 #include "message.h"
 #pragma once
 
 class Provider {
 protected:
+    void performRequest(const std::string& body, const CurlSlist& headers, Curl& curl, std::string& rawResponse) const;
+
     std::string api_key;
     std::string api_url;
     std::string model;
@@ -23,3 +27,4 @@ public:
     virtual Message sendRequest(const std::vector<Message>& conversation) const = 0;
     virtual ~Provider() = default;
 };
+
