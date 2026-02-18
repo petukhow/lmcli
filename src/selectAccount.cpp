@@ -24,24 +24,24 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             std::getline(std::cin, providerName);
             if (providerName == "/exit") break;
 
-            for (const auto& itprovider : accounts["accounts"]) {
-                if (itprovider["name"].get<std::string>() == providerName) {
-                    if (itprovider["type"].get<std::string>() == "anthropic") {
+            for (const auto& acc : accounts["accounts"]) {
+                if (acc["name"].get<std::string>() == providerName) {
+                    if (acc["type"].get<std::string>() == "anthropic") {
                         provider = std::make_unique<Anthropic>(
-                            itprovider["api_key"].get<std::string>(),
-                            itprovider["api_url"].get<std::string>(),
-                            itprovider["model"].get<std::string>(),
+                            acc["api_key"].get<std::string>(),
+                            acc["api_url"].get<std::string>(),
+                            acc["model"].get<std::string>(),
                             config["system_prompt"].get<std::string>(),
                             config["limit"].get<size_t>(),
                             config["max_tokens"].get<size_t>()
                         );
                         break;
                     }
-                    else if (itprovider["type"].get<std::string>() == "openai-compatible") {
+                    else if (acc["type"].get<std::string>() == "openai-compatible") {
                         provider = std::make_unique<OpenAICompatible>(
-                            itprovider["api_key"].get<std::string>(),
-                            itprovider["api_url"].get<std::string>(),
-                            itprovider["model"].get<std::string>(),
+                            acc["api_key"].get<std::string>(),
+                            acc["api_url"].get<std::string>(),
+                            acc["model"].get<std::string>(),
                             config["system_prompt"].get<std::string>(),
                             config["limit"].get<size_t>(),
                             config["max_tokens"].get<size_t>()

@@ -39,7 +39,7 @@ std::string getSystemDataPath() {
     // std::string firstDataDir = (colon == std::string::npos) ? dirsStr : dirsStr.substr(0, colon);
     // return firstDataDir + "/lmcli/";
 
-    // search through XDG_DATA_DIRS entries instead of hardcoding
+    // task: search through XDG_DATA_DIRS entries instead of hardcoding
     return "/usr/share/lmcli/";
 }
 
