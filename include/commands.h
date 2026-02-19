@@ -9,3 +9,5 @@ void accounts();
 void help();
 
 void init();
+
+void removeAccount();

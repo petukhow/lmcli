@@ -31,6 +31,9 @@ int main(int argc, char* argv[]) {
     else if (command == "init") {
         init();
     }
+    else if (command == "remove") {
+        removeAccount();
+    }
 
     else {
         std::cerr << "Unknown command: " << command << "\n";
