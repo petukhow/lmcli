@@ -22,7 +22,7 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
             continue;
         }
         requestBody["contents"].push_back({
-            {"parts", json::array({json({"text", msg.content})})},
+            {"parts", json::array({json{{"text", msg.content}}})},
             {"role", msg.role}
         });
     }
