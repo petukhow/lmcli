@@ -17,6 +17,12 @@
       "type": "openai-compatible",
       "default_api_url": "https://api.openai.com/v1/chat/completions",
       "default_model": "gpt-5.2"
+    },
+    { 
+      "name": "Google",
+      "type": "google",
+      "default_api_url": "https://generativelanguage.googleapis.com/v1beta/models/",
+      "default_model": "gemini-3-flash-preview"
     }
     ]
 }

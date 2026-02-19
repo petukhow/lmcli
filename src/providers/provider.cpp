@@ -1,5 +1,6 @@
 #include "httpUtils.h"
 #include "openAICompatible.h"
+#include "google.h"
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"
@@ -30,6 +31,15 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
             config["max_tokens"].get<size_t>()
         );
     }
+    else if (accounts["type"].get<std::string>() == "google") {
+        provider = std::make_unique<Google>(
+            accounts["api_key"].get<std::string>(),
+            accounts["api_url"].get<std::string>(),
+            accounts["model"].get<std::string>(),
+            config["system_prompt"].get<std::string>(),
+            config["limit"].get<size_t>()
+        );
+    }
     else {
         std::cerr << "No accounts configured. Run 'lmcli setup' to add one.\n";
         return nullptr;
@@ -39,7 +49,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
 }
 
 void Provider::performRequest(const std::string& body, const CurlSlist& headers,
-        Curl& curl, std::string& rawResponse) const {
+    Curl& curl, std::string& rawResponse) const {
     CURLcode result;
 
     curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());

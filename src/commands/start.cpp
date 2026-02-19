@@ -12,12 +12,21 @@
 using json = nlohmann::json;
 
 void start() {
+    std::cerr << "loading config\n";
     json config = loadConfig(CONFIG_FILE);
+    std::cerr << "loading accounts\n";
     json accounts = loadAccounts(ACCOUNTS_FILE);
+    std::cerr << "loading providers\n";
     json providers = loadProviders();
+    
+    std::cerr << "1\n";
     std::vector<Message> conversation;
+    std::cerr << "2\n";
     Message prompt;
+    std::cerr << "3\n";
     Message answer;
+
+    std::cerr << "all loaded\n";
 
     if (config.empty()) {
         std::cerr << "Config files not found. Run 'lmcli setup' to create.\n";

@@ -19,8 +19,8 @@ protected:
 
 public:
     Provider(const std::string& api_key, const std::string& api_url,
-        const std::string& model, const std::string& system_prompt, size_t limit, size_t max_tokens)
-        : api_key(api_key), api_url(api_url), model(model), system_prompt(system_prompt), limit(limit), max_tokens(max_tokens) {}
+        const std::string& model, const std::string& system_prompt, size_t limit)
+        : api_key(api_key), api_url(api_url), model(model), system_prompt(system_prompt), limit(limit) {}
 
     static std::unique_ptr<Provider> create(const nlohmann::json& accounts, const nlohmann::json& config);
         

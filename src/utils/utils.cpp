@@ -38,8 +38,10 @@ std::string getSystemDataPath() {
     while (true) {
         size_t colon = dirsStr.find(':');
         firstDataDir = (colon == std::string::npos) ? dirsStr : dirsStr.substr(0, colon);
+
         if (firstDataDir.empty()) return "/usr/share/lmcli/";
-        if (std::filesystem::exists(firstDataDir)) {
+
+        if (std::filesystem::exists(firstDataDir + "/lmcli/")) {
             return firstDataDir + "/lmcli/";
         } else {
             dirsStr.erase(0, firstDataDir.length() + 1);

@@ -36,6 +36,8 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
                 break;
                 }
         }     
+    } else {
+        std::cerr << "You have broken accounts.json. Try 'lmcli init'.";
     }
     return provider;
 }
