@@ -37,11 +37,12 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
             accounts["api_url"].get<std::string>(),
             accounts["model"].get<std::string>(),
             config["system_prompt"].get<std::string>(),
-            config["limit"].get<size_t>()
+            config["limit"].get<size_t>(),
+            config["max_tokens"].get<size_t>()
         );
     }
     else {
-        std::cerr << "No accounts configured. Run 'lmcli setup' to add one.\n";
+        std::cerr << "Unknown account type.\n";
         return nullptr;
     }
 

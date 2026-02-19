@@ -15,6 +15,7 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
 
     requestBody["contents"] = json::array();
     requestBody["systemInstruction"]["parts"] = json::array({json{{"text", system_prompt}}});
+    requestBody["generationConfig"]["maxOutputTokens"] = max_tokens;
 
     for (const auto& msg : conversation) {
         requestBody["contents"].push_back({
