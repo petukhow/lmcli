@@ -2,7 +2,6 @@
 #include "httpUtils.h"
 #include "google.h"
 #include <curl/curl.h>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -23,7 +22,6 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
             {"role", msg.role}
         });
     }
-    std::cout << rawResponse;
     std::string body = requestBody.dump();
         
     headers.append("Content-Type: application/json");
