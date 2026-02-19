@@ -18,6 +18,9 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
     requestBody["generationConfig"]["maxOutputTokens"] = max_tokens;
 
     for (const auto& msg : conversation) {
+        if (msg.role == "system") {
+            continue;
+        }
         requestBody["contents"].push_back({
             {"parts", json::array({json({"text", msg.content})})},
             {"role", msg.role}
@@ -44,4 +47,4 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
     }
 
     return response;
-    }
+}

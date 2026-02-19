@@ -50,4 +50,4 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     }
 
     return response;
-    }
+}
