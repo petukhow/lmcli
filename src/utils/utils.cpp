@@ -67,3 +67,19 @@ void createFileIfNotExists(const std::string& configDir, const std::string& file
     file << fileTemplate;
     std::cout << "✓ Created " << configDir << "\n";
 }
+
+std::string getChatDir() {
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return "./";  // Fallback to current directory
+    }
+    return std::string(home) + "/.config/lmcli/chats/";
+}
+
+std::string getChatsPath(const std::string& filename) {
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return "./" + filename;  // Fallback to current directory
+    }
+    return std::string(home) + "/.config/lmcli/chats" + filename;
+}

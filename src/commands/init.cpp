@@ -5,12 +5,13 @@
 #include <string>
 #include <filesystem>
 
-
 void init() {
     std::string configDir = getConfigDir();
-
+    std::string chatsDir = getChatsDir();
+    
     try {
         std::filesystem::create_directories(configDir);
+        std::filesystem::create_directories(chatsDir);
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return;

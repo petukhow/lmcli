@@ -11,3 +11,7 @@ std::string getConfigDir();
 void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate);
 
 std::string getSystemDataPath();
+
+std::string getChatsDir();
+
+std::string getChatsPath(const std::string& filename);

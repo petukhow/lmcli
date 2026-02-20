@@ -31,10 +31,13 @@ json loadAccounts(const std::string& filepath) {
     return parsed;
 }
 
-void saveAccounts(const std::string& filepath, const json& accounts) {
-    std::string fullPath = getConfigPath(filepath);
+void saveAccounts(const std::string& filename, const json& accounts) {
+    std::string fullPath = getConfigPath(filename);
+    std::ofstream accountsList;
+
     try {
-        std::ofstream accountsList(fullPath);
+        accountsList.exceptions(std::ofstream::failbit);
+        accountsList.open(fullPath);
         accountsList << accounts.dump(4);
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
