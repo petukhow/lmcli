@@ -55,6 +55,7 @@ void start() {
             conversation.pop_back();
             continue;
         }
+        
         conversation.push_back({"assistant", answer.content});
 
         std::cout << answer.content << "\n";

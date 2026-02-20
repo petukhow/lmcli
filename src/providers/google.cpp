@@ -21,9 +21,10 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
         if (msg.role == "system") {
             continue;
         }
+        std::string googleRole = (msg.role == "assistant") ? "model" : msg.role;        
         requestBody["contents"].push_back({
             {"parts", json::array({json{{"text", msg.content}}})},
-            {"role", msg.role}
+            {"role", googleRole}
         });
     }
     std::string body = requestBody.dump();
