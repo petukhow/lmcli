@@ -12,9 +12,13 @@ void removeAccount() {
     bool isFound = false;
     json accounts = loadAccounts(ACCOUNTS_FILE);
 
-    std::cout << "Select an account to remove (type '/exit' to quit):\n";
-    for (const auto& account : accounts["accounts"]) {
-        std::cout << "-- " << account["name"].get<std::string>() << "\n";
+    if (!accounts["accounts"].empty()) {
+        std::cout << "Select an account to remove (type '/exit' to quit):\n";
+        for (const auto& account : accounts["accounts"]) {
+            std::cout << "-- " << account["name"].get<std::string>() << "\n";
+        }
+    } else {
+        std::cerr << "No accounts configured.";
     }
 
     std::cout << "> ";
@@ -32,6 +36,6 @@ void removeAccount() {
         }
     }
     if (!isFound) {
-        std::cerr << "Account not found.";
+        std::cerr << "Account not found.\n";
     }
 }

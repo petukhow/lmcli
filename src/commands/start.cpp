@@ -21,7 +21,7 @@ void start() {
     Message answer;
 
     if (config.empty()) {
-        std::cerr << "Config files not found. Run 'lmcli setup' to create.\n";
+        std::cerr << "Config file not found. Run 'lmcli init' to create.\n";
         return;
     }
 

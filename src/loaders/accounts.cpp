@@ -1,5 +1,6 @@
 #include "accounts.h"
 #include "json.hpp"
+#include <exception>
 #include <iostream>
 #include <fstream>
 #include "utils.h"
@@ -32,6 +33,10 @@ json loadAccounts(const std::string& filepath) {
 
 void saveAccounts(const std::string& filepath, const json& accounts) {
     std::string fullPath = getConfigPath(filepath);
-    std::ofstream accountsList(fullPath);
-    accountsList << accounts.dump(4);
+    try {
+        std::ofstream accountsList(fullPath);
+        accountsList << accounts.dump(4);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+    }
 }
