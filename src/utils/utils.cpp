@@ -8,6 +8,7 @@
 #include <filesystem>
 
 bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
+    if (limit == 0) return false;
     return conversation.size() >= limit;
 }
 
