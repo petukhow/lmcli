@@ -26,8 +26,8 @@ void init() {
         "accounts": []
     })";
     
-    createFileIfNotExists(configDir + CONFIG_FILE, configTemplate);
-    createFileIfNotExists(configDir + ACCOUNTS_FILE, accountsTemplate);
+    createConfigFileIfNotExists(configDir + CONFIG_FILE, configTemplate);
+    createConfigFileIfNotExists(configDir + ACCOUNTS_FILE, accountsTemplate);
 
     std::cout << "\n✓ Initialization complete!\n";
     std::cout << "Next steps:\n";

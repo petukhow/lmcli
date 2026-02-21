@@ -51,12 +51,11 @@ std::string getSystemDataPath() {
     return firstDataDir + "/lmcli/";
 }
 
-void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
+void createConfigFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
     if (std::filesystem::exists(configDir)) {
         std::cout << "⚠ " << configDir << " already exists, skipping\n";
         return;
     }
-    
     // Create the file
     std::ofstream file(configDir);
     if (!file.is_open()) {
@@ -68,7 +67,24 @@ void createFileIfNotExists(const std::string& configDir, const std::string& file
     std::cout << "✓ Created " << configDir << "\n";
 }
 
-std::string getChatDir() {
+void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
+    size_t i = 1;
+    std::string finalPath = configDir;
+    while (std::filesystem::exists(finalPath)) {
+        finalPath = configDir + "_" + std::to_string(i);
+        i++;
+    }   
+    std::ofstream file(finalPath);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not create " << finalPath << "\n";
+        return; 
+    }
+    file << fileTemplate;
+    std::cout << "✓ Created " << finalPath << "\n";
+}
+
+
+std::string getChatsDir() {
     const char* home = std::getenv("HOME");
     if (!home) {
         return "./";  // Fallback to current directory

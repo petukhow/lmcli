@@ -8,6 +8,8 @@ std::string getConfigPath(const std::string& filename);
 
 std::string getConfigDir();
 
+void createConfigFileIfNotExists(const std::string& configDir, const std::string& fileTemplate);
+
 void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate);
 
 std::string getSystemDataPath();

@@ -1,5 +1,6 @@
 #include "commands.h"
 #include "json.hpp"
+#include "chatSetup.h"
 #include "selectAccount.h"
 #include "constants.h"
 #include "config.h"
@@ -29,6 +30,8 @@ void start() {
         std::cerr << "Providers config doesn't exist. Your installation may be broken.\n";
         return;
     }
+    
+    std::string chat = chatSetup();
 
     auto provider = selectAccount(accounts, config);
     
