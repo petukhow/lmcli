@@ -61,7 +61,8 @@ void start() {
         
         conversation.push_back({"assistant", answer.content});
 
-        std::cout << answer.content << "\n";
+        std::cout << "\n\n";
+        std::cout << answer.content << "\n\n";
 
         if (limitExceeded(conversation, limit_messages)) {
             conversation.erase(conversation.begin() + 1); // erases user's message
