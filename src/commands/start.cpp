@@ -61,7 +61,7 @@ void start() {
         
         conversation.push_back({"assistant", answer.content});
 
-        std::cout << "\n\n";
+        std::cout << "\n";
         std::cout << answer.content << "\n\n";
 
         if (limitExceeded(conversation, limit_messages)) {
