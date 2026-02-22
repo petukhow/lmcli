@@ -86,8 +86,16 @@ std::string createChat(const std::string& chatsDir) {
     std::string chatPath; // path to the chat file
 
     std::cout << "Enter chat's name (leave empty for default: 'chat #...'): \n";
-    std::cout << "> ";
-    std::getline(std::cin, chatName);
+    
+    while (true) {
+        std::cout << "> ";
+        std::getline(std::cin, chatName);
+
+        if (!chatName.empty() && chatName[0] == '/') {
+            std::cerr << "Chat name cannot start with '/'. Try again.\n";
+            continue;
+        } else break;
+    }
 
     fullChatName = chatsDir + chatName + ".json"; 
 
