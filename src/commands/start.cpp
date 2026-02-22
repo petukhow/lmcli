@@ -1,6 +1,5 @@
 #include "commands.h"
 #include "json.hpp"
-#include "chatSetup.h"
 #include "selectAccount.h"
 #include "constants.h"
 #include "chats.h"
@@ -31,7 +30,7 @@ void start() {
         return;
     }
 
-    std::string chatsPath = chatSetup();
+    std::string chatsPath = setupChat();
     if (chatsPath.empty()) {
         return;
     }
