@@ -67,20 +67,24 @@ void createConfigFileIfNotExists(const std::string& configDir, const std::string
     std::cout << "✓ Created " << configDir << "\n";
 }
 
-void createFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
+std::string createFileIfNotExists(const std::string& chatsDir, const std::string& fileTemplate) {
     size_t i = 1;
-    std::string finalPath = configDir;
+    std::filesystem::path finalPath = chatsDir;
+    std::string stem = finalPath.parent_path() / finalPath.stem();
+    std::string extension = finalPath.extension().string();
+
     while (std::filesystem::exists(finalPath)) {
-        finalPath = configDir + "_" + std::to_string(i);
+        finalPath = stem + "_" + std::to_string(i) + extension;
         i++;
     }   
     std::ofstream file(finalPath);
     if (!file.is_open()) {
         std::cerr << "Error: Could not create " << finalPath << "\n";
-        return; 
+        return ""; 
     }
     file << fileTemplate;
     std::cout << "✓ Created " << finalPath << "\n";
+    return finalPath.string();
 }
 
 
@@ -97,5 +101,5 @@ std::string getChatsPath(const std::string& filename) {
     if (!home) {
         return "./" + filename;  // Fallback to current directory
     }
-    return std::string(home) + "/.config/lmcli/chats" + filename;
+    return std::string(home) + "/.config/lmcli/chats/" + filename;
 }

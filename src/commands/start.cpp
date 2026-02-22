@@ -3,6 +3,7 @@
 #include "chatSetup.h"
 #include "selectAccount.h"
 #include "constants.h"
+#include "chats.h"
 #include "config.h"
 #include "providers.h"
 #include "accounts.h"
@@ -17,7 +18,6 @@ void start() {
     json accounts = loadAccounts(ACCOUNTS_FILE);
     json providers = loadProviders();
     
-    std::vector<Message> conversation;
     Message prompt;
     Message answer;
 
@@ -30,9 +30,15 @@ void start() {
         std::cerr << "Providers config doesn't exist. Your installation may be broken.\n";
         return;
     }
-    
-    std::string chat = chatSetup();
 
+    std::string chatsPath = chatSetup();
+    if (chatsPath.empty()) {
+        return;
+    }
+
+    json chats = loadChats(chatsPath);
+    std::vector<Message> conversation = chats["conversation"].get<std::vector<Message>>();
+    
     auto provider = selectAccount(accounts, config);
     
     if (provider == nullptr) {
@@ -40,7 +46,9 @@ void start() {
         return;
     }
 
-    conversation.push_back({"system", config["system_prompt"].get<std::string>()});
+    if (chats["conversation"].empty()) {
+        conversation.push_back({"system", config["system_prompt"].get<std::string>()});
+    }
     size_t limit_messages = config["limit"].get<size_t>();
 
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
@@ -63,6 +71,8 @@ void start() {
 
         std::cout << "\n";
         std::cout << answer.content << "\n\n";
+
+        saveChat(chatsPath, conversation);
 
         if (limitExceeded(conversation, limit_messages)) {
             conversation.erase(conversation.begin() + 1); // erases user's message

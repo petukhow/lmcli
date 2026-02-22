@@ -1,9 +1,9 @@
-#include "chats.h"
 #include <filesystem>
 #include "utils.h"
 #include <iostream>
 
 std::string chatSetup() {
+    std::string chatPath;
     std::string chatName;
     std::string fullChatName;
     std::string chatsDir = getChatsDir();
@@ -42,11 +42,11 @@ std::string chatSetup() {
                 std::filesystem::directory_iterator{});
             if (chatName == "") {
                 fullChatName = chatsDir + "chat #" + std::to_string(filesAmount) + ".json";
-                createFileIfNotExists(fullChatName, chatTemplate);
-                return fullChatName;
+                chatPath = createFileIfNotExists(fullChatName, chatTemplate);
+                return chatPath;
             } else {
-                createFileIfNotExists(fullChatName, chatTemplate);
-                return fullChatName;
+                chatPath = createFileIfNotExists(fullChatName, chatTemplate);
+                return chatPath;
             }
                 
         } else {

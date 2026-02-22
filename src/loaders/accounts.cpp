@@ -25,9 +25,9 @@ json loadAccounts(const std::string& filepath) {
     try {
         parsed = json::parse(str);
     } catch (const json::parse_error& e) {
-        std::cerr << "parse error: " << e.what() << "\n";
+        std::cerr << "Parse error: " << e.what() << "\n";
         return {};
-}
+    }
     return parsed;
 }
 
