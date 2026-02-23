@@ -26,15 +26,11 @@ std::string setupChat() {
             fullChatName = createChat(chatsDir);
             if (fullChatName != "") {
                 break;
-            } else {
-                std::cerr << "Failed to create a new chat. Try again.\n";
             }
         } else {
             fullChatName = continueChat(chatsDir, chatName);
             if (fullChatName != "") {
                 break;
-            } else {
-                std::cerr << "Chat not found. Try again.\n";
             }
         }
     }
@@ -91,6 +87,8 @@ std::string createChat(const std::string& chatsDir) {
         std::cout << "> ";
         std::getline(std::cin, chatName);
 
+        if (chatName == "/exit") return "/exit";
+        
         if (!chatName.empty() && chatName[0] == '/') {
             std::cerr << "Chat name cannot start with '/'. Try again.\n";
             continue;

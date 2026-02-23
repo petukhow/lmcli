@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 
 json loadProviders() {
-    std::string fullPath = getSystemDataPath() + PROVIDERS_FILE;
+    std::string fullPath = getSystemDataPath(PROVIDERS_FILE);
     std::ifstream file(fullPath);
     std::string str;
     json parsed = {};

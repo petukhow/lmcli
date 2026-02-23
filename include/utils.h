@@ -13,7 +13,7 @@ void createConfigFileIfNotExists(const std::string& configDir, const std::string
 
 std::string createFileIfNotExists(const std::string& chatsDir, const std::string& fileTemplate);
 
-std::string getSystemDataPath();
+std::string getSystemDataPath(const std::string& filename);
 
 std::string getChatsDir();
 

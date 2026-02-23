@@ -28,11 +28,11 @@ std::string getConfigDir() {
     return std::string(home) + "/.config/lmcli/";
 }
 
-std::string getSystemDataPath() {
+std::string getSystemDataPath(const std::string& filename) {
     const char* dataDirs = std::getenv("XDG_DATA_DIRS");
     std::string firstDataDir;
     if (!dataDirs) {
-        return "/usr/share/lmcli/"; // Fallback to system path
+        return "/usr/share/lmcli/" + filename; // Fallback to system path
     }
 
     std::string dirsStr = dataDirs;
@@ -42,13 +42,16 @@ std::string getSystemDataPath() {
 
         if (firstDataDir.empty()) return "/usr/share/lmcli/";
 
-        if (std::filesystem::exists(firstDataDir + "/lmcli/")) {
-            return firstDataDir + "/lmcli/";
+        std::string base = firstDataDir.back() == '/' ? firstDataDir : firstDataDir + "/";
+        std::string cfg  = base + "lmcli/" + filename;
+        if (std::filesystem::exists(cfg)) {
+            return base + "lmcli/" + filename;
         } else {
-            dirsStr.erase(0, firstDataDir.length() + 1);
+            dirsStr.erase(0, firstDataDir.length() + (colon == std::string::npos ? 0 : 1));
+            if (colon == std::string::npos) break;
         }
     }   
-    return firstDataDir + "/lmcli/";
+    return "/usr/share/lmcli/" + filename;
 }
 
 void createConfigFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
