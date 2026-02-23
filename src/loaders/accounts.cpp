@@ -28,6 +28,9 @@ json loadAccounts(const std::string& filepath) {
         std::cerr << "Parse error: " << e.what() << "\n";
         return {};
     }
+    if (parsed.empty()) {
+        std::cerr << "Accounts file is empty. Try 'lmcli init'.";
+    }
     return parsed;
 }
 

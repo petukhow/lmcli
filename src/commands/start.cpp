@@ -20,15 +20,7 @@ void start() {
     Message prompt;
     Message answer;
 
-    if (config.empty()) {
-        std::cerr << "Config file not found. Run 'lmcli init' to create.\n";
-        return;
-    }
-
-    if (providers.empty()) {
-        std::cerr << "Providers config doesn't exist. Your installation may be broken.\n";
-        return;
-    }
+    auto provider = selectAccount(accounts, config);
 
     std::string chatsPath = setupChat();
     if (chatsPath.empty()) {
@@ -37,8 +29,6 @@ void start() {
 
     json chats = loadChats(chatsPath);
     std::vector<Message> conversation = chats["conversation"].get<std::vector<Message>>();
-    
-    auto provider = selectAccount(accounts, config);
     
     if (provider == nullptr) {
         std::cerr << "No provider selected.\n";

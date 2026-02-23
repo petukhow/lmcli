@@ -27,6 +27,9 @@ json loadProviders() {
     } catch (const json::parse_error& e) {
         std::cerr << "Parse error: " << e.what() << "\n";
         return {};
-}
+    }
+    if (parsed.empty()) {
+        std::cerr << "Installation may be broken, try reinstalling";
+    }
     return parsed;
 }

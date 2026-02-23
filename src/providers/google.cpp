@@ -43,7 +43,7 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
             response.content = parsed["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
         }
     } catch (const std::exception& e) {
-        response.content = "";
+        response.content = "unexpected response from provider.";
         response.isFailed = true;
     }
 

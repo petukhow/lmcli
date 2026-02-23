@@ -45,7 +45,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
             response.content = parsed["content"][0]["text"].get<std::string>();
         }
     } catch (const std::exception& e) {
-        response.content = "";
+        response.content = "unexpected response from provider.";
         response.isFailed = true;
     }
 

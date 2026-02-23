@@ -21,11 +21,15 @@ json loadConfig(const std::string& filepath) {
         std::cerr << "Error: Could not open file: " << fullPath << "\n";
         return parsed;
     }
+
     try {
         parsed = json::parse(str);
     } catch (const json::parse_error& e) {
         std::cerr << "Parse error: " << e.what() << "\n";
         return {};
-}
+    }   
+    if (parsed.empty()) {
+        std::cerr << "Config file is empty. Try 'lmcli init'.";
+    }
     return parsed;
 }

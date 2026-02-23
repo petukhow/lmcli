@@ -40,7 +40,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
             response.content = parsed["choices"][0]["message"]["content"].get<std::string>();
         }
     } catch (const std::exception& e) {
-        response.content = "";
+        response.content = "unexpected response from provider.";
         response.isFailed = true;
     }
 
