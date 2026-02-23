@@ -87,7 +87,7 @@ std::string createChat(const std::string& chatsDir) {
         std::cout << "> ";
         std::getline(std::cin, chatName);
 
-        if (chatName == "/exit") return "/exit";
+        if (chatName == "/exit") return "";
         
         if (!chatName.empty() && chatName[0] == '/') {
             std::cerr << "Chat name cannot start with '/'. Try again.\n";
