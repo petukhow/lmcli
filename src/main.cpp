@@ -41,8 +41,11 @@ int main(int argc, char* argv[]) {
         else if (subcommand == "account") {
             removeAccount();
         }
+        else if (subcommand == "chats") {
+            removeChats();
+        }
         else {
-            std::cerr << "Undefined command. Usage: lmcli remove [account|chat]\n";
+            std::cerr << "Undefined command. Usage: lmcli remove [account|chat|chats]\n";
         }
     }
 

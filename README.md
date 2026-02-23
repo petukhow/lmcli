@@ -68,20 +68,24 @@ Select an account and begin your conversation. Type `/exit` to quit.
 
 ## Usage
 ```
-lmcli [COMMAND]
+lmcli [COMMAND] [SUBCOMMAND]
 
 Commands:
-  init        Initialize config directory and files
-  setup       Add a new provider account
-  start       Start a chat session
-  accounts    List configured accounts
-  help        Show help message
-
+  init                         Initialize config directory and files
+  setup                        Add a new provider account
+  start                        Start a chat session
+  accounts                     List configured accounts
+  remove [account|chat|chats]  Remove account or chat(s)
+  help                         Show help message
+  
 Examples:
-  lmcli init          # First-time setup
-  lmcli setup         # Add a new account
-  lmcli start         # Begin chatting (or just 'lmcli')
-  lmcli accounts      # View your accounts
+  lmcli init            # First-time setup
+  lmcli setup           # Add a new account
+  lmcli start           # Begin chatting (or just 'lmcli')
+  lmcli accounts        # View your accounts
+  lmcli remove account  # Remove an account
+  lmcli remove chat     # Remove a chat
+  lmcli remove chats    # Remove all chats
 ```
 
 ## Configuration
