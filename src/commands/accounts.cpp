@@ -8,7 +8,8 @@ using json = nlohmann::json;
 
 void accounts() {
     json accounts = loadAccounts(ACCOUNTS_FILE);
-
+    
+    std::cout << "Your accounts:\n";
     for (const auto& account : accounts["accounts"]) {
         std::cout << "-- " << account["name"].get<std::string>() << "\n";
     }

@@ -7,9 +7,9 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     
-    if (argc != 2) {
-        std::cerr << "Usage: lmcli [COMMAND]\n";
-        std::cerr << "See 'lmcli help' for available commands.\n";
+    if (argc > 3) {
+        std::cerr << "Usage: lmcli [COMMAND] [SUBCOMMAND]\n";
+        std::cerr << "See 'lmcli help' for available commands and subcommands.\n";
         return 1;
     }
 
@@ -22,7 +22,6 @@ int main(int argc, char* argv[]) {
         start();
     }
     else if (command == "accounts") {
-        std::cout << "Your accounts:\n";
         accounts();
     } 
     else if (command == "help") {
@@ -32,7 +31,19 @@ int main(int argc, char* argv[]) {
         init();
     }
     else if (command == "remove") {
-        removeAccount();
+        std::string subcommand;
+        if (argc == 3) {
+            subcommand = argv[2];
+        }
+        if (subcommand == "chat") {
+            removeChat();
+        }
+        else if (subcommand == "account") {
+            removeAccount();
+        }
+        else {
+            std::cerr << "Undefined command. Usage: lmcli remove [account|chat]\n";
+        }
     }
 
     else {
