@@ -7,7 +7,6 @@
 #include "providers.h"
 #include "accounts.h"
 #include "message.h"
-#include "utils.h"
 #include <iostream>
 
 using json = nlohmann::json;
@@ -38,7 +37,7 @@ void start() {
     if (conversation.empty()) {
         conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     }
-    size_t limit_messages = config["limit"].get<size_t>();
+    size_t limitMessages = config["limit"].get<size_t>();
 
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
 
@@ -61,9 +60,10 @@ void start() {
         std::cout << "\n";
         std::cout << answer.content << "\n\n";
 
-        if (limitExceeded(conversation, limit_messages)) {
-            conversation.erase(conversation.begin() + 1); // erases user's first conversation message
-            conversation.erase(conversation.begin() + 1); // erases model's first conversation answer 
+        if (limitMessages > 0) {
+            while (conversation.size() > limitMessages) {
+                conversation.erase(conversation.begin() + 1);
+            }
         }
         saveChat(chatsPath, conversation);
     }

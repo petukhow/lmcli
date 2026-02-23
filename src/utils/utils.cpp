@@ -1,16 +1,9 @@
 #include "utils.h"
-#include "message.h"
 #include <cstring>
 #include <string>
-#include <vector>
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-
-bool limitExceeded(const std::vector<Message>& conversation, size_t limit) {
-    if (limit == 0) return false;
-    return conversation.size() >= limit;
-}
 
 std::string getConfigPath(const std::string& filename) {
     const char* home = std::getenv("HOME");
