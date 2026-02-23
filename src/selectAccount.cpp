@@ -30,7 +30,6 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             }
             
             if (provider == nullptr) {
-                std::cout << "Unexpected input. Try again.\n";
                 continue;
             } else {
                 break;

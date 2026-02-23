@@ -24,9 +24,7 @@ std::string setupChat() {
             break;
         } else if (chatName == "/new") {
             fullChatName = createChat(chatsDir);
-            if (fullChatName != "") {
-                break;
-            }
+            break;
         } else {
             fullChatName = continueChat(chatsDir, chatName);
             if (fullChatName != "") {
