@@ -1,6 +1,7 @@
 #include "httpUtils.h"
 #include "openAICompatible.h"
 #include "google.h"
+#include "streaming.h"
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"
@@ -51,13 +52,14 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
 
 void Provider::performRequest(const std::string& body, const CurlSlist& headers,
     Curl& curl, std::string& rawResponse) const {
+    StreamContext context;
     CURLcode result;
 
     curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
     curl_easy_setopt(curl.get(), CURLOPT_URL, api_url.c_str());
     curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.c_str());
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, curlWriteCallback);
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &rawResponse);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, streamCallback);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
     result = curl_easy_perform(curl.get());
 

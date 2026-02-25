@@ -29,3 +29,4 @@ public:
 };
 
 size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
+size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata);

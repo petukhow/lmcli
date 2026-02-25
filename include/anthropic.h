@@ -10,3 +10,4 @@ public:
     
     Message sendRequest(const std::vector<Message>& conversation) const override;
 };
+

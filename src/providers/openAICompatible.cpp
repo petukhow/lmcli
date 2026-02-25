@@ -1,6 +1,8 @@
 #include "json.hpp"
+#include <iostream>
 #include "httpUtils.h"
 #include "openAICompatible.h"
+#include "streaming.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
@@ -45,4 +47,35 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     }
 
     return response;
+}
+
+void eventHandler(StreamContext* context) {
+    size_t eventEnd;
+    while ((eventEnd = context->buffer.find("\n\n")) != std::string::npos) {
+        std::string delta;
+        std::string response;
+
+        std::string event = context->buffer.substr(0, eventEnd); 
+        context->buffer.erase(0, eventEnd + 2);
+
+        size_t dataIndex = event.find("data: ");
+        if (dataIndex == std::string::npos) continue;
+        response = event.substr(dataIndex + 6);
+
+        if (response == "[DONE]") break;
+        try {
+            nlohmann::json parsed = nlohmann::json::parse(response);
+            if (parsed.contains("choices") 
+                && parsed["choices"][0].contains("delta")
+                && parsed["choices"][0]["delta"].contains("content"))
+            {
+                delta = parsed["choices"][0]["delta"]["content"];
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Broken response's json.\n";  
+        }
+
+        std::cout << delta;
+        std::cout.flush();
+    }
 }

@@ -2,6 +2,8 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <stdexcept>
+#include <string>
+#include "streaming.h"
 
 // =====================================
 //                Curl
@@ -36,9 +38,22 @@ CurlSlist::~CurlSlist() {
     curl_slist_free_all(headers);
 }
 
+// =====================================
+//           Callbacks logic
+// =====================================
+
 size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     std::string* response = static_cast<std::string*>(userdata);
     response->append(ptr, size * nmemb);
+
+    return size * nmemb;
+}
+
+size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    StreamContext* context = static_cast<StreamContext*>(userdata);
+    context->buffer.append(ptr, size * nmemb);
+
+    eventHandler(context);
 
     return size * nmemb;
 }
