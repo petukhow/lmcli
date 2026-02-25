@@ -54,7 +54,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     return response;
 }
 
-void eventHandler(StreamContext* context) {
+void Anthropic::eventHandler(StreamContext* context) const {
     size_t eventEnd;
     while ((eventEnd = context->buffer.find("\n\n")) != std::string::npos) {
         std::string delta;

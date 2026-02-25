@@ -9,4 +9,6 @@ public:
         : Provider(api_key, api_url + model + ":generateContent", model, system_prompt, limit, max_tokens) {}
     
     Message sendRequest(const std::vector<Message>& conversation) const override;
+
+    void eventHandler(StreamContext* context) const override;
 };

@@ -8,7 +8,5 @@ struct StreamContext {
     const Provider* provider;               
 };
 
-void eventHandler(StreamContext* context);
-
 size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
 
