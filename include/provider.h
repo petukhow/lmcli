@@ -5,10 +5,11 @@
 #include "httpUtils.h"
 #include "json.hpp"
 #include "message.h"
+#include "streaming.h"
 
 class Provider {
 protected:
-    void performRequest(const std::string& body, const CurlSlist& headers, Curl& curl, std::string& rawResponse) const;
+    void performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
 
     std::string api_key;
     std::string api_url;
@@ -25,6 +26,7 @@ public:
     static std::unique_ptr<Provider> create(const nlohmann::json& accounts, const nlohmann::json& config);
         
     virtual Message sendRequest(const std::vector<Message>& conversation) const = 0;
+    virtual void eventHandler(StreamContext* context) const = 0;
     virtual ~Provider() = default;
 };
 

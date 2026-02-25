@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
-#include <provider.h>
+
+class Provider;
 
 struct StreamContext {
     std::string buffer;
@@ -8,4 +9,6 @@ struct StreamContext {
 };
 
 void eventHandler(StreamContext* context);
+
+size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
 

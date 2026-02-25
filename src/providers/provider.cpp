@@ -51,8 +51,10 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
 }
 
 void Provider::performRequest(const std::string& body, const CurlSlist& headers,
-    Curl& curl, std::string& rawResponse) const {
+    Curl& curl) const {
     StreamContext context;
+    context.provider = this;
+    
     CURLcode result;
 
     curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());

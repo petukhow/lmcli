@@ -31,7 +31,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    performRequest(body, headers, curl, rawResponse);
+    performRequest(body, headers, curl);
 
     try {
         json parsed = json::parse(rawResponse);

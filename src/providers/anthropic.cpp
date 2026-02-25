@@ -36,7 +36,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     headers.append("anthropic-version: 2023-06-01");
     headers.append(x_api_key.c_str());
 
-    performRequest(body, headers, curl, rawResponse);
+    performRequest(body, headers, curl);
 
     try {
         json parsed = json::parse(rawResponse);
