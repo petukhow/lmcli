@@ -50,7 +50,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-void Provider::performRequest(const std::string& body, const CurlSlist& headers,
+std::string Provider::performRequest(const std::string& body, const CurlSlist& headers,
     Curl& curl) const {
     StreamContext context;
     context.provider = this;
@@ -69,4 +69,6 @@ void Provider::performRequest(const std::string& body, const CurlSlist& headers,
         std::cerr << "curl_easy_perform() failed:\n";
         std::cerr << curl_easy_strerror(result) << "\n";
     }
+
+    return context.fullContent;
 }

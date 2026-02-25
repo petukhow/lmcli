@@ -31,18 +31,18 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    performRequest(body, headers, curl);
+    std::string content = performRequest(body, headers, curl);
 
     try {
-        json parsed = json::parse(rawResponse);
+        json parsed = json::parse(content);
         if (parsed.contains("error")) {
-            response.content = parsed["error"]["message"];
+            content = parsed["error"]["message"];
             response.isFailed = true;
         } else {
-            response.content = parsed["choices"][0]["message"]["content"].get<std::string>();
+            content = parsed["choices"][0]["message"]["content"].get<std::string>();
         }
     } catch (const std::exception& e) {
-        response.content = "unexpected response from provider.";
+        content = "unexpected response from provider.";
         response.isFailed = true;
     }
 
@@ -71,11 +71,17 @@ void OpenAICompatible::eventHandler(StreamContext* context) const {
             {
                 delta = parsed["choices"][0]["delta"]["content"];
             }
+            if (parsed.contains("error")) {
+                delta = parsed["error"]["message"];
+                context->fullContent = delta;
+                break;
+            }
         } catch (const std::exception& e) {
             std::cerr << "Broken response's json.\n";  
         }
 
         std::cout << delta;
         std::cout.flush();
+        context->fullContent += delta;
     }
 }

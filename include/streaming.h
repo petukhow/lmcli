@@ -5,7 +5,9 @@ class Provider;
 
 struct StreamContext {
     std::string buffer;
-    const Provider* provider;               
+    std::string fullContent;
+    const Provider* provider;  
+    bool isFailed = false;
 };
 
 size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata);

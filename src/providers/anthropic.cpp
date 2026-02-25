@@ -36,18 +36,18 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     headers.append("anthropic-version: 2023-06-01");
     headers.append(x_api_key.c_str());
 
-    performRequest(body, headers, curl);
+    std::string content = performRequest(body, headers, curl);
 
     try {
-        json parsed = json::parse(rawResponse);
+        json parsed = json::parse(content);
         if (parsed.contains("error")) {
-            response.content = parsed["error"]["message"];
+            content = parsed["error"]["message"];
             response.isFailed = true;
         } else {
-            response.content = parsed["content"][0]["text"].get<std::string>();
+            content = parsed["content"][0]["text"].get<std::string>();
         }
     } catch (const std::exception& e) {
-        response.content = "unexpected response from provider.";
+        content = "unexpected response from provider.";
         response.isFailed = true;
     }
 
@@ -72,6 +72,12 @@ void Anthropic::eventHandler(StreamContext* context) const {
             nlohmann::json parsed = nlohmann::json::parse(response);
             if (parsed.contains("delta") && parsed["delta"].contains("text")) {
                 delta = parsed["delta"]["text"];
+            }
+            if (parsed.contains("error")) {
+                delta = parsed["error"]["message"];
+                context->fullContent = delta;
+                context->isFailed = true;
+                break;
             }
         } catch (const std::exception& e) {
             std::cerr << "Broken response's json.\n";  

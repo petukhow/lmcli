@@ -9,7 +9,7 @@
 
 class Provider {
 protected:
-    void performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
+    std::string performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
 
     std::string api_key;
     std::string api_url;
