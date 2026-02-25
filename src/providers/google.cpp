@@ -49,3 +49,5 @@ Message Google::sendRequest(const std::vector<Message>& conversation) const {
 
     return response;
 }
+
+void Google::eventHandler(StreamContext* context) const {}

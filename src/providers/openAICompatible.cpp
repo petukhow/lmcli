@@ -18,6 +18,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     requestBody["model"] = model;
     requestBody["max_tokens"] = max_tokens;
     requestBody["messages"] = json::array();
+    requestBody["stream"] = true;
 
     for (const auto& msg : conversation) {
         requestBody["messages"].push_back({
@@ -33,19 +34,7 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
 
     std::string content = performRequest(body, headers, curl);
 
-    try {
-        json parsed = json::parse(content);
-        if (parsed.contains("error")) {
-            content = parsed["error"]["message"];
-            response.isFailed = true;
-        } else {
-            content = parsed["choices"][0]["message"]["content"].get<std::string>();
-        }
-    } catch (const std::exception& e) {
-        content = "unexpected response from provider.";
-        response.isFailed = true;
-    }
-
+    response.content = content;
     return response;
 }
 
@@ -63,6 +52,7 @@ void OpenAICompatible::eventHandler(StreamContext* context) const {
         response = event.substr(dataIndex + 6);
 
         if (response == "[DONE]") break;
+
         try {
             nlohmann::json parsed = nlohmann::json::parse(response);
             if (parsed.contains("choices") 
