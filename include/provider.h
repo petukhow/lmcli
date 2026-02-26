@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include <memory>
 #include <string>
+#include <utility>
 #include "httpUtils.h"
 #include "json.hpp"
 #include "message.h"
@@ -9,7 +10,7 @@
 
 class Provider {
 protected:
-    std::string performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
+    std::pair<std::string, bool> performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
 
     std::string api_key;
     std::string api_url;

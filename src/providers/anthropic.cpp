@@ -10,7 +10,6 @@ using json = nlohmann::json;
 Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "x-api-key: " + api_key;
     CurlSlist headers;
-    std::string rawResponse;
     json requestBody;
     Message response;
     Curl curl;
@@ -19,6 +18,7 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     requestBody["max_tokens"] = max_tokens;
     requestBody["messages"] = json::array();
     requestBody["system"] = system_prompt;
+    requestBody["stream"] = true;
 
     for (const auto& msg : conversation) {
         if (msg.role == "system") {
@@ -36,21 +36,10 @@ Message Anthropic::sendRequest(const std::vector<Message>& conversation) const {
     headers.append("anthropic-version: 2023-06-01");
     headers.append(x_api_key.c_str());
 
-    std::string content = performRequest(body, headers, curl);
+    auto [content, isFailed] = performRequest(body, headers, curl);
 
-    try {
-        json parsed = json::parse(content);
-        if (parsed.contains("error")) {
-            content = parsed["error"]["message"];
-            response.isFailed = true;
-        } else {
-            content = parsed["content"][0]["text"].get<std::string>();
-        }
-    } catch (const std::exception& e) {
-        content = "unexpected response from provider.";
-        response.isFailed = true;
-    }
-
+    response.content = content;
+    response.isFailed = isFailed;
     return response;
 }
 
@@ -67,9 +56,10 @@ void Anthropic::eventHandler(StreamContext* context) const {
         if (dataIndex == std::string::npos) continue;
         response = event.substr(dataIndex + 6);
 
-        if (response == "[DONE]") break;
         try {
             nlohmann::json parsed = nlohmann::json::parse(response);
+            if (parsed.contains("type") && parsed["type"] == "message_stop") break;
+
             if (parsed.contains("delta") && parsed["delta"].contains("text")) {
                 delta = parsed["delta"]["text"];
             }
@@ -85,5 +75,6 @@ void Anthropic::eventHandler(StreamContext* context) const {
 
         std::cout << delta;
         std::cout.flush();
+        context->fullContent += delta;
     }
 }

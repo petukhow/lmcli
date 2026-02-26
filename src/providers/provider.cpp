@@ -7,6 +7,7 @@
 #include "json.hpp"
 #include <memory>
 #include <iostream>
+#include <utility>
 
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
     std::unique_ptr<Provider> provider = nullptr;
@@ -50,10 +51,11 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-std::string Provider::performRequest(const std::string& body, const CurlSlist& headers,
+std::pair<std::string, bool> Provider::performRequest(const std::string& body, const CurlSlist& headers,
     Curl& curl) const {
     StreamContext context;
     context.provider = this;
+    context.isFailed = false;
     
     CURLcode result;
 
@@ -68,7 +70,8 @@ std::string Provider::performRequest(const std::string& body, const CurlSlist& h
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
         std::cerr << curl_easy_strerror(result) << "\n";
+        context.isFailed = true;
     }
 
-    return context.fullContent;
+    return {context.fullContent, context.isFailed};
 }

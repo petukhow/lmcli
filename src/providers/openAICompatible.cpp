@@ -10,7 +10,6 @@ using json = nlohmann::json;
 Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
-    std::string rawResponse;
     json requestBody;
     Message response;
     Curl curl;
@@ -32,9 +31,10 @@ Message OpenAICompatible::sendRequest(const std::vector<Message>& conversation) 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    std::string content = performRequest(body, headers, curl);
+    auto [content, isFailed] = performRequest(body, headers, curl);
 
     response.content = content;
+    response.isFailed = isFailed;
     return response;
 }
 
@@ -64,6 +64,7 @@ void OpenAICompatible::eventHandler(StreamContext* context) const {
             if (parsed.contains("error")) {
                 delta = parsed["error"]["message"];
                 context->fullContent = delta;
+                context->isFailed = true;
                 break;
             }
         } catch (const std::exception& e) {
