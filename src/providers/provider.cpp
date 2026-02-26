@@ -54,6 +54,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
 std::pair<std::string, bool> Provider::performRequest(const std::string& body, const CurlSlist& headers,
     Curl& curl) const {
     StreamContext context;
+    nlohmann::json parsed;
     context.provider = this;
     context.isFailed = false;
     
@@ -65,12 +66,25 @@ std::pair<std::string, bool> Provider::performRequest(const std::string& body, c
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, streamCallback);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
+    
+
     result = curl_easy_perform(curl.get());
 
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
         std::cerr << curl_easy_strerror(result) << "\n";
         context.isFailed = true;
+    }
+
+    if (context.fullContent.empty() && !context.buffer.empty()) {
+    try {
+        auto parsed = nlohmann::json::parse(context.buffer);
+        if (parsed.contains("error")) {
+            context.fullContent = parsed["error"]["message"];
+            context.isFailed = true;
+        }
+    } catch (...) {
+        }
     }
 
     return {context.fullContent, context.isFailed};
