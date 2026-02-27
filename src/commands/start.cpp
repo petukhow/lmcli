@@ -8,8 +8,11 @@
 #include "accounts.h"
 #include "message.h"
 #include <iostream>
+#include "colors.h"
 
 using json = nlohmann::json;
+
+using namespace colors;
 
 void start() {
     json config = loadConfig(CONFIG_FILE);
@@ -42,11 +45,12 @@ void start() {
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
 
     while (true) {
-        std::cout << "> ";
+        std::cout << RED << "You: " << END;
         if (!std::getline(std::cin, prompt.content)) break; // user's prompt
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
 
+        std::cout << BLINK << "Model: " << END;
         answer = account->sendRequest(conversation);
 
         if (answer.isFailed) {
