@@ -9,7 +9,7 @@ void removeChats() {
     std::string chatsDir = getChatsDir();
     std::string userAnswer;
 
-    std::cerr << "WARNING: it will remove all chats\n";
+    std::cerr << "WARNING: it will remove all chats.\n";
         while (true) {
         std::cerr << "Do you want to continue (y/n)? ";
         if (!std::getline(std::cin, userAnswer)) break;

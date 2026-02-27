@@ -15,7 +15,7 @@ std::string setupChat() {
     
     printChats(chatsDir); 
 
-    std::cout << "Enter chat's name to continue (/exit to leave, /new to create): \n";
+    std::cout << "\nEnter chat's name to continue (/exit to leave, /new to create): \n";
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, chatName);
@@ -64,13 +64,13 @@ void printChats(const std::string chatsDir) {
     bool empty = std::filesystem::is_empty(chatsDir);
     
     if (!empty) {
-        std::cout << "Chats: \n";
+        std::cout << "\nChats: \n";
         for (const auto& file : std::filesystem::directory_iterator(chatsDir)) {
             std::cout << "-- ";
             std::cout << file.path().stem().string() << "\n";
         }  
     } else {
-        std::cerr << "No chats yet. Start a new chat to create one.\n";
+        std::cerr << "No chats yet. Start a new chat to create one.\n\n";
     }
 }
 
@@ -79,7 +79,7 @@ std::string createChat(const std::string& chatsDir) {
     std::string fullChatName; // full path to the chat file (chatsDir + chatName)
     std::string chatPath; // path to the chat file
 
-    std::cout << "Enter chat's name (leave empty for default: 'chat #...'): \n";
+    std::cout << "\nEnter chat's name (leave empty for default: 'chat #...'): \n";
     
     while (true) {
         std::cout << "> ";
@@ -88,7 +88,7 @@ std::string createChat(const std::string& chatsDir) {
         if (chatName == "/exit") return "";
         
         if (!chatName.empty() && chatName[0] == '/') {
-            std::cerr << "Chat name cannot start with '/'. Try again.\n";
+            std::cerr << "Chat name cannot start with '/'. Try again.\n\n";
             continue;
         } else break;
     }

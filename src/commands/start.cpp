@@ -42,7 +42,7 @@ void start() {
     }
     size_t limitMessages = config["limit"].get<size_t>();
 
-    std::cout << "Prompt (or '/exit' to end the conversation): \n";
+    std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
 
     while (true) {
         std::cout << RED << "You: " << END;

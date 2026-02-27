@@ -12,7 +12,7 @@ void removeChat() {
     while (true) {
         bool isFound = false;
 
-        std::cout << "Select a chat to remove (type '/exit' to quit):\n\n";
+        std::cout << "Select a chat to remove (type '/exit' to quit):\n" ;
         printChats(chatsDir);
         std::cout << "\n> ";
         if (!std::getline(std::cin, removeChatName)) return;
