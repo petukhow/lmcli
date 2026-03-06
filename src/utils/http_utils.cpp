@@ -1,4 +1,4 @@
-#include "httpUtils.h"
+#include "http_utils.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <stdexcept>
@@ -41,7 +41,7 @@ CurlSlist::~CurlSlist() {
 //           Callback logic
 // =====================================
 
-size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     std::string* response = static_cast<std::string*>(userdata);
     response->append(ptr, size * nmemb);
 

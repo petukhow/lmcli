@@ -5,7 +5,7 @@
 struct Message {
     std::string role;
     std::string content;
-    bool isFailed = false;
+    bool is_failed = false;
 };
 
 void to_json(nlohmann::json& j, const Message& m);

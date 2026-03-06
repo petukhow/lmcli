@@ -1,4 +1,4 @@
 #pragma once
 #include "json.hpp"
 
-nlohmann::json loadConfig(const std::string& filepath);
+nlohmann::json load_config(const std::string& filepath);

@@ -1,4 +1,4 @@
 #pragma once
 #include "json.hpp"
 
-nlohmann::json loadProviders();
+nlohmann::json load_providers();

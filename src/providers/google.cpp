@@ -1,53 +1,53 @@
 #include "json.hpp"
-#include "httpUtils.h"
+#include "http_utils.h"
 #include "google.h"
 #include <curl/curl.h>
 
 using json = nlohmann::json;
 
-Message Google::sendRequest(const std::vector<Message>& conversation) const {
+Message Google::send_request(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "x-goog-api-key: " + api_key;
     CurlSlist headers;
-    std::string rawResponse;
-    json requestBody;
+    std::string raw_response;
+    json request_body;
     Message response;
     Curl curl;
 
-    requestBody["contents"] = json::array();
-    requestBody["systemInstruction"]["parts"] = json::array({json{{"text", system_prompt}}});
-    requestBody["generationConfig"]["maxOutputTokens"] = max_tokens;
+    request_body["contents"] = json::array();
+    request_body["systemInstruction"]["parts"] = json::array({json{{"text", system_prompt}}});
+    request_body["generationConfig"]["maxOutputTokens"] = max_tokens;
 
     for (const auto& msg : conversation) {
         if (msg.role == "system") {
             continue;
         }
-        std::string googleRole = (msg.role == "assistant") ? "model" : msg.role;        
-        requestBody["contents"].push_back({
+        std::string google_role = (msg.role == "assistant") ? "model" : msg.role;        
+        request_body["contents"].push_back({
             {"parts", json::array({json{{"text", msg.content}}})},
-            {"role", googleRole}
+            {"role", google_role}
         });
     }
-    std::string body = requestBody.dump();
+    std::string body = request_body.dump();
         
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    performRequest(body, headers, curl);
+    perform_request(body, headers, curl);
 
     try {
-        json parsed = json::parse(rawResponse);
+        json parsed = json::parse(raw_response);
         if (parsed.contains("error")) {
             response.content = parsed["error"]["message"];
-            response.isFailed = true;
+            response.is_failed = true;
         } else {
             response.content = parsed["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
         }
     } catch (const std::exception& e) {
         response.content = "unexpected response from provider.";
-        response.isFailed = true;
+        response.is_failed = true;
     }
 
     return response;
 }
 
-void Google::eventHandler(StreamContext* context) const {}
+void Google::event_handler(StreamContext* context) const {}

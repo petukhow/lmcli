@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-json loadProviders() {
-    std::string fullPath = getSystemDataPath(PROVIDERS_FILE);
-    std::ifstream file(fullPath);
+json load_providers() {
+    std::string full_path = get_system_data_path(PROVIDERS_FILE);
+    std::ifstream file(full_path);
     std::string str;
     json parsed = {};
 
@@ -19,7 +19,7 @@ json loadProviders() {
         str = ss.str();     // Convert stringstream to std::string
     } else {
         // Handle file opening error
-        std::cerr << "Error: Could not open file: " << fullPath << "\n";
+        std::cerr << "Error: Could not open file: " << full_path << "\n";
         return parsed;
     }
     try {

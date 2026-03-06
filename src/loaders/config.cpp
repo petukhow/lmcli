@@ -6,9 +6,9 @@
 
 using json = nlohmann::json;
 
-json loadConfig(const std::string& filepath) {
-    std::string fullPath = getConfigPath(filepath);
-    std::ifstream file(fullPath);
+json load_config(const std::string& filepath) {
+    std::string full_path = get_config_path(filepath);
+    std::ifstream file(full_path);
     std::string str;
     json parsed = {};
 
@@ -18,7 +18,7 @@ json loadConfig(const std::string& filepath) {
         str = ss.str();     // Convert stringstream to std::string
     } else {
         // Handle file opening error
-        std::cerr << "Error: Could not open file: " << fullPath << "\n";
+        std::cerr << "Error: Could not open file: " << full_path << "\n";
         return parsed;
     }
 

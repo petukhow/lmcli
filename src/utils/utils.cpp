@@ -5,7 +5,7 @@
 #include <iostream>
 #include <filesystem>
 
-std::string getConfigPath(const std::string& filename) {
+std::string get_config_path(const std::string& filename) {
     const char* home = std::getenv("HOME");
     if (!home) {
         return "./" + filename;  // Fallback to current directory
@@ -13,7 +13,7 @@ std::string getConfigPath(const std::string& filename) {
     return std::string(home) + "/.config/lmcli/" + filename;
 }
 
-std::string getConfigDir() {
+std::string get_config_dir() {
     const char* home = std::getenv("HOME");
     if (!home) {
         return "./"; // Fallback to current directory
@@ -21,70 +21,70 @@ std::string getConfigDir() {
     return std::string(home) + "/.config/lmcli/";
 }
 
-std::string getSystemDataPath(const std::string& filename) {
-    const char* dataDirs = std::getenv("XDG_DATA_DIRS");
-    std::string firstDataDir;
-    if (!dataDirs) {
+std::string get_system_data_path(const std::string& filename) {
+    const char* data_dirs = std::getenv("XDG_DATA_DIRS");
+    std::string first_data_dir;
+    if (!data_dirs) {
         return "/usr/share/lmcli/" + filename; // Fallback to system path
     }
 
-    std::string dirsStr = dataDirs;
+    std::string dirs_str = data_dirs;
     while (true) {
-        size_t colon = dirsStr.find(':');
-        firstDataDir = (colon == std::string::npos) ? dirsStr : dirsStr.substr(0, colon);
+        size_t colon = dirs_str.find(':');
+        first_data_dir = (colon == std::string::npos) ? dirs_str : dirs_str.substr(0, colon);
 
-        if (firstDataDir.empty()) return "/usr/share/lmcli/";
+        if (first_data_dir.empty()) return "/usr/share/lmcli/";
 
-        std::string base = firstDataDir.back() == '/' ? firstDataDir : firstDataDir + "/";
+        std::string base = first_data_dir.back() == '/' ? first_data_dir : first_data_dir + "/";
         std::string cfg  = base + "lmcli/" + filename;
         if (std::filesystem::exists(cfg)) {
             return base + "lmcli/" + filename;
         } else {
-            dirsStr.erase(0, firstDataDir.length() + (colon == std::string::npos ? 0 : 1));
+            dirs_str.erase(0, first_data_dir.length() + (colon == std::string::npos ? 0 : 1));
             if (colon == std::string::npos) break;
         }
-    }   
+    }
     return "/usr/share/lmcli/" + filename;
 }
 
-void createConfigFileIfNotExists(const std::string& configDir, const std::string& fileTemplate) {
-    if (std::filesystem::exists(configDir)) {
-        std::cout << "⚠ " << configDir << " already exists, skipping\n";
+void create_config_file_if_not_exists(const std::string& config_dir, const std::string& file_template) {
+    if (std::filesystem::exists(config_dir)) {
+        std::cout << "⚠ " << config_dir << " already exists, skipping\n";
         return;
     }
     // Create the file
-    std::ofstream file(configDir);
+    std::ofstream file(config_dir);
     if (!file.is_open()) {
-        std::cerr << "Error: Could not create " << configDir << "\n";
+        std::cerr << "Error: Could not create " << config_dir << "\n";
         return;
     }
-    
-    file << fileTemplate;
-    std::cout << "✓ Created " << configDir << "\n";
+
+    file << file_template;
+    std::cout << "✓ Created " << config_dir << "\n";
 }
 
-std::string createFileIfNotExists(const std::string& chatsDir, const std::string& fileTemplate) {
+std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template) {
     size_t i = 1;
-    std::filesystem::path finalPath = chatsDir;
-    std::string stem = finalPath.parent_path() / finalPath.stem();
-    std::string extension = finalPath.extension().string();
+    std::filesystem::path final_path = chats_dir;
+    std::string stem = final_path.parent_path() / final_path.stem();
+    std::string extension = final_path.extension().string();
 
-    while (std::filesystem::exists(finalPath)) {
-        finalPath = stem + "_" + std::to_string(i) + extension;
+    while (std::filesystem::exists(final_path)) {
+        final_path = stem + "_" + std::to_string(i) + extension;
         i++;
-    }   
-    std::ofstream file(finalPath);
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not create " << finalPath << "\n";
-        return ""; 
     }
-    file << fileTemplate;
-    std::cout << "✓ Created " << finalPath << "\n";
-    return finalPath.string();
+    std::ofstream file(final_path);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not create " << final_path << "\n";
+        return "";
+    }
+    file << file_template;
+    std::cout << "✓ Created " << final_path << "\n";
+    return final_path.string();
 }
 
 
-std::string getChatsDir() {
+std::string get_chats_dir() {
     const char* home = std::getenv("HOME");
     if (!home) {
         return "./";  // Fallback to current directory
@@ -92,7 +92,7 @@ std::string getChatsDir() {
     return std::string(home) + "/.config/lmcli/chats/";
 }
 
-std::string getChatsPath(const std::string& filename) {
+std::string get_chats_path(const std::string& filename) {
     const char* home = std::getenv("HOME");
     if (!home) {
         return "./" + filename;  // Fallback to current directory

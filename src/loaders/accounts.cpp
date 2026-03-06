@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-json loadAccounts(const std::string& filepath) {
-    std::string fullPath = getConfigPath(filepath);
-    std::ifstream file(fullPath);
+json load_accounts(const std::string& filepath) {
+    std::string full_path = get_config_path(filepath);
+    std::ifstream file(full_path);
     std::string str;
     json parsed = {};
 
@@ -19,7 +19,7 @@ json loadAccounts(const std::string& filepath) {
         str = ss.str();     // Convert stringstream to std::string
     } else {
         // Handle file opening error
-        std::cerr << "Error: Could not open file: " << fullPath << "\n";
+        std::cerr << "Error: Could not open file: " << full_path << "\n";
         return parsed;
     }
     try {
@@ -34,14 +34,14 @@ json loadAccounts(const std::string& filepath) {
     return parsed;
 }
 
-void saveAccounts(const std::string& filename, const json& accounts) {
-    std::string fullPath = getConfigPath(filename);
-    std::ofstream accountsList;
+void save_accounts(const std::string& filename, const json& accounts) {
+    std::string full_path = get_config_path(filename);
+    std::ofstream accounts_list;
 
     try {
-        accountsList.exceptions(std::ofstream::failbit);
-        accountsList.open(fullPath);
-        accountsList << accounts.dump(4);
+        accounts_list.exceptions(std::ofstream::failbit);
+        accounts_list.open(full_path);
+        accounts_list << accounts.dump(4);
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
     }

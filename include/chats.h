@@ -4,14 +4,14 @@
 #include "message.h"
 #include <vector>
 
-void saveChat(const std::string& filepath, const std::vector<Message>& chat);
+void save_chat(const std::string& filepath, const std::vector<Message>& chat);
 
-nlohmann::json loadChats(const std::string& filepath);
+nlohmann::json load_chats(const std::string& filepath);
 
-std::string setupChat();
+std::string setup_chat();
 
-void printChats(const std::string chatsDir);
+void print_chats(const std::string chats_dir);
 
-std::string createChat(const std::string& chatsDir);
+std::string create_chat(const std::string& chats_dir);
 
-std::string continueChat(const std::string& chatsDir, const std::string& chatName);
+std::string continue_chat(const std::string& chats_dir, const std::string& chat_name);

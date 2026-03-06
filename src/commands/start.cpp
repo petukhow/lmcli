@@ -1,6 +1,6 @@
 #include "commands.h"
 #include "json.hpp"
-#include "selectAccount.h"
+#include "select_account.h"
 #include "constants.h"
 #include "chats.h"
 #include "config.h"
@@ -15,24 +15,24 @@ using json = nlohmann::json;
 using namespace colors;
 
 void start() {
-    json config = loadConfig(CONFIG_FILE);
-    json accounts = loadAccounts(ACCOUNTS_FILE);
-    json providers = loadProviders();
+    json config = load_config(CONFIG_FILE);
+    json accounts = load_accounts(ACCOUNTS_FILE);
+    json providers = load_providers();
 
     std::vector<Message> conversation;
     
     Message prompt;
     Message answer;
 
-    auto account = selectAccount(accounts, config);
+    auto account = select_account(accounts, config);
     if (!account) return;
-        
-    std::string chatsPath = setupChat();
-    if (chatsPath.empty()) {
+
+    std::string chats_path = setup_chat();
+    if (chats_path.empty()) {
         return;
     }
 
-    json chats = loadChats(chatsPath);
+    json chats = load_chats(chats_path);
     if (chats.contains("conversation") && chats["conversation"].is_array()) {
         conversation = chats["conversation"].get<std::vector<Message>>();
     }
@@ -40,7 +40,7 @@ void start() {
     if (conversation.empty()) {
         conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     }
-    size_t limitMessages = config["limit"].get<size_t>();
+    size_t limit_messages = config["limit"].get<size_t>();
 
     std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
 
@@ -51,9 +51,9 @@ void start() {
         conversation.push_back({"user", prompt.content});
 
         std::cout << BLINK << "Model: " << END;
-        answer = account->sendRequest(conversation);
+        answer = account->send_request(conversation);
 
-        if (answer.isFailed) {
+        if (answer.is_failed) {
             std::cout << "Request failed: " << answer.content << "\n";
             conversation.pop_back();
             continue;
@@ -62,11 +62,11 @@ void start() {
         conversation.push_back({"assistant", answer.content});
         std::cout << "\n\n";
 
-        if (limitMessages > 0) {
-            while (conversation.size() > limitMessages) {
+        if (limit_messages > 0) {
+            while (conversation.size() > limit_messages) {
                 conversation.erase(conversation.begin() + 1);
             }
         }
-        saveChat(chatsPath, conversation);
+        save_chat(chats_path, conversation);
     }
 }

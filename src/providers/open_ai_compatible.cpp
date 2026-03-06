@@ -1,14 +1,14 @@
 #include "json.hpp"
-#include "http_utils.h"
-#include "anthropic.h"
-#include <curl/curl.h>
 #include <iostream>
+#include "http_utils.h"
+#include "open_ai_compatible.h"
 #include "streaming.h"
+#include <curl/curl.h>
 
 using json = nlohmann::json;
 
-Message Anthropic::send_request(const std::vector<Message>& conversation) const {
-    const std::string x_api_key = "x-api-key: " + api_key;
+Message OpenAICompatible::send_request(const std::vector<Message>& conversation) const {
+    const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
     json request_body;
     Message response;
@@ -17,13 +17,9 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     request_body["model"] = model;
     request_body["max_tokens"] = max_tokens;
     request_body["messages"] = json::array();
-    request_body["system"] = system_prompt;
     request_body["stream"] = true;
 
     for (const auto& msg : conversation) {
-        if (msg.role == "system") {
-            continue;
-        }
         request_body["messages"].push_back({
             {"content", msg.content},
             {"role", msg.role}
@@ -31,9 +27,8 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     }
 
     std::string body = request_body.dump();
-        
+
     headers.append("Content-Type: application/json");
-    headers.append("anthropic-version: 2023-06-01");
     headers.append(x_api_key.c_str());
 
     auto [content, is_failed] = perform_request(body, headers, curl);
@@ -43,7 +38,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     return response;
 }
 
-void Anthropic::event_handler(StreamContext* context) const {
+void OpenAICompatible::event_handler(StreamContext* context) const {
     size_t event_end;
     while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
         std::string delta;
@@ -56,12 +51,15 @@ void Anthropic::event_handler(StreamContext* context) const {
         if (data_index == std::string::npos) continue;
         response = event.substr(data_index + 6);
 
+        if (response == "[DONE]") break;
+
         try {
             nlohmann::json parsed = nlohmann::json::parse(response);
-            if (parsed.contains("type") && parsed["type"] == "message_stop") break;
-
-            if (parsed.contains("delta") && parsed["delta"].contains("text")) {
-                delta = parsed["delta"]["text"];
+            if (parsed.contains("choices")
+                && parsed["choices"][0].contains("delta")
+                && parsed["choices"][0]["delta"].contains("content"))
+            {
+                delta = parsed["choices"][0]["delta"]["content"];
             }
             if (parsed.contains("error")) {
                 delta = parsed["error"]["message"];
@@ -70,7 +68,7 @@ void Anthropic::event_handler(StreamContext* context) const {
                 break;
             }
         } catch (const std::exception& e) {
-            std::cerr << "Broken response's json.\n";  
+            std::cerr << "Broken response's json.\n";
         }
 
         std::cout << delta;

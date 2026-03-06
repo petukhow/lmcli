@@ -3,20 +3,20 @@
 #include "json.hpp"
 #include <vector>
 
-bool limitExceeded(const std::vector<Message>& conversation, size_t limit);
+bool limit_exceeded(const std::vector<Message>& conversation, size_t limit);
 
-std::string getConfigPath(const std::string& filename);
+std::string get_config_path(const std::string& filename);
 
-std::string getConfigDir();
+std::string get_config_dir();
 
-void createConfigFileIfNotExists(const std::string& configDir, const std::string& fileTemplate);
+void create_config_file_if_not_exists(const std::string& config_dir, const std::string& file_template);
 
-std::string createFileIfNotExists(const std::string& chatsDir, const std::string& fileTemplate);
+std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template);
 
-std::string getSystemDataPath(const std::string& filename);
+std::string get_system_data_path(const std::string& filename);
 
-std::string getChatsDir();
+std::string get_chats_dir();
 
-std::string getChatsPath(const std::string& filename);
+std::string get_chats_path(const std::string& filename);
 
 void from_json(const nlohmann::json& j, Message& m);

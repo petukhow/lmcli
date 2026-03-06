@@ -36,13 +36,13 @@ int main(int argc, char* argv[]) {
             subcommand = argv[2];
         }
         if (subcommand == "chat") {
-            removeChat();
+            remove_chat();
         }
         else if (subcommand == "account") {
-            removeAccount();
+            remove_account();
         }
         else if (subcommand == "chats") {
-            removeChats();
+            remove_chats();
         }
         else {
             std::cerr << "Undefined command. Usage: lmcli remove [account|chat|chats]\n";

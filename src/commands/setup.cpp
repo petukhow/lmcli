@@ -8,21 +8,21 @@
 using json = nlohmann::json;
 
 void setup() {
-    json providers = loadProviders();
-    json accounts = loadAccounts(ACCOUNTS_FILE);
+    json providers = load_providers();
+    json accounts = load_accounts(ACCOUNTS_FILE);
 
-    std::string providerName; // user's choice    
-    json newAccount; // user's new account
+    std::string provider_name; // user's choice
+    json new_account; // user's new account
 
     // config settings
-    std::string defaultModel; 
-    std::string defaultUrl;
+    std::string default_model;
+    std::string default_url;
     std::string type;
 
     // user's data
-    std::string accountName;
-    std::string apiKey;
-    std::string userModel;
+    std::string account_name;
+    std::string api_key;
+    std::string user_model;
 
     std::cout << "Select a provider to set up (type '/exit' to quit):\n";
 
@@ -31,52 +31,52 @@ void setup() {
     }
 
     std::cout << "> ";
-    std::getline(std::cin, providerName);
+    std::getline(std::cin, provider_name);
 
-    if (providerName == "/exit") {
+    if (provider_name == "/exit") {
         return;
     }
 
     for (const auto& provider : providers["providers"]) {
-        if (provider["name"].get<std::string>() == providerName) {
+        if (provider["name"].get<std::string>() == provider_name) {
             type = provider["type"].get<std::string>();
-            defaultUrl = provider["default_api_url"].get<std::string>();
-            defaultModel = provider["default_model"].get<std::string>();
+            default_url = provider["default_api_url"].get<std::string>();
+            default_model = provider["default_model"].get<std::string>();
 
             while (true) {
                 std::cout << "Enter account name (Default: "
                     << provider["name"].get<std::string>() << "): ";
-                std::getline(std::cin, accountName);
-                if (accountName == "") accountName = provider["name"].get<std::string>();
-                
+                std::getline(std::cin, account_name);
+                if (account_name == "") account_name = provider["name"].get<std::string>();
+
                 std::cout << "Enter API key: ";
-                std::getline(std::cin, apiKey);
-                if (apiKey.empty()) {
+                std::getline(std::cin, api_key);
+                if (api_key.empty()) {
                     std::cerr << "API key cannot be empty.\n";
                     continue;
                 }
 
-                std::cout << "Enter model (Default: " << defaultModel << "): ";
-                std::getline(std::cin, userModel);
-                if (userModel == "") userModel = defaultModel;
+                std::cout << "Enter model (Default: " << default_model << "): ";
+                std::getline(std::cin, user_model);
+                if (user_model == "") user_model = default_model;
 
                 break;
             }
-                newAccount = {
+                new_account = {
                     {"type", type},
-                    {"name", accountName},
-                    {"api_key", apiKey},
-                    {"api_url", defaultUrl},
-                    {"model", userModel}
+                    {"name", account_name},
+                    {"api_key", api_key},
+                    {"api_url", default_url},
+                    {"model", user_model}
                 };
 
-                accounts["accounts"].push_back(newAccount);
-                saveAccounts(ACCOUNTS_FILE, accounts);
+                accounts["accounts"].push_back(new_account);
+                save_accounts(ACCOUNTS_FILE, accounts);
                 break;
-            } 
+            }
     }
 
-    if (newAccount.empty()) {
+    if (new_account.empty()) {
         std::cout << "Unknown provider. Try again.\n";
     }
 }

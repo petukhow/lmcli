@@ -1,12 +1,12 @@
-#include "selectAccount.h"
+#include "select_account.h"
 #include "provider.h"
 #include "json.hpp"
 #include <iostream>
 
 using json = nlohmann::json;
 
-std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config) {
-    std::string providerName;
+std::unique_ptr<Provider> select_account(const json& accounts, const json& config) {
+    std::string provider_name;
     std::unique_ptr<Provider> provider = nullptr;
 
     // Check if accounts array exists and is not empty
@@ -19,11 +19,11 @@ std::unique_ptr<Provider> selectAccount(const json& accounts, const json& config
             }   
 
             std::cout << "> ";
-            std::getline(std::cin, providerName);
-            if (providerName == "/exit") break;
+            std::getline(std::cin, provider_name);
+            if (provider_name == "/exit") break;
 
             for (const auto& acc : accounts["accounts"]) {
-                if (acc["name"].get<std::string>() == providerName) {
+                if (acc["name"].get<std::string>() == provider_name) {
                     provider = Provider::create(acc, config);
                     break;
                 }

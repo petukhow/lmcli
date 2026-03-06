@@ -10,8 +10,8 @@ void help();
 
 void init();
 
-void removeAccount(); // remove one account
+void remove_account(); // remove one account
 
-void removeChat(); // remove one chat
+void remove_chat(); // remove one chat
 
-void removeChats(); // remove all chats
+void remove_chats(); // remove all chats

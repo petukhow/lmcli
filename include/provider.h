@@ -3,14 +3,14 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include "httpUtils.h"
+#include "http_utils.h"
 #include "json.hpp"
 #include "message.h"
 #include "streaming.h"
 
 class Provider {
 protected:
-    std::pair<std::string, bool> performRequest(const std::string& body, const CurlSlist& headers, Curl& curl) const;
+    std::pair<std::string, bool> perform_request(const std::string& body, const CurlSlist& headers, Curl& curl) const;
 
     std::string api_key;
     std::string api_url;
@@ -26,8 +26,8 @@ public:
 
     static std::unique_ptr<Provider> create(const nlohmann::json& accounts, const nlohmann::json& config);
         
-    virtual Message sendRequest(const std::vector<Message>& conversation) const = 0;
-    virtual void eventHandler(StreamContext* context) const = 0;
+    virtual Message send_request(const std::vector<Message>& conversation) const = 0;
+    virtual void event_handler(StreamContext* context) const = 0;
     virtual ~Provider() = default;
 };
 

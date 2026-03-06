@@ -28,5 +28,5 @@ public:
     ~CurlSlist();
 };
 
-size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-size_t streamCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+size_t stream_callback(char *ptr, size_t size, size_t nmemb, void *userdata);

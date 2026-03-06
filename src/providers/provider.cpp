@@ -1,5 +1,5 @@
-#include "httpUtils.h"
-#include "openAICompatible.h"
+#include "http_utils.h"
+#include "open_ai_compatible.h"
 #include "google.h"
 #include "streaming.h"
 #include "anthropic.h"
@@ -51,19 +51,19 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-std::pair<std::string, bool> Provider::performRequest(const std::string& body, const CurlSlist& headers,
+std::pair<std::string, bool> Provider::perform_request(const std::string& body, const CurlSlist& headers,
     Curl& curl) const {
     StreamContext context;
     nlohmann::json parsed;
     context.provider = this;
-    context.isFailed = false;
+    context.is_failed = false;
     
     CURLcode result;
 
     curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, headers.get());
     curl_easy_setopt(curl.get(), CURLOPT_URL, api_url.c_str());
     curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS, body.c_str());
-    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, streamCallback);
+    curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, stream_callback);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
     
@@ -73,19 +73,19 @@ std::pair<std::string, bool> Provider::performRequest(const std::string& body, c
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
         std::cerr << curl_easy_strerror(result) << "\n";
-        context.isFailed = true;
+        context.is_failed = true;
     }
 
-    if (context.fullContent.empty() && !context.buffer.empty()) {
+    if (context.full_content.empty() && !context.buffer.empty()) {
     try {
         auto parsed = nlohmann::json::parse(context.buffer);
         if (parsed.contains("error")) {
-            context.fullContent = parsed["error"]["message"];
-            context.isFailed = true;
+            context.full_content = parsed["error"]["message"];
+            context.is_failed = true;
         }
     } catch (...) {
         }
     }
 
-    return {context.fullContent, context.isFailed};
+    return {context.full_content, context.is_failed};
 }
