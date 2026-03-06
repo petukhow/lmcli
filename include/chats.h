@@ -10,8 +10,11 @@ nlohmann::json load_chats(const std::string& filepath);
 
 std::string setup_chat();
 
-void print_chats(const std::string chats_dir);
+std::vector<std::filesystem::directory_entry> store_chats(const std::string& chats_dir);
+
+void print_chats(const std::vector<std::filesystem::directory_entry>& chats);
 
 std::string create_chat(const std::string& chats_dir);
 
-std::string continue_chat(const std::string& chats_dir, const std::string& chat_name);
+std::string continue_chat(const std::string& chats_dir, const std::string& chat_name,
+    const std::vector<std::filesystem::directory_entry>& chats);

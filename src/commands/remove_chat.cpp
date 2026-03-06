@@ -6,14 +6,15 @@
 #include <string>
 
 void remove_chat() {
-    std::string chats_dir = get_chats_dir();
+    const std::string chats_dir = get_chats_dir();
+    const auto chats = store_chats(chats_dir);
     std::string remove_chat_name;
     
     while (true) {
         bool is_found = false;
 
-        std::cout << "Select a chat to remove (type '/exit' to quit):\n" ;
-        print_chats(chats_dir);
+        std::cout << "Select a chat to remove (type '/exit' to quit):\n";
+        print_chats(chats);
         std::cout << "\n> ";
         if (!std::getline(std::cin, remove_chat_name)) return;
 

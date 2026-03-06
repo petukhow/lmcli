@@ -1,21 +1,26 @@
 #include "chats.h"
 #include "utils.h"
 #include "json.hpp"
+#include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 #include "message.h"
 
 using json = nlohmann::json;
 
 std::string setup_chat() {
-    std::string chat_path; // path to the chat file
+    const std::string chats_dir = get_chats_dir(); // path to the chats directory
+    const std::string chat_path; // path to the chat file
+    const auto chats = store_chats(chats_dir);
     std::string chat_name; // chat name with extension
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
-    std::string chats_dir = get_chats_dir(); // path to the chats directory
+    
+    print_chats(chats);
 
-    print_chats(chats_dir);
-
-    std::cout << "\nEnter chat's name to continue (/exit to leave, /new to create): \n";
+    std::cout << "\nEnter chat's name or number to continue (/exit to leave, /new to create): \n";
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, chat_name);
@@ -26,7 +31,7 @@ std::string setup_chat() {
             full_chat_name = create_chat(chats_dir);
             break;
         } else {
-            full_chat_name = continue_chat(chats_dir, chat_name);
+            full_chat_name = continue_chat(chats_dir, chat_name, chats);
             if (full_chat_name != "") {
                 break;
             }
@@ -37,7 +42,8 @@ std::string setup_chat() {
 
 void save_chat(const std::string& filePath, const std::vector<Message>& chat) {;
     std::ofstream conversation;
-    json j = {{"conversation", chat}};
+    const json j = {{"conversation", chat}};
+    
     try {
         conversation.exceptions(std::ofstream::failbit);
         conversation.open(filePath);
@@ -60,14 +66,21 @@ json load_chats(const std::string& filepath) {
     return parsed;
 }
 
-void print_chats(const std::string chats_dir) {
-    bool empty = std::filesystem::is_empty(chats_dir);
+std::vector<std::filesystem::directory_entry> store_chats(const std::string& chats_dir) {
+    std::vector<std::filesystem::directory_entry> chats;
 
-    if (!empty) {
+    for (const auto& file : std::filesystem::directory_iterator(chats_dir)) {
+        chats.push_back(file);
+    }
+    return chats;
+}
+
+void print_chats(const std::vector<std::filesystem::directory_entry>& chats) {
+    if (!chats.empty()) {
         std::cout << "\nChats: \n";
-        for (const auto& file : std::filesystem::directory_iterator(chats_dir)) {
-            std::cout << "-- ";
-            std::cout << file.path().stem().string() << "\n";
+        for (size_t i = 0; i < chats.size(); ++i) {
+            std::cout << "[" + std::to_string(i+1) + "] ";
+            std::cout << chats[i].path().stem().string() << "\n";
         }
     } else {
         std::cerr << "No chats yet. Start a new chat to create one.\n\n";
@@ -80,7 +93,6 @@ std::string create_chat(const std::string& chats_dir) {
     std::string chat_path; // path to the chat file
 
     std::cout << "\nEnter chat's name (leave empty for default: 'chat #...'): \n";
-
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, chat_name);
@@ -108,12 +120,23 @@ std::string create_chat(const std::string& chats_dir) {
     return chat_path;
 }
 
-std::string continue_chat(const std::string& chats_dir, const std::string& chat_name) {
-    std::string full_chat_name = chats_dir + chat_name + ".json";
-    if (std::filesystem::exists(full_chat_name)) {
-        return full_chat_name;
+std::string continue_chat(const std::string& chats_dir, const std::string& chat_name,
+    const std::vector<std::filesystem::directory_entry>& chats) {
+    const std::string full_chat_name = chats_dir + chat_name + ".json";
+
+    try {
+        size_t chat_index = std::stoi(chat_name);
+        if (chat_index >= 1 && chat_index <= chats.size()) {
+            return chats[chat_index-1].path().string();
+        }
+
+    } catch (std::invalid_argument) {
+        if (std::filesystem::exists(full_chat_name)) {
+            return full_chat_name;
     } else {
         std::cerr << "No chat with given name found. Try again.\n";
         return "";
+        }
     }
+    return "";
 }

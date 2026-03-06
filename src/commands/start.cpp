@@ -45,12 +45,12 @@ void start() {
     std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
 
     while (true) {
-        std::cout << RED << "You: " << END;
+        std::cout << CYAN << "You: " << END;
         if (!std::getline(std::cin, prompt.content)) break; // user's prompt
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
 
-        std::cout << BLINK << "Model: " << END;
+        std::cout << "Model: " << END;
         answer = account->send_request(conversation);
 
         if (answer.is_failed) {
