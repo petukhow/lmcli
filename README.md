@@ -102,7 +102,7 @@ Configuration files are stored in `~/.config/lmcli/`:
 ```
 
 - **system_prompt**: Default system message for all conversations
-- **limit**: Maximum number of messages to keep in context (older messages are pruned)
+- **limit**: Maximum number of messages to keep in context (older messages are pruned). Set to 0 to disable
 - **max_tokens**: Maximum tokens per API response
 
 ### `accounts.json`
