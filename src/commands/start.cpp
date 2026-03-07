@@ -50,7 +50,7 @@ void start() {
         if (prompt.content == "/exit") break; 
         conversation.push_back({"user", prompt.content});
 
-        std::cout << "Model: " << END;
+        std::cout << YELLOW << "Model: " << END;
         answer = account->send_request(conversation);
 
         if (answer.is_failed) {
