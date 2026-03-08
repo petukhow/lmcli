@@ -18,6 +18,10 @@ std::string setup_chat() {
     std::string chat_name; // chat name with extension
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
 
+    if (!std::filesystem::exists(chats_dir)) {
+        return "";
+    }
+
     if (!chats.empty()) {
         print_chats(chats);
         std::cout << "\nEnter chat's name or number to continue (/exit to leave, /new to create): \n";
@@ -71,7 +75,7 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
     std::vector<std::filesystem::directory_entry> chats;
 
     if (!std::filesystem::exists(chats_dir)) {
-        std::cerr << "Chats directory not found. Try 'lmcli init'.\n";
+        std::cerr << "\nChats directory not found. Try 'lmcli init'.\n";
         return chats;
     }
 
