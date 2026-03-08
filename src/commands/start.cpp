@@ -19,6 +19,16 @@ void start() {
     json accounts = load_accounts(ACCOUNTS_FILE);
     json providers = load_providers();
 
+    if (config.empty()) {
+        std::cerr << "Config not found. Try 'lmcli init'.\n";
+        return;
+    }
+
+    if (accounts.empty()) {
+        std::cerr << "Accounts file not found. Try 'lmcli setup'.\n";
+        return;
+    }
+
     std::vector<Message> conversation;
     
     Message prompt;
