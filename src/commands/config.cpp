@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <string>
 
-
 using json = nlohmann::json;
 
 static std::optional<size_t> get_positive_number(const std::string& field_name) {
@@ -51,13 +50,16 @@ void edit_system_prompt() {
         if (std::tolower(user_answer[0]) == 'y') {
             std::cout << "Enter new system prompt: ";
             if (!std::getline(std::cin, new_system_prompt)) return;
-            
-            break;
-        } else if (std::tolower(user_answer[0]) == 'n') return;
-    }
 
-    config["system_prompt"] = new_system_prompt;
-    save_config(config);
+            config["system_prompt"] = new_system_prompt;
+            save_config();
+            break;
+        } else {
+            if (std::tolower(user_answer[0]) == 'n') {
+                return;
+            }
+        }
+    }
 }
 
 void edit_limit() {
@@ -68,7 +70,7 @@ void edit_limit() {
 
     if (new_limit_value.has_value()) {
         config["limit"] = new_limit_value;
-        save_config(config);
+        save_config();
     }
 }
 
@@ -80,7 +82,7 @@ void edit_max_tokens() {
 
     if (new_tokens_value.has_value()) {
         config["max_tokens"] = new_tokens_value;
-        save_config(config);
+        save_config();
     }
 }
 
@@ -88,9 +90,9 @@ void print_settings() {
     json config = load_config(CONFIG_FILE);
 
     std::cout << "Current settings:\n";
-    std::cout << "  System prompt: " << config["system_prompt"] << "\n";
-    std::cout << "  Limit: " << config["limit"] << "\n";
-    std::cout << "  Max tokens: " << config["max_tokens"] << "\n";
+    std::cout << "  System prompt: " << config["system_prompt"].get<std::string>() << "\n";
+    std::cout << "  Limit: " << config["limit"].get<size_t>() << "\n";
+    std::cout << "  Max tokens: " << config["max_tokens"].get<size_t>() << "\n";
 }
 
 void config(const std::string& subcommand) {

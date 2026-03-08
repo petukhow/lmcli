@@ -2,8 +2,9 @@
 #include <iostream>
 #include "json.hpp"
 #include <fstream>
+#include "json_io.h"
 
-nlohmann::json load_json_file(const std::string& filepath) {
+nlohmann::json load_json(const std::string& filepath) {
     std::ifstream file(filepath);
     std::string str;
     nlohmann::json parsed = {};
@@ -28,4 +29,15 @@ nlohmann::json load_json_file(const std::string& filepath) {
         std::cerr << "File " + filepath << " is empty. Try 'lmcli init'.";
     }
     return parsed;
+}
+
+void save_json(const nlohmann::json& filepath) {
+    std::ofstream accs;
+    try {
+        accs.exceptions(std::ofstream::failbit);
+        accs.open(filepath);
+        accs << filepath.dump(4);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+    }
 }

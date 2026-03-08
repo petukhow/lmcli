@@ -12,7 +12,7 @@ void help() {
     std::cout << "  accounts                          List all configured accounts\n";
     std::cout << "  remove [account|chat|chats]       Remove account or chat(s)\n";  
     std::cout << "  config [prompt|limit|max-tokens]  Show and edit current config settings\n"; 
-    std::cout << "  help                              Show this help message\n";
+    std::cout << "  help                              Show this help message\n\n";
 
     std::cout << "EXAMPLES:\n";
     std::cout << "  lmcli                     # Start chat (default)\n";

@@ -71,7 +71,7 @@ void setup() {
                 };
 
                 accounts["accounts"].push_back(new_account);
-                save_accounts(accounts);
+                save_accounts();
                 break;
             }
     }

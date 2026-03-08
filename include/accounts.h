@@ -3,4 +3,4 @@
 
 nlohmann::json load_accounts(const std::string& filename);
 
-void save_accounts(const nlohmann::json& accounts);
+void save_accounts();
