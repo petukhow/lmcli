@@ -17,26 +17,27 @@ std::string setup_chat() {
     const auto chats = store_chats(chats_dir);
     std::string chat_name; // chat name with extension
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
-    
-    print_chats(chats);
 
-    std::cout << "\nEnter chat's name or number to continue (/exit to leave, /new to create): \n";
-    while (true) {
-        std::cout << "> ";
-        std::getline(std::cin, chat_name);
+    if (!chats.empty()) {
+        print_chats(chats);
+        std::cout << "\nEnter chat's name or number to continue (/exit to leave, /new to create): \n";
+        while (true) {
+            std::cout << "> ";
+            std::getline(std::cin, chat_name);
 
-        if (chat_name == "/exit") {
-            break;
-        } else if (chat_name == "/new") {
-            full_chat_name = create_chat(chats_dir);
-            break;
-        } else {
-            full_chat_name = continue_chat(chats_dir, chat_name, chats);
-            if (full_chat_name != "") {
+            if (chat_name == "/exit") {
                 break;
+            } else if (chat_name == "/new") {
+                full_chat_name = create_chat(chats_dir);
+                break;
+            } else {
+                full_chat_name = continue_chat(chats_dir, chat_name, chats);
+                if (full_chat_name != "") {
+                    break;
+                }
             }
         }
-    }
+    } else full_chat_name = create_chat(chats_dir);
     return full_chat_name;
 }
 
@@ -99,6 +100,7 @@ std::string create_chat(const std::string& chats_dir) {
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
     std::string chat_path; // path to the chat file
 
+    std::cout << "\nYou're creating a new chat...";
     std::cout << "\nEnter chat's name (leave empty for default: 'chat #...'): \n";
     while (true) {
         std::cout << "> ";
