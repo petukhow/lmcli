@@ -1,6 +1,7 @@
+#pragma once
 #include <string>
 #include "json.hpp"
-#pragma once
+
 
 struct Message {
     std::string role;

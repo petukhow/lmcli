@@ -1,35 +1,10 @@
 #include "providers.h"
 #include "constants.h"
 #include "json.hpp"
-#include <iostream>
-#include <fstream>
+#include "load_json.h"
 #include "utils.h"
 
-using json = nlohmann::json;
-
-json load_providers() {
+nlohmann::json load_providers() {
     std::string full_path = get_system_data_path(PROVIDERS_FILE);
-    std::ifstream file(full_path);
-    std::string str;
-    json parsed = {};
-
-    if (file) {
-        std::ostringstream ss;
-        ss << file.rdbuf(); // Read file buffer into the stringstream
-        str = ss.str();     // Convert stringstream to std::string
-    } else {
-        // Handle file opening error
-        std::cerr << "Error: Could not open file: " << full_path << "\n";
-        return parsed;
-    }
-    try {
-        parsed = json::parse(str);
-    } catch (const json::parse_error& e) {
-        std::cerr << "Parse error: " << e.what() << "\n";
-        return {};
-    }
-    if (parsed.empty()) {
-        std::cerr << "Installation may be broken, try reinstalling";
-    }
-    return parsed;
+    return load_json_file(full_path);
 }

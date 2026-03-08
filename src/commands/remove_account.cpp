@@ -13,6 +13,7 @@ void remove_account() {
     json accounts = load_accounts(ACCOUNTS_FILE);
 
     while (true) {
+        is_found = false;
         std::cout << "Select an account to remove (type '/exit' to quit):\n";
         for (const auto& account : accounts["accounts"]) {
             std::cout << "-- " << account["name"].get<std::string>() << "\n";

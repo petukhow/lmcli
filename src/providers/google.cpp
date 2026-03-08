@@ -20,7 +20,10 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
         if (msg.role == "system") {
             continue;
         }
-        std::string google_role = (msg.role == "assistant") ? "model" : msg.role;        
+        std::string google_role;  
+        if (msg.role == "assistant") {
+            google_role = "model";
+        }      
         request_body["contents"].push_back({
             {"parts", json::array({json{{"text", msg.content}}})},
             {"role", google_role}
