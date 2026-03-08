@@ -12,8 +12,8 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 ## Supported Providers
 
 - **Anthropic** (Claude models)
-- **OpenAI** (GPT models)
-- **Groq** (Llama, Mixtral, etc.)
+- **OpenAI-compatible** (GPT models, services: Groq, OpenRouter, etc.)
+- **Google** (Gemini) - Untested due to regional restrictions
 
 ## Installation
 

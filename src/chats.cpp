@@ -40,7 +40,7 @@ std::string setup_chat() {
     return full_chat_name;
 }
 
-void save_chat(const std::string& filePath, const std::vector<Message>& chat) {;
+void save_chat(const std::string& filePath, const std::vector<Message>& chat) {
     std::ofstream conversation;
     const json j = {{"conversation", chat}};
     
@@ -130,7 +130,7 @@ std::string continue_chat(const std::string& chats_dir, const std::string& chat_
             return chats[chat_index-1].path().string();
         }
 
-    } catch (std::invalid_argument) {
+    } catch (const std::invalid_argument&) {
         if (std::filesystem::exists(full_chat_name)) {
             return full_chat_name;
     } else {
