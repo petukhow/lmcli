@@ -79,9 +79,6 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
             chats.push_back(file);
         }
     }
-    else {
-        std::cerr << "No chats created.\n";
-    }
     return chats;
 }
 

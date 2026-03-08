@@ -60,11 +60,14 @@ void setup() {
 
                 if (account_name == "") account_name = provider["name"].get<std::string>();
 
-                std::cout << "Enter API key: ";
-                std::getline(std::cin, api_key);
-                if (api_key.empty()) {
-                    std::cerr << "Error: API key cannot be empty.\n";
-                    continue;
+                while (true) {
+                    std::cout << "Enter API key: ";
+                    std::getline(std::cin, api_key);
+                    if (api_key.empty()) {
+                        std::cerr << "Error: API key cannot be empty.\n";
+                        continue;
+                    }
+                    break;
                 }
 
                 std::cout << "Enter model (Default: " << default_model << "): ";
