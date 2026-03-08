@@ -78,7 +78,7 @@ void remove_account() {
             if (accounts["accounts"][i]["name"].get<std::string>() == remove_account_name) {
                 is_found = true;
                 accounts["accounts"].erase(i);
-                save_accounts();
+                save_accounts(accounts);
                 std::cout << "Removed successfully.\n";
                 break;
             }

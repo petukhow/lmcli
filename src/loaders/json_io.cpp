@@ -31,12 +31,12 @@ nlohmann::json load_json(const std::string& filepath) {
     return parsed;
 }
 
-void save_json(const nlohmann::json& filepath) {
+void save_json(const std::string& filepath, const nlohmann::json& data) {
     std::ofstream accs;
     try {
         accs.exceptions(std::ofstream::failbit);
         accs.open(filepath);
-        accs << filepath.dump(4);
+        accs << data.dump(4);
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
     }

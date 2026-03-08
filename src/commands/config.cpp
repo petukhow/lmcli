@@ -52,7 +52,7 @@ void edit_system_prompt() {
             if (!std::getline(std::cin, new_system_prompt)) return;
 
             config["system_prompt"] = new_system_prompt;
-            save_config();
+            save_config(config);
             break;
         } else {
             if (std::tolower(user_answer[0]) == 'n') {
@@ -70,7 +70,7 @@ void edit_limit() {
 
     if (new_limit_value.has_value()) {
         config["limit"] = new_limit_value;
-        save_config();
+        save_config(config);
     }
 }
 
@@ -82,7 +82,7 @@ void edit_max_tokens() {
 
     if (new_tokens_value.has_value()) {
         config["max_tokens"] = new_tokens_value;
-        save_config();
+        save_config(config);
     }
 }
 

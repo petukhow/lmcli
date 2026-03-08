@@ -9,7 +9,7 @@ nlohmann::json load_accounts(const std::string& filename) {
     return load_json(full_path);
 }
 
-void save_accounts() {
+void save_accounts(const nlohmann::json& accounts) {
     std::string full_path = get_config_path(ACCOUNTS_FILE);
-    save_json(full_path);
+    save_json(full_path, accounts);
 }

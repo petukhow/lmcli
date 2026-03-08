@@ -9,7 +9,7 @@ nlohmann::json load_config(const std::string& filename) {
     return load_json(full_path);
 }
 
-void save_config() {
+void save_config(const nlohmann::json& config) {
     const std::string full_path = get_config_path(CONFIG_FILE);
-    save_json(full_path);
+    save_json(full_path, config);
 }
