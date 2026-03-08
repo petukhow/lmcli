@@ -99,5 +99,7 @@ void remove(const std::string& subcommand) {
     else if (subcommand == "chats") {
         remove_chats();
     }
-    else std::cerr << "Usage: lmcli remove [account|chat|chats]\n";
+    else {
+        std::cerr << "Usage: lmcli remove [account|chat|chats]\n";
+    }
 }

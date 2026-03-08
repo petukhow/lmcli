@@ -47,6 +47,17 @@ void setup() {
                 std::cout << "Enter account name (Default: "
                     << provider["name"].get<std::string>() << "): ";
                 std::getline(std::cin, account_name);
+
+                bool duplicate = false;
+                for (const auto& acc : accounts["accounts"]) {
+                    if (acc["name"].get<std::string>() == account_name) {
+                        std::cerr << "Account with this name already exists.\n";
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
+
                 if (account_name == "") account_name = provider["name"].get<std::string>();
 
                 std::cout << "Enter API key: ";
