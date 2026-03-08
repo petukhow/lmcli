@@ -71,21 +71,25 @@ Select an account and begin your conversation. Type `/exit` to quit.
 lmcli [COMMAND] [SUBCOMMAND]
 
 Commands:
-  init                         Initialize config directory and files
-  setup                        Add a new provider account
-  start                        Start a chat session
-  accounts                     List configured accounts
-  remove [account|chat|chats]  Remove account or chat(s)
-  help                         Show help message
+  init                              Initialize config directory and files
+  setup                             Add a new provider account
+  start                             Start a chat session
+  accounts                          List configured accounts
+  remove [account|chat|chats]       Remove account or chat(s)
+  config [prompt|limit|max-tokens]  Show and edit current config settings
+  help                              Show help message
   
 Examples:
-  lmcli init            # First-time setup
-  lmcli setup           # Add a new account
-  lmcli start           # Begin chatting (or just 'lmcli')
-  lmcli accounts        # View your accounts
-  lmcli remove account  # Remove an account
-  lmcli remove chat     # Remove a chat
-  lmcli remove chats    # Remove all chats
+  lmcli init                # First-time setup
+  lmcli setup               # Add a new account
+  lmcli start               # Begin chatting (or just 'lmcli')
+  lmcli accounts            # View your accounts
+  lmcli remove account      # Remove an account
+  lmcli remove chat         # Remove a chat
+  lmcli remove chats        # Remove all chats
+  lmcli config prompt       # Check and edit system prompt
+  lmcli config limit        # Check and edit messages limit
+  lmcli config max-tokens   # Check and edit max tokens limit
 ```
 
 ## Configuration
@@ -121,17 +125,15 @@ Select a provider to set up (type '/exit' to quit):
 -- OpenAI
 -- Groq
 > Anthropic
-Enter account name (Default: Anthropic): my-claude
-Enter API key: sk-ant-...
-Enter model (Default: claude-sonnet-4-5): 
 
 $ lmcli start
 Select an account from the list below (type '/exit' to quit):
 -- my-claude
 > my-claude
+
 Prompt (or '/exit' to end the conversation):
-> Hello!
-Hi! How can I help you today?
+You: Hello!
+Model: Hi! How can I help you today?
 ```
 
 ## Development
