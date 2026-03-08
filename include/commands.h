@@ -11,4 +11,6 @@ void help();
 
 void init();
 
-void remove(const std::string& subcommand); // remove one account|remove one chat|remove all chats
+void remove(const std::string& subcommand);
+
+void config(const std::string& subcommand);

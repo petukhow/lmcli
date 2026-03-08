@@ -1,17 +1,16 @@
 #include "config.h"
-#include "config_l.h"
 #include "constants.h"
+#include "commands.h"
 #include "json.hpp"
 #include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include "utils.h"
-#include "fstream"
+
 
 using json = nlohmann::json;
 
-std::optional<size_t> get_positive_number(const std::string& field_name) {
+static std::optional<size_t> get_positive_number(const std::string& field_name) {
     int raw_value;
     std::string user_input;
     size_t new_value;
@@ -85,16 +84,15 @@ void edit_max_tokens() {
     }
 }
 
-void save_config(const json& config) {
-    std::string full_path = get_config_path(CONFIG_FILE);
-    std::ofstream cfg;
-
-    try {
-        cfg.exceptions(std::ofstream::failbit);
-        cfg.open(full_path);
-        cfg << config.dump(4);
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
+void config(const std::string& subcommand) {
+    if (subcommand == "prompt") {
+        edit_system_prompt();
     }
+    else if (subcommand == "limit") {
+        edit_limit();
+    }
+    else if (subcommand == "max-tokens") {
+        edit_max_tokens();
+    }
+    else std::cerr << "Usage: lmcli config [prompt|limit|max-tokens]\n";
 }
-

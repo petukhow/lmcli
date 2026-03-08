@@ -78,7 +78,7 @@ void remove_account() {
             if (accounts["accounts"][i]["name"].get<std::string>() == remove_account_name) {
                 is_found = true;
                 accounts["accounts"].erase(i);
-                save_accounts(ACCOUNTS_FILE, accounts);
+                save_accounts(accounts);
                 std::cout << "Removed successfully.\n";
                 break;
             }
@@ -99,7 +99,5 @@ void remove(const std::string& subcommand) {
     else if (subcommand == "chats") {
         remove_chats();
     }
-    else {
-        std::cerr << "Usage: lmcli remove [account|chat|chats]\n";
-    }
+    else std::cerr << "Usage: lmcli remove [account|chat|chats]\n";
 }

@@ -37,6 +37,13 @@ int main(int argc, char* argv[]) {
         }
         remove(subcommand);
     }
+    else if (command == "config") {
+        std::string subcommand;
+        if (argc == 3) {
+            subcommand = argv[2];
+        }
+        config(subcommand);
+    }
     else {
         std::cerr << "Unknown command: " << command << "\n";
         std::cerr << "See 'lmcli help' for available commands.\n";
