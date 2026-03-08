@@ -138,6 +138,8 @@ std::string continue_chat(const std::string& chats_dir, const std::string& chat_
         size_t chat_index = std::stoi(chat_name);
         if (chat_index >= 1 && chat_index <= chats.size()) {
             return chats[chat_index-1].path().string();
+        } else {
+            std::cout << "No chat with index " << chat_index << ".\n";
         }
 
     } catch (const std::invalid_argument&) {
