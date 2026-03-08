@@ -84,6 +84,15 @@ void edit_max_tokens() {
     }
 }
 
+void print_settings() {
+    json config = load_config(CONFIG_FILE);
+
+    std::cout << "Current settings:\n";
+    std::cout << "  System prompt: " << config["system_prompt"] << "\n";
+    std::cout << "  Limit: " << config["limit"] << "\n";
+    std::cout << "  Max tokens: " << config["max_tokens"] << "\n";
+}
+
 void config(const std::string& subcommand) {
     if (subcommand == "prompt") {
         edit_system_prompt();
@@ -93,6 +102,9 @@ void config(const std::string& subcommand) {
     }
     else if (subcommand == "max-tokens") {
         edit_max_tokens();
+    }
+    else if (subcommand == "") {
+        print_settings();
     }
     else std::cerr << "Usage: lmcli config [prompt|limit|max-tokens]\n";
 }
