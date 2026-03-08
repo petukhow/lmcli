@@ -51,7 +51,7 @@ void setup() {
                 bool duplicate = false;
                 for (const auto& acc : accounts["accounts"]) {
                     if (acc["name"].get<std::string>() == account_name) {
-                        std::cerr << "Account with this name already exists.\n";
+                        std::cerr << "Error: Account with this name already exists.\n";
                         duplicate = true;
                         break;
                     }
@@ -63,7 +63,7 @@ void setup() {
                 std::cout << "Enter API key: ";
                 std::getline(std::cin, api_key);
                 if (api_key.empty()) {
-                    std::cerr << "API key cannot be empty.\n";
+                    std::cerr << "Error: API key cannot be empty.\n";
                     continue;
                 }
 
