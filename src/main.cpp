@@ -35,20 +35,8 @@ int main(int argc, char* argv[]) {
         if (argc == 3) {
             subcommand = argv[2];
         }
-        if (subcommand == "chat") {
-            remove_chat();
-        }
-        else if (subcommand == "account") {
-            remove_account();
-        }
-        else if (subcommand == "chats") {
-            remove_chats();
-        }
-        else {
-            std::cerr << "Undefined command. Usage: lmcli remove [account|chat|chats]\n";
-        }
+        remove(subcommand);
     }
-
     else {
         std::cerr << "Unknown command: " << command << "\n";
         std::cerr << "See 'lmcli help' for available commands.\n";

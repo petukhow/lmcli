@@ -69,8 +69,18 @@ json load_chats(const std::string& filepath) {
 std::vector<std::filesystem::directory_entry> store_chats(const std::string& chats_dir) {
     std::vector<std::filesystem::directory_entry> chats;
 
-    for (const auto& file : std::filesystem::directory_iterator(chats_dir)) {
-        chats.push_back(file);
+    if (!std::filesystem::exists(chats_dir)) {
+        std::cerr << "Chats directory not found. Try 'lmcli init'.\n";
+        return chats;
+    }
+
+    if (!std::filesystem::is_empty(chats_dir)) {
+        for (const auto& file : std::filesystem::directory_iterator(chats_dir)) {
+            chats.push_back(file);
+        }
+    }
+    else {
+        std::cerr << "No chats created.\n";
     }
     return chats;
 }

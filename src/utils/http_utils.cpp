@@ -37,8 +37,4 @@ CurlSlist::~CurlSlist() {
     curl_slist_free_all(headers);
 }
 
-// =====================================
-//           Callback logic
-// =====================================
-
 

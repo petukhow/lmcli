@@ -48,6 +48,7 @@ void start() {
         std::cout << CYAN << "You: " << END;
         if (!std::getline(std::cin, prompt.content)) break; // user's prompt
         if (prompt.content == "/exit") break; 
+        if (prompt.content == "") continue;
         conversation.push_back({"user", prompt.content});
 
         std::cout << YELLOW << "Model: " << END;

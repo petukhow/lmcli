@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 void setup();
 
@@ -10,8 +11,4 @@ void help();
 
 void init();
 
-void remove_account(); // remove one account
-
-void remove_chat(); // remove one chat
-
-void remove_chats(); // remove all chats
+void remove(const std::string& subcommand); // remove one account|remove one chat|remove all chats
