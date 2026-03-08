@@ -8,7 +8,6 @@ using json = nlohmann::json;
 Message Google::send_request(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "x-goog-api-key: " + api_key;
     CurlSlist headers;
-    std::string raw_response;
     json request_body;
     Message response;
     Curl curl;
@@ -32,22 +31,9 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    perform_request(body, headers, curl);
+    auto [content, is_failed] = perform_request(body, headers, curl);
 
-    try {
-        json parsed = json::parse(raw_response);
-        if (parsed.contains("error")) {
-            response.content = parsed["error"]["message"];
-            response.is_failed = true;
-        } else {
-            response.content = parsed["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
-        }
-    } catch (const std::exception& e) {
-        response.content = "unexpected response from provider.";
-        response.is_failed = true;
-    }
-
+    response.content = content;
+    response.is_failed = is_failed;
     return response;
 }
-
-void Google::event_handler(StreamContext* context) const {}
