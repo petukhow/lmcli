@@ -43,14 +43,21 @@ void start() {
     }
 
     json chats = load_chats(chats_path);
+
     if (chats.contains("conversation") && chats["conversation"].is_array()) {
         conversation = chats["conversation"].get<std::vector<Message>>();
     }
 
+    if (!conversation.empty()) {
+        if (conversation[0].content != config["system_prompt"]) {
+            conversation[0].content = config["system_prompt"];
+        }
+    }
+
+    size_t limit_messages = config["limit"].get<size_t>();
     if (conversation.empty()) {
         conversation.push_back({"system", config["system_prompt"].get<std::string>()});
     }
-    size_t limit_messages = config["limit"].get<size_t>();
 
     std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
 
