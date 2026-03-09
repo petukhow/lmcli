@@ -1,6 +1,8 @@
 #pragma once
+#include "json.hpp"
 #include "provider.h"
 #include "streaming.h"
+#include "tools.h"
 #include <cstddef>
 #include <string>
 
@@ -13,4 +15,5 @@ public:
     Message send_request(const std::vector<Message>& conversation) const override;
 
     std::optional<std::string> extract_delta(const nlohmann::json& json) const override;
+    std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) const override;
 };

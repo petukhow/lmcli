@@ -5,6 +5,7 @@
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"
+#include "tools.h"
 #include <memory>
 #include <iostream>
 #include <optional>
@@ -67,10 +68,8 @@ std::pair<std::string, bool> Provider::perform_request(const std::string& body, 
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, stream_callback);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
-    
-
     result = curl_easy_perform(curl.get());
-
+    
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
         std::cerr << curl_easy_strerror(result) << "\n";
@@ -94,6 +93,7 @@ std::pair<std::string, bool> Provider::perform_request(const std::string& body, 
 void Provider::event_handler(StreamContext* context) const {
     size_t event_end;
     while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
+        ToolInfo tool_info;
         std::optional<std::string> delta;
         std::string response;
 
@@ -119,6 +119,18 @@ void Provider::event_handler(StreamContext* context) const {
             }
 
             delta = extract_delta(parsed);
+            auto tool = extract_tool_call(parsed);
+            if (tool.has_value()) {
+                context->tool_call.push_back(*tool);
+            }
+
+            if (parsed["choices"][0]["delta"].contains("tool_calls")) {
+                tool_info.id = parsed["choices"][0]["delta"]["tool_calls"][0]["id"];
+                tool_info.name = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["name"];
+                tool_info.arguments = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"];
+                context->tool_call.push_back(tool_info);
+            }
+
         } catch (const std::exception& e) {
             std::cerr << "Broken response's json.\n";
         }

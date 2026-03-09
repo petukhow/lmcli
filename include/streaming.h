@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include "tools.h"
+#include <vector>
 
 class Provider;
 
@@ -7,6 +9,7 @@ struct StreamContext {
     std::string buffer;
     std::string full_content;
     const Provider* provider;
+    std::vector<ToolInfo> tool_call; 
     bool is_failed = false;
 };
 

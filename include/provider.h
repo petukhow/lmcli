@@ -7,6 +7,7 @@
 #include "json.hpp"
 #include "message.h"
 #include "streaming.h"
+#include "tools.h"
 
 class Provider {
 protected:
@@ -28,7 +29,8 @@ public:
         
     virtual Message send_request(const std::vector<Message>& conversation) const = 0;
     virtual std::optional<std::string> extract_delta(const nlohmann::json& json) const = 0;
-    void event_handler(StreamContext* context) const;
+    virtual std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) const = 0;
+    virtual void event_handler(StreamContext* context) const;
     virtual ~Provider() = default;
 };
 
