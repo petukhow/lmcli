@@ -3,7 +3,6 @@
 #include "anthropic.h"
 #include <curl/curl.h>
 #include <iostream>
-#include "streaming.h"
 
 using json = nlohmann::json;
 
@@ -43,38 +42,16 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     return response;
 }
 
-void Anthropic::event_handler(StreamContext* context) const {
-    size_t event_end;
-    while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
-        std::string delta;
-        std::string response;
-
-        std::string event = context->buffer.substr(0, event_end);
-        context->buffer.erase(0, event_end + 2);
-
-        size_t data_index = event.find("data: ");
-        if (data_index == std::string::npos) continue;
-        response = event.substr(data_index + 6);
-
-        try {
-            nlohmann::json parsed = nlohmann::json::parse(response);
-            if (parsed.contains("type") && parsed["type"] == "message_stop") break;
-
-            if (parsed.contains("delta") && parsed["delta"].contains("text")) {
-                delta = parsed["delta"]["text"];
-            }
-            if (parsed.contains("error")) {
-                delta = parsed["error"]["message"];
-                context->full_content = delta;
-                context->is_failed = true;
-                break;
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Broken response's json.\n";  
+std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) const {
+    std::string delta;
+    try {
+        if (json.contains("delta") && json["delta"].contains("text")) {
+            delta = json["delta"]["text"];
         }
-
-        std::cout << delta;
-        std::cout.flush();
-        context->full_content += delta;
+    } catch (const std::exception& e) {
+        std::cerr << "Broken response's json.\n";  
+        return std::nullopt;
     }
+
+    return delta;
 }

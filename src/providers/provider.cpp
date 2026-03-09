@@ -7,6 +7,7 @@
 #include "json.hpp"
 #include <memory>
 #include <iostream>
+#include <optional>
 #include <utility>
 
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
@@ -88,4 +89,44 @@ std::pair<std::string, bool> Provider::perform_request(const std::string& body, 
     }
 
     return {context.full_content, context.is_failed};
+}
+
+void Provider::event_handler(StreamContext* context) const {
+    size_t event_end;
+    while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
+        std::optional<std::string> delta;
+        std::string response;
+
+        std::string event = context->buffer.substr(0, event_end);
+        context->buffer.erase(0, event_end + 2);
+
+        size_t data_index = event.find("data: ");
+        if (data_index == std::string::npos) continue;
+        response = event.substr(data_index + 6);
+
+        if (response == "[DONE]") break;
+
+        try {
+            nlohmann::json parsed = nlohmann::json::parse(response);
+
+            if (parsed.contains("type") && parsed["type"] == "message_stop") break;
+            if (parsed.contains("candidates") && parsed["candidates"][0].contains("finishReason")) break;
+
+            if (parsed.contains("error")) {
+                context->full_content = parsed["error"]["message"];
+                context->is_failed = true;
+                break;
+            }
+
+            delta = extract_delta(parsed);
+        } catch (const std::exception& e) {
+            std::cerr << "Broken response's json.\n";
+        }
+
+        if (delta.has_value()) {
+            std::cout << *delta;
+            std::cout.flush();
+            context->full_content += *delta;
+        }
+    }
 }

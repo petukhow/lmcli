@@ -10,5 +10,5 @@ public:
     
     Message send_request(const std::vector<Message>& conversation) const override;
 
-    void event_handler(StreamContext* context) const override;
+    std::optional<std::string> extract_delta(const nlohmann::json& json) const override;
 };

@@ -2,8 +2,8 @@
 #include <iostream>
 #include "http_utils.h"
 #include "open_ai_compatible.h"
-#include "streaming.h"
 #include <curl/curl.h>
+#include <optional>
 
 using json = nlohmann::json;
 
@@ -38,41 +38,20 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     return response;
 }
 
-void OpenAICompatible::event_handler(StreamContext* context) const {
-    size_t event_end;
-    while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
-        std::string delta;
-        std::string response;
+std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json& json) const {
+    std::string delta;
 
-        std::string event = context->buffer.substr(0, event_end);
-        context->buffer.erase(0, event_end + 2);
-
-        size_t data_index = event.find("data: ");
-        if (data_index == std::string::npos) continue;
-        response = event.substr(data_index + 6);
-
-        if (response == "[DONE]") break;
-
-        try {
-            nlohmann::json parsed = nlohmann::json::parse(response);
-            if (parsed.contains("choices")
-                && parsed["choices"][0].contains("delta")
-                && parsed["choices"][0]["delta"].contains("content"))
-            {
-                delta = parsed["choices"][0]["delta"]["content"];
-            }
-            if (parsed.contains("error")) {
-                delta = parsed["error"]["message"];
-                context->full_content = delta;
-                context->is_failed = true;
-                break;
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Broken response's json.\n";
+    try {
+        if (json.contains("choices")
+            && json["choices"][0].contains("delta")
+            && json["choices"][0]["delta"].contains("content"))
+        {
+            delta = json["choices"][0]["delta"]["content"];
         }
-
-        std::cout << delta;
-        std::cout.flush();
-        context->full_content += delta;
+    } catch (const std::exception& e) {
+        std::cerr << "Broken response's json.\n";
+        return std::nullopt;
     }
+
+    return delta;
 }
