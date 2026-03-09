@@ -1,4 +1,5 @@
 #include "json.hpp"
+#include <exception>
 #include <iostream>
 #include "http_utils.h"
 #include "streaming.h"
@@ -14,6 +15,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
     json request_body;
+    std::string body;
     Message response;
     Curl curl;
 
@@ -44,9 +46,9 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
 
     for (const auto& msg : conversation) {
         json message = {{"role", msg.role}};
-        
+            
         if (msg.role == "tool") {
-            message["content"] = msg.content;
+             message["content"] = msg.content;
             message["tool_call_id"] = msg.tool_call_id;
         } else if (!msg.tool_calls.empty()) {
             message["tool_calls"] = json::array();
@@ -65,9 +67,10 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
         }
         
         request_body["messages"].push_back(message);
+        
     }
 
-    std::string body = request_body.dump();
+    body = request_body.dump();
 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
@@ -77,8 +80,9 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     response.content = context.full_content;
     response.is_failed = context.is_failed;
     response.tool_calls = context.tool_calls;
-    
+
     return response;
+    
 }
 
 std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json& json) const {

@@ -90,10 +90,10 @@ void start() {
                     result_msg.content = result;
                     result_msg.tool_call_id = tool.id;
                     conversation.push_back(result_msg);
-                    
-                    answer = account->send_request(conversation);
                 }
-            }
+                
+            } answer.tool_calls.clear();
+            answer = account->send_request(conversation);
         }
 
         if (answer.is_failed) {
@@ -102,7 +102,10 @@ void start() {
             continue;
         }
         
-        conversation.push_back({"assistant", answer.content});
+        Message assistant_msg;
+        assistant_msg.role = "assistant";
+        assistant_msg.content = answer.content;
+        conversation.push_back(assistant_msg);
         std::cout << "\n\n";
 
         if (limit_messages > 0) {
@@ -110,6 +113,8 @@ void start() {
                 conversation.erase(conversation.begin() + 1);
             }
         }
+
         save_chat(chats_path, conversation);
+
     }
 }

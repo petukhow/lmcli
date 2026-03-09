@@ -76,8 +76,15 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     }
 
     if (context.full_content.empty() && !context.buffer.empty()) {
+        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
+        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
     try {
+        std::cerr << "BUFFER: " << context.buffer << "\n";
+        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
+        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
         auto parsed = nlohmann::json::parse(context.buffer);
+        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
+        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
         if (parsed.contains("error")) {
             context.full_content = parsed["error"]["message"];
             context.is_failed = true;
@@ -121,13 +128,6 @@ void Provider::event_handler(StreamContext* context) const {
             auto tool = extract_tool_call(parsed);
             if (tool.has_value()) {
                 context->tool_calls.push_back(*tool);
-            }
-
-            if (parsed["choices"][0]["delta"].contains("tool_calls")) {
-                tool_info.id = parsed["choices"][0]["delta"]["tool_calls"][0]["id"];
-                tool_info.name = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["name"];
-                tool_info.arguments = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"];
-                context->tool_calls.push_back(tool_info);
             }
 
         } catch (const std::exception& e) {
