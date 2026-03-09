@@ -90,12 +90,11 @@ void start() {
                     result_msg.content = result;
                     result_msg.tool_call_id = tool.id;
                     conversation.push_back(result_msg);
-
+                    
+                    answer = account->send_request(conversation);
                 }
             }
         }
-
-        answer = account->send_request(conversation);
 
         if (answer.is_failed) {
             std::cout << "Request failed: " << answer.content << "\n";

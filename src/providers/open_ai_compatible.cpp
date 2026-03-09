@@ -85,11 +85,14 @@ std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json&
     std::string delta;
 
     try {
-        if (json.contains("choices")
-            && json["choices"][0].contains("delta")
-            && json["choices"][0]["delta"].contains("content"))
-        {
-            delta = json["choices"][0]["delta"]["content"];
+        if (json["choices"][0]["delta"].contains("content") 
+            && !json["choices"][0]["delta"]["content"].is_null()) {
+            if (json.contains("choices")
+                && json["choices"][0].contains("delta")
+                && json["choices"][0]["delta"].contains("content"))
+            {
+                delta = json["choices"][0]["delta"]["content"];
+            }
         }
     } catch (const std::exception& e) {
         std::cerr << "Broken response's json.\n";
