@@ -77,7 +77,7 @@ std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json&
     return delta;
 }
 
-std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) {
+std::optional<ToolInfo> OpenAICompatible::extract_tool_call(const nlohmann::json& json) const {
     if (json["choices"][0]["delta"].contains("tool_calls")) {
         auto& tool = json["choices"][0]["delta"]["tool_calls"][0];
         ToolInfo tool_info;

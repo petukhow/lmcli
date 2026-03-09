@@ -9,6 +9,7 @@
 #include "message.h"
 #include <iostream>
 #include "colors.h"
+#include "tools.h"
 
 using json = nlohmann::json;
 
@@ -69,6 +70,30 @@ void start() {
         conversation.push_back({"user", prompt.content});
 
         std::cout << YELLOW << "Model: " << END;
+        answer = account->send_request(conversation);
+
+        if (!answer.tool_calls.empty()) {
+            Message tool_message;
+            tool_message.role = "assistant";
+            tool_message.tool_calls = answer.tool_calls;
+            conversation.push_back(tool_message);
+
+            for (const auto& tool : answer.tool_calls) {
+                if (tool.name == "read_file") {
+                    auto args = json::parse(tool.arguments);
+                    std::string path = args["file"];
+
+                    std::string result = read_file(path);
+                    Message result_msg;
+                    result_msg.role = "tool";
+                    result_msg.content = result;
+                    result_msg.tool_call_id = tool.id;
+                    conversation.push_back(result_msg);
+
+                }
+            }
+        }
+
         answer = account->send_request(conversation);
 
         if (answer.is_failed) {

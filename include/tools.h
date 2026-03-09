@@ -6,3 +6,5 @@ struct ToolInfo {
     std::string name;
     std::string arguments;
 };
+
+std::string read_file(const std::string filename);
