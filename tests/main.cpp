@@ -63,7 +63,7 @@ TEST_CASE("OpenAI compatible extract_delta with empty response") {
     nlohmann::json response = {};
 
     auto result = openai_comp.extract_delta(response);
-    CHECK(result == "");
+    CHECK(result == std::nullopt);
 }
 
 TEST_CASE("OpenAI-compatible's extract_delta accesses to an empty array") {
