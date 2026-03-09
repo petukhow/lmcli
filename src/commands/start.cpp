@@ -83,6 +83,7 @@ void start() {
                     auto args = json::parse(tool.arguments);
                     std::string path = args["file"];
 
+                    std::cerr << tool.name << " " << path << "\n";
                     std::string result = read_file(path);
                     Message result_msg;
                     result_msg.role = "tool";

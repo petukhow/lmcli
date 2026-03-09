@@ -3,7 +3,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <utility>
 #include "http_utils.h"
 #include "json.hpp"
 #include "message.h"
@@ -12,7 +11,7 @@
 
 class Provider {
 protected:
-    std::pair<std::string, bool> perform_request(const std::string& body, const CurlSlist& headers, Curl& curl) const;
+    StreamContext perform_request(const std::string& body, const CurlSlist& headers, Curl& curl) const;
 
     std::string api_key;
     std::string api_url;

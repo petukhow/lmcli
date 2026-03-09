@@ -9,7 +9,6 @@
 #include <memory>
 #include <iostream>
 #include <optional>
-#include <utility>
 
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
     std::unique_ptr<Provider> provider = nullptr;
@@ -53,7 +52,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-std::pair<std::string, bool> Provider::perform_request(const std::string& body, const CurlSlist& headers,
+StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers,
     Curl& curl) const {
     StreamContext context;
     nlohmann::json parsed;
@@ -87,7 +86,7 @@ std::pair<std::string, bool> Provider::perform_request(const std::string& body, 
         }
     }
 
-    return {context.full_content, context.is_failed};
+    return context;
 }
 
 void Provider::event_handler(StreamContext* context) const {
@@ -121,14 +120,14 @@ void Provider::event_handler(StreamContext* context) const {
             delta = extract_delta(parsed);
             auto tool = extract_tool_call(parsed);
             if (tool.has_value()) {
-                context->tool_call.push_back(*tool);
+                context->tool_calls.push_back(*tool);
             }
 
             if (parsed["choices"][0]["delta"].contains("tool_calls")) {
                 tool_info.id = parsed["choices"][0]["delta"]["tool_calls"][0]["id"];
                 tool_info.name = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["name"];
                 tool_info.arguments = parsed["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"];
-                context->tool_call.push_back(tool_info);
+                context->tool_calls.push_back(tool_info);
             }
 
         } catch (const std::exception& e) {

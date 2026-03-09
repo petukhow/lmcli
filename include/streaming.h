@@ -9,7 +9,7 @@ struct StreamContext {
     std::string buffer;
     std::string full_content;
     const Provider* provider;
-    std::vector<ToolInfo> tool_call; 
+    std::vector<ToolInfo> tool_calls; 
     bool is_failed = false;
 };
 

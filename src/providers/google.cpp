@@ -40,10 +40,12 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    auto [content, is_failed] = perform_request(body, headers, curl);
+    auto context = perform_request(body, headers, curl);
 
-    response.content = content;
-    response.is_failed = is_failed;
+    response.content = context.full_content;
+    response.is_failed = context.is_failed;
+    response.tool_calls = context.tool_calls;
+    
     return response;
 }
 

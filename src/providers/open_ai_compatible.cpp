@@ -1,10 +1,12 @@
 #include "json.hpp"
 #include <iostream>
 #include "http_utils.h"
+#include "streaming.h"
 #include "tools.h"
 #include "open_ai_compatible.h"
 #include <curl/curl.h>
 #include <optional>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -41,10 +43,28 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     });
 
     for (const auto& msg : conversation) {
-        request_body["messages"].push_back({
-            {"content", msg.content},
-            {"role", msg.role}
-        });
+        json message = {{"role", msg.role}};
+        
+        if (msg.role == "tool") {
+            message["content"] = msg.content;
+            message["tool_call_id"] = msg.tool_call_id;
+        } else if (!msg.tool_calls.empty()) {
+            message["tool_calls"] = json::array();
+            for (const auto& tool : msg.tool_calls) {
+                message["tool_calls"].push_back({
+                    {"id", tool.id},
+                    {"type", "function"},
+                    {"function", {
+                        {"name", tool.name},
+                        {"arguments", tool.arguments}
+                    }}
+                });
+            }
+        } else {
+            message["content"] = msg.content;
+        }
+        
+        request_body["messages"].push_back(message);
     }
 
     std::string body = request_body.dump();
@@ -52,10 +72,12 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    auto [content, is_failed] = perform_request(body, headers, curl);
+    auto context = perform_request(body, headers, curl);
 
-    response.content = content;
-    response.is_failed = is_failed;
+    response.content = context.full_content;
+    response.is_failed = context.is_failed;
+    response.tool_calls = context.tool_calls;
+    
     return response;
 }
 
