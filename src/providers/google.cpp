@@ -49,8 +49,7 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
 
 std::optional<std::string> Google::extract_delta(const nlohmann::json& json) const {
     std::string delta;
-    try {
-            
+    try {  
         if (json.contains("candidates") && json["candidates"][0].contains("content")
             && json["candidates"][0]["content"].contains("parts")
             && json["candidates"][0]["content"]["parts"][0].contains("text")) {
