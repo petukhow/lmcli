@@ -1,5 +1,7 @@
 #include "json.hpp"
 #include "http_utils.h"
+#include "streaming.h"
+#include "tools.h"
 #include "anthropic.h"
 #include <curl/curl.h>
 #include <iostream>
@@ -56,4 +58,19 @@ std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) 
     }
 
     return delta;
+}
+
+std::optional<ToolInfo> Anthropic::extract_tool_call(const nlohmann::json& json) const {
+    for (const auto& block : json["content"]) {
+        if (block["type"] == "tool_use") {
+            ToolInfo tool_info;
+            tool_info.id = block["id"];
+            tool_info.name = block["name"];
+            tool_info.arguments = block["input"].dump();
+
+
+            return tool_info;
+        }
+    }
+    return std::nullopt;
 }

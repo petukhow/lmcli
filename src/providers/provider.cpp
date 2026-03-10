@@ -76,15 +76,9 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     }
 
     if (context.full_content.empty() && !context.buffer.empty()) {
-        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
-        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
+
     try {
-        std::cerr << "BUFFER: " << context.buffer << "\n";
-        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
-        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
         auto parsed = nlohmann::json::parse(context.buffer);
-        std::cerr << "CONTENT: " << context.full_content.substr(0, 30) << "\n";
-        std::cerr << "BUFFER: " << context.buffer.substr(0, 30) << "\n";
         if (parsed.contains("error")) {
             context.full_content = parsed["error"]["message"];
             context.is_failed = true;
@@ -98,11 +92,12 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
 
 void Provider::event_handler(StreamContext* context) const {
     size_t event_end;
+    ToolInfo anthropic_ti;
     while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
         ToolInfo tool_info;
         std::optional<std::string> delta;
         std::string response;
-
+        
         std::string event = context->buffer.substr(0, event_end);
         context->buffer.erase(0, event_end + 2);
 
@@ -122,6 +117,27 @@ void Provider::event_handler(StreamContext* context) const {
                 context->full_content = parsed["error"]["message"];
                 context->is_failed = true;
                 break;
+            }
+
+            if (parsed["type"] == "content_block_start") {
+                if (parsed["content_block"]["type"] == "tool_use") {
+                    anthropic_ti.id = parsed["content_block"]["id"];
+                    anthropic_ti.name = parsed["content_block"]["name"];
+                }
+            }
+
+            if (parsed["type"] == "content_block_delta") {
+                if (parsed["delta"].contains("partial_json")) {
+                    context->tool_buffer += parsed["delta"]["partial_json"].get<std::string>();
+                }
+            }
+
+            if (parsed["type"] == "content_block_stop") {
+                if (!context->tool_buffer.empty()) {
+                    anthropic_ti.arguments = context->tool_buffer;
+                    context->tool_calls.push_back(anthropic_ti);
+                    context->tool_buffer.clear();
+                }
             }
 
             delta = extract_delta(parsed);

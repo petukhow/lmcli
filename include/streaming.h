@@ -7,6 +7,7 @@ class Provider;
 
 struct StreamContext {
     std::string buffer;
+    std::string tool_buffer;
     std::string full_content;
     const Provider* provider;
     std::vector<ToolInfo> tool_calls; 
