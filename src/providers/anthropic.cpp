@@ -20,15 +20,45 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     request_body["messages"] = json::array();
     request_body["system"] = system_prompt;
     request_body["stream"] = true;
+    request_body["tools"] = json::array({
+    {
+        {"name", "read_file"},
+        {"description", "Read the contents of a file at a given path"},
+        {"input_schema", {
+            {"type", "object"},
+            {"properties", {
+                {"file", {
+                    {"type", "string"},
+                    {"description", "Path to a file"}
+                }}
+            }},
+            {"required", json::array({"file"})}
+            }}
+        }
+    });
 
     for (const auto& msg : conversation) {
         if (msg.role == "system") {
             continue;
         }
-        request_body["messages"].push_back({
+
+        if (msg.role == "tool") {
+            request_body["messages"].push_back({
+        {"role", "user"},
+        {"content", json::array({
+            {
+                {"type", "tool_result"},
+                {"tool_use_id", msg.tool_call_id},
+                {"content", msg.content}
+                }
+                })}
+            });
+        } else {
+            request_body["messages"].push_back({
             {"content", msg.content},
             {"role", msg.role}
-        });
+            });
+        }
     }
 
     std::string body = request_body.dump();
