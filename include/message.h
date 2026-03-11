@@ -4,7 +4,6 @@
 #include "json.hpp"
 #include "tools.h"
 
-
 struct Message {
     std::string role;
     std::string content;

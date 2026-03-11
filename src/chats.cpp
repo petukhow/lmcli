@@ -19,6 +19,7 @@ std::string setup_chat() {
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
 
     if (!std::filesystem::exists(chats_dir)) {
+        std::cerr << "Chats directory doesn't exist. Try 'lmcli init'";
         return "";
     }
 
