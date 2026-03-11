@@ -26,10 +26,11 @@ public:
         : api_key(api_key), api_url(api_url), model(model), system_prompt(system_prompt), limit(limit), max_tokens(max_tokens) {}
 
     static std::unique_ptr<Provider> create(const nlohmann::json& accounts, const nlohmann::json& config);
+    void set_model(const std::string& new_model) { model = new_model; }
         
     virtual Message send_request(const std::vector<Message>& conversation) const = 0;
     virtual std::optional<std::string> extract_delta(const nlohmann::json& json) const = 0;
-    virtual std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) const {return std::nullopt;};
+    virtual std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) const { return std::nullopt; };
     virtual void event_handler(StreamContext* context) const;
     virtual ~Provider() = default;
 };

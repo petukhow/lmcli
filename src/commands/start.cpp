@@ -8,9 +8,11 @@
 #include "accounts.h"
 #include "message.h"
 #include <cstddef>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 #include "colors.h"
 #include "tools.h"
@@ -80,8 +82,28 @@ void start() {
     while (true) {
         std::cout << CYAN << "You: " << END;
         if (!std::getline(std::cin, prompt.content)) break; // user's prompt
-        if (prompt.content == "/exit") break; 
         if (prompt.content == "") continue;
+
+        if (prompt.content[0] == '/') {
+            if (prompt.content == "/exit") break; 
+            
+            size_t i = prompt.content.find(" ");
+            std::string arg1 = prompt.content.substr(0, i);
+
+            if (arg1 == "/model") {
+                if (i == std::string::npos) {
+                    std::cerr << "Usage: /model [name]\n";
+                    continue;
+                }
+                std::string arg2 = prompt.content.substr(i+1);
+                values->account->set_model(arg2);
+                continue;
+            }
+            
+            std::cerr << "Unexpected command.\n";
+            continue;
+        }
+
         values->conversation.push_back({"user", prompt.content, "", {}});
 
         std::cout << YELLOW << "Model: " << END;

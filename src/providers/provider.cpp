@@ -68,6 +68,10 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
     result = curl_easy_perform(curl.get());
+
+    long http_code = 0;
+    curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
+    std::cerr << "HTTP: " << http_code << "\n";
     
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
@@ -76,7 +80,7 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     }
 
     if (context.full_content.empty() && !context.buffer.empty()) {
-
+        std::cerr << context.buffer;
     try {
         auto parsed = nlohmann::json::parse(context.buffer);
         if (parsed.contains("error")) {
@@ -119,24 +123,30 @@ void Provider::event_handler(StreamContext* context) const {
                 break;
             }
 
-            if (parsed["type"] == "content_block_start") {
-                if (parsed["content_block"]["type"] == "tool_use") {
-                    anthropic_ti.id = parsed["content_block"]["id"];
-                    anthropic_ti.name = parsed["content_block"]["name"];
+            if (parsed["type"].contains("content_block_start")) {
+                if (parsed["type"] == "content_block_start") {
+                    if (parsed["content_block"]["type"] == "tool_use") {
+                        anthropic_ti.id = parsed["content_block"]["id"];
+                        anthropic_ti.name = parsed["content_block"]["name"];
+                    }
+                }
+            } else continue;
+
+            if (parsed["type"].contains("content_block_delta")) {
+                if (parsed["type"] == "content_block_delta") {
+                    if (parsed["delta"].contains("partial_json")) {
+                        context->tool_buffer += parsed["delta"]["partial_json"].get<std::string>();
+                    }
                 }
             }
 
-            if (parsed["type"] == "content_block_delta") {
-                if (parsed["delta"].contains("partial_json")) {
-                    context->tool_buffer += parsed["delta"]["partial_json"].get<std::string>();
-                }
-            }
-
-            if (parsed["type"] == "content_block_stop") {
-                if (!context->tool_buffer.empty()) {
-                    anthropic_ti.arguments = context->tool_buffer;
-                    context->tool_calls.push_back(anthropic_ti);
-                    context->tool_buffer.clear();
+            if (parsed["type"].contains("content_block_stop")) {
+                if (parsed["type"] == "content_block_stop") {
+                    if (!context->tool_buffer.empty()) {
+                        anthropic_ti.arguments = context->tool_buffer;
+                        context->tool_calls.push_back(anthropic_ti);
+                        context->tool_buffer.clear();
+                    }
                 }
             }
 
