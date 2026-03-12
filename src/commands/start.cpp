@@ -117,7 +117,6 @@ void start() {
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation);
         }
-
         if (output.is_failed) {
             std::cout << "Request failed: " << output.content << "\n";
             values->conversation.pop_back();

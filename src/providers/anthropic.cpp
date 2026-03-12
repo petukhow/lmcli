@@ -53,7 +53,23 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
                 }
                 })}
             });
-        } else {
+        } 
+        else if (msg.role == "assistant" && !msg.tool_calls.empty()) {
+            json content = json::array();
+            for (const auto& tool : msg.tool_calls) {
+                content.push_back({
+                    {"type", "tool_use"},
+                    {"id", tool.id},
+                    {"name", tool.name},
+                    {"input", json::parse(tool.arguments)}
+                });
+            }
+            request_body["messages"].push_back({
+                {"role", "assistant"},
+                {"content", content}
+            });
+        }
+        else {
             request_body["messages"].push_back({
             {"content", msg.content},
             {"role", msg.role}
@@ -91,17 +107,5 @@ std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) 
 }
 
 std::optional<ToolInfo> Anthropic::extract_tool_call(const nlohmann::json& json) const {
-    if (!json.contains("content")) return std::nullopt;
-    for (const auto& block : json["content"]) {
-        if (block["type"] == "tool_use") {
-            ToolInfo tool_info;
-            tool_info.id = block["id"];
-            tool_info.name = block["name"];
-            tool_info.arguments = block["input"].dump();
-
-
-            return tool_info;
-        }
-    }
     return std::nullopt;
 }

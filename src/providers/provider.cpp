@@ -77,7 +77,6 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     }
 
     if (context.full_content.empty() && !context.buffer.empty()) {
-        std::cerr << context.buffer;
     try {
         auto parsed = nlohmann::json::parse(context.buffer);
         if (parsed.contains("error")) {
@@ -93,9 +92,7 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
 
 void Provider::event_handler(StreamContext* context) const {
     size_t event_end;
-    ToolInfo anthropic_ti;
     while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
-        ToolInfo tool_info;
         std::optional<std::string> delta;
         std::string response;
         
@@ -130,8 +127,8 @@ void Provider::event_handler(StreamContext* context) const {
 
                 if (parsed.contains("type") && parsed["type"] == "content_block_start") {
                     if (parsed["content_block"]["type"] == "tool_use") {
-                        anthropic_ti.id = parsed["content_block"]["id"];
-                        anthropic_ti.name = parsed["content_block"]["name"];
+                        context->pending_tool.id = parsed["content_block"]["id"];
+                        context->pending_tool.name = parsed["content_block"]["name"];
                     }
                 }
 
@@ -143,8 +140,8 @@ void Provider::event_handler(StreamContext* context) const {
 
                 if (parsed.contains("type") && parsed["type"] == "content_block_stop") {
                     if (!context->tool_buffer.empty()) {
-                        anthropic_ti.arguments = context->tool_buffer;
-                        context->tool_calls.push_back(anthropic_ti);
+                        context->pending_tool.arguments = context->tool_buffer;
+                        context->tool_calls.push_back(context->pending_tool);
                         context->tool_buffer.clear();
                     }
                 }
