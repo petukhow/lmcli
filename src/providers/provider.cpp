@@ -9,6 +9,7 @@
 #include <memory>
 #include <iostream>
 #include <optional>
+#include <string>
 
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
     std::unique_ptr<Provider> provider = nullptr;
@@ -68,10 +69,6 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
     result = curl_easy_perform(curl.get());
-
-    long http_code = 0;
-    curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
-    std::cerr << "HTTP: " << http_code << "\n";
     
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
@@ -105,65 +102,71 @@ void Provider::event_handler(StreamContext* context) const {
         std::string event = context->buffer.substr(0, event_end);
         context->buffer.erase(0, event_end + 2);
 
-        size_t data_index = event.find("data: ");
-        if (data_index == std::string::npos) continue;
-        response = event.substr(data_index + 6);
+        while (!event.empty()) {
+            size_t data_index = event.find("data: ");
+            if (data_index == std::string::npos) break;
 
-        if (response == "[DONE]") break;
-
-        try {
-            nlohmann::json parsed = nlohmann::json::parse(response);
-
-            if (parsed.contains("type") && parsed["type"] == "message_stop") break;
-            if (parsed.contains("candidates") && parsed["candidates"][0].contains("finishReason")) break;
-
-            if (parsed.contains("error")) {
-                context->full_content = parsed["error"]["message"];
-                context->is_failed = true;
-                break;
+            size_t subevent_end = event.find("\n", data_index);
+            if (subevent_end == std::string::npos) {
+                response = event.substr(data_index + 6);
+            }
+            else {
+                response = event.substr(data_index + 6, subevent_end - data_index - 6);
             }
 
-            if (parsed["type"].contains("content_block_start")) {
-                if (parsed["type"] == "content_block_start") {
+            if (response == "[DONE]") break;
+
+            try {
+                nlohmann::json parsed = nlohmann::json::parse(response);
+
+                if (parsed.contains("type") && parsed["type"] == "message_stop") break;
+                if (parsed.contains("candidates") && parsed["candidates"][0].contains("finishReason")) break;
+
+                if (parsed.contains("error")) {
+                    context->full_content = parsed["error"]["message"];
+                    context->is_failed = true;
+                    break;
+                }
+
+                if (parsed.contains("type") && parsed["type"] == "content_block_start") {
                     if (parsed["content_block"]["type"] == "tool_use") {
                         anthropic_ti.id = parsed["content_block"]["id"];
                         anthropic_ti.name = parsed["content_block"]["name"];
                     }
                 }
-            } else continue;
 
-            if (parsed["type"].contains("content_block_delta")) {
-                if (parsed["type"] == "content_block_delta") {
+                if (parsed.contains("type") && parsed["type"] == "content_block_delta") {
                     if (parsed["delta"].contains("partial_json")) {
                         context->tool_buffer += parsed["delta"]["partial_json"].get<std::string>();
                     }
                 }
-            }
 
-            if (parsed["type"].contains("content_block_stop")) {
-                if (parsed["type"] == "content_block_stop") {
+                if (parsed.contains("type") && parsed["type"] == "content_block_stop") {
                     if (!context->tool_buffer.empty()) {
                         anthropic_ti.arguments = context->tool_buffer;
                         context->tool_calls.push_back(anthropic_ti);
                         context->tool_buffer.clear();
                     }
                 }
+
+                delta = extract_delta(parsed);
+                auto tool = extract_tool_call(parsed);
+                if (tool.has_value()) {
+                    context->tool_calls.push_back(*tool);
+                }
+
+            } catch (const std::exception& e) {
+                std::cerr << "Broken response's json.\n";
             }
 
-            delta = extract_delta(parsed);
-            auto tool = extract_tool_call(parsed);
-            if (tool.has_value()) {
-                context->tool_calls.push_back(*tool);
+            if (delta.has_value()) {
+                std::cout << *delta;
+                std::cout.flush();
+                context->full_content += *delta;
             }
-
-        } catch (const std::exception& e) {
-            std::cerr << "Broken response's json.\n";
+            if (subevent_end == std::string::npos) event.clear();
+            else event.erase(0, subevent_end + 1);
         }
-
-        if (delta.has_value()) {
-            std::cout << *delta;
-            std::cout.flush();
-            context->full_content += *delta;
-        }
+        continue;
     }
 }

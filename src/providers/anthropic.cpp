@@ -91,6 +91,7 @@ std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) 
 }
 
 std::optional<ToolInfo> Anthropic::extract_tool_call(const nlohmann::json& json) const {
+    if (!json.contains("content")) return std::nullopt;
     for (const auto& block : json["content"]) {
         if (block["type"] == "tool_use") {
             ToolInfo tool_info;
