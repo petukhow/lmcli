@@ -1,5 +1,6 @@
 #pragma once
 #include "provider.h"
+#include "streaming.h"
 #include <string>
 
 class Google : public Provider {
@@ -11,5 +12,5 @@ public:
     Message send_request(const std::vector<Message>& conversation) const override;
 
     std::optional<std::string> extract_delta(const nlohmann::json& json) const override;
-    // std::optional<ToolInfo> extract_tool_call(const nlohmann::json& json) const override;
+    void extract_tool_call(const nlohmann::json& json, StreamContext* context) const override;
 };

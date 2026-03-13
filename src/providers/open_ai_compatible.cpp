@@ -106,17 +106,22 @@ std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json&
     return delta;
 }
 
-std::optional<ToolInfo> OpenAICompatible::extract_tool_call(const nlohmann::json& json) const {
+void OpenAICompatible::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
     if (json["choices"][0]["delta"].contains("tool_calls")) {
         auto& tool = json["choices"][0]["delta"]["tool_calls"][0];
-        ToolInfo tool_info;
         
-        if (tool.contains("id")) tool_info.id = tool["id"];
+        if (tool.contains("id")) context->pending_tool.id = tool["id"];
         if (tool.contains("function")) {
-            if (tool["function"].contains("name")) tool_info.name = tool["function"]["name"];
-            if (tool["function"].contains("arguments")) tool_info.arguments = tool["function"]["arguments"];
+            if (tool["function"].contains("name")) context->pending_tool.name = tool["function"]["name"];
+            if (tool["function"].contains("arguments")) context->pending_tool.arguments = tool["function"]["arguments"];
         }
-        return tool_info;
+    }
+    if (json["choices"][0].contains("finish_reason")) {
+        if (json["choices"][0]["finish_reason"] == "tool_calls") {
+            if (!context->pending_tool.arguments.empty()) {
+                context->tool_calls.push_back(context->pending_tool);
+                context->pending_tool.arguments.clear();
+            }
         }
-    return std::nullopt;
+    }
 }

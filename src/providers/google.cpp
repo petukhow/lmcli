@@ -63,3 +63,7 @@ std::optional<std::string> Google::extract_delta(const nlohmann::json& json) con
     }
     return delta;
 }
+
+void Google::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
+    return;
+}

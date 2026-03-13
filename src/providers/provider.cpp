@@ -5,7 +5,6 @@
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"
-#include "tools.h"
 #include <memory>
 #include <iostream>
 #include <optional>
@@ -125,32 +124,8 @@ void Provider::event_handler(StreamContext* context) const {
                     break;
                 }
 
-                if (parsed.contains("type") && parsed["type"] == "content_block_start") {
-                    if (parsed["content_block"]["type"] == "tool_use") {
-                        context->pending_tool.id = parsed["content_block"]["id"];
-                        context->pending_tool.name = parsed["content_block"]["name"];
-                    }
-                }
-
-                if (parsed.contains("type") && parsed["type"] == "content_block_delta") {
-                    if (parsed["delta"].contains("partial_json")) {
-                        context->tool_buffer += parsed["delta"]["partial_json"].get<std::string>();
-                    }
-                }
-
-                if (parsed.contains("type") && parsed["type"] == "content_block_stop") {
-                    if (!context->tool_buffer.empty()) {
-                        context->pending_tool.arguments = context->tool_buffer;
-                        context->tool_calls.push_back(context->pending_tool);
-                        context->tool_buffer.clear();
-                    }
-                }
-
                 delta = extract_delta(parsed);
-                auto tool = extract_tool_call(parsed);
-                if (tool.has_value()) {
-                    context->tool_calls.push_back(*tool);
-                }
+                extract_tool_call(parsed, context);
 
             } catch (const std::exception& e) {
                 std::cerr << "Broken response's json.\n";

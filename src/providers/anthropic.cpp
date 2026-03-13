@@ -106,6 +106,25 @@ std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) 
     return delta;
 }
 
-std::optional<ToolInfo> Anthropic::extract_tool_call(const nlohmann::json& json) const {
-    return std::nullopt;
+void Anthropic::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
+    if (json.contains("type") && json["type"] == "content_block_start") {
+        if (json["content_block"]["type"] == "tool_use") {
+            context->pending_tool.id = json["content_block"]["id"];
+            context->pending_tool.name = json["content_block"]["name"];
+        }
+    }
+
+    if (json.contains("type") && json["type"] == "content_block_delta") {
+        if (json["delta"].contains("partial_json")) {
+            context->tool_buffer += json["delta"]["partial_json"].get<std::string>();
+        }
+    }
+
+    if (json.contains("type") && json["type"] == "content_block_stop") {
+        if (!context->tool_buffer.empty()) {
+            context->pending_tool.arguments = context->tool_buffer;
+            context->tool_calls.push_back(context->pending_tool);
+            context->tool_buffer.clear();
+        }
+    }
 }
