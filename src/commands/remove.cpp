@@ -8,11 +8,11 @@
 #include "accounts.h"
 
 void remove_chat() {
-    const std::string chats_dir = get_chats_dir();
-    const auto chats = store_chats(chats_dir);
     std::string remove_chat_name;
     
     while (true) {
+        const std::string chats_dir = get_chats_dir();
+        const auto chats = store_chats(chats_dir);
         bool is_found = false;
 
         std::cout << "Select a chat to remove (type '/exit' to quit):\n";
@@ -60,9 +60,9 @@ void remove_chats() {
 void remove_account() {
     std::string remove_account_name;
     bool is_found = false;
-    nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
 
     while (true) {
+        nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
         is_found = false;
         std::cout << "Select an account to remove (type '/exit' to quit):\n";
         for (const auto& account : accounts["accounts"]) {
