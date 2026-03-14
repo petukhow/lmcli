@@ -88,8 +88,8 @@ void start() {
     auto values = chat_init(); // initializes the conversation vector
     if (!values) return;
 
-    std::cout << "Available commands:\n  /model [name] - switch model\n  /exit - end conversation\n";
-    std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
+    std::cout << "\nEnter /help for available commands.\n";
+    std::cout << "Prompt (or '/exit' to end the conversation): \n";
     while (true) {
         std::cout << CYAN << "You: " << END;
         if (!std::getline(std::cin, prompt.content)) break; // user's prompt
@@ -97,6 +97,12 @@ void start() {
 
         if (prompt.content[0] == '/') {
             if (prompt.content == "/exit") break; 
+            if (prompt.content == "/help") {
+                std::cout << "Available commands:\n";
+                std::cout << "  /exit - End the conversation\n";
+                std::cout << "  /model [name] - Switch to a different model\n";
+                continue;
+            }
             
             size_t i = prompt.content.find(" ");
             std::string arg1 = prompt.content.substr(0, i);
