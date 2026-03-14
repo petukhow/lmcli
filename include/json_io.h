@@ -4,4 +4,4 @@
 
 void save_json(const std::string& filepath, const nlohmann::json& data);
 
-nlohmann::json load_json(const std::string& filepath);
+std::optional<nlohmann::json> load_json(const std::string& filepath);

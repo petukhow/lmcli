@@ -46,10 +46,20 @@ static std::optional<ChatValues> chat_init() {
     json config = load_config(CONFIG_FILE);
     json accounts = load_accounts(ACCOUNTS_FILE);
 
+    if (config.is_null() || accounts.is_null()) {
+        std::cerr << "Failed to load config or accounts. Try 'lmcli init'.\n";
+        return std::nullopt;
+    }
+
     std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
 
     json chats = load_chats(chats_path);
+
+    if (chats.is_null()) {
+        std::cerr << "Failed to load chats. Try 'lmcli init'.\n";
+        return std::nullopt;
+    }
 
     auto account = select_account(accounts, config);
     if (!account) return std::nullopt;

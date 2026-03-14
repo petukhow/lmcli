@@ -81,3 +81,11 @@ TEST_CASE("Google's extract_delta accesses to an empty array") {
     auto result = google.extract_delta(response);
     CHECK(result == "");
 }
+
+TEST_CASE("Anthropic's extract_delta accesses to an empty array") {
+    auto anthropic = Anthropic("", "", "", "", 0, 0);
+    nlohmann::json response = {{"delta", {}}};
+
+    auto result = anthropic.extract_delta(response);
+    CHECK(result == "");
+}
