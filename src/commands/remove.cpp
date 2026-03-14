@@ -15,6 +15,11 @@ void remove_chat() {
         const auto chats = store_chats(chats_dir);
         bool is_found = false;
 
+        if (chats.empty()) {
+            std::cout << "No chats to remove.\n";
+            return;
+        }
+        
         std::cout << "Select a chat to remove (type '/exit' to quit):\n";
         print_chats(chats);
         std::cout << "\n> ";

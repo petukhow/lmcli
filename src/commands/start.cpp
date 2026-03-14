@@ -51,6 +51,9 @@ static std::optional<ChatValues> chat_init() {
         return std::nullopt;
     }
 
+    auto account = select_account(accounts, config);
+        if (!account) return std::nullopt;
+
     std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
 
@@ -60,9 +63,6 @@ static std::optional<ChatValues> chat_init() {
         std::cerr << "Failed to load chats. Try 'lmcli init'.\n";
         return std::nullopt;
     }
-
-    auto account = select_account(accounts, config);
-    if (!account) return std::nullopt;
 
     if (chats.contains("conversation") && chats["conversation"].is_array()) {
         conversation = chats["conversation"].get<std::vector<Message>>();
@@ -88,6 +88,7 @@ void start() {
     auto values = chat_init(); // initializes the conversation vector
     if (!values) return;
 
+    std::cout << "Available commands:\n  /model [name] - switch model\n  /exit - end conversation\n";
     std::cout << "\nPrompt (or '/exit' to end the conversation): \n";
     while (true) {
         std::cout << CYAN << "You: " << END;
