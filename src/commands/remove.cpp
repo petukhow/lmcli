@@ -16,7 +16,7 @@ void remove_chat() {
         bool is_found = false;
 
         if (chats.empty()) {
-            std::cout << "No chats to remove.\n";
+            std::cerr << "No chats to remove.\n";
             return;
         }
         
