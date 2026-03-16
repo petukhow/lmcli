@@ -42,8 +42,14 @@ void remove_chat() {
 }
 
 void remove_chats() {
-    std::string chats_dir = get_chats_dir();
+    const std::string chats_dir = get_chats_dir();
+    const auto chats = store_chats(chats_dir);
     std::string user_answer;
+
+    if (chats.empty()) {
+        std::cerr << "No chats to remove.\n";
+        return;
+    }
 
     std::cerr << "WARNING: it will remove all chats.\n";
         while (true) {
