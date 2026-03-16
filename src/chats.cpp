@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "message.h"
+#include "terminal.h"
 
 using json = nlohmann::json;
 
@@ -25,10 +26,13 @@ std::string setup_chat() {
 
     if (!chats.empty()) {
         print_chats(chats);
-        std::cout << "\nEnter chat's name or number to continue (/exit to leave, /new to create): \n";
+        std::cout << "Enter chat's name or number to continue (/exit to leave, /new to create): \n";
         while (true) {
             std::cout << "> ";
             std::getline(std::cin, chat_name);
+
+            clear_lines(chats.size() + 3);
+            std::cout.flush();
 
             if (chat_name == "/exit") {
                 break;
@@ -90,7 +94,7 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
 
 void print_chats(const std::vector<std::filesystem::directory_entry>& chats) {
     if (!chats.empty()) {
-        std::cout << "\nChats: \n";
+        std::cout << "Chats: \n";
         for (size_t i = 0; i < chats.size(); ++i) {
             std::cout << "[" + std::to_string(i+1) + "] ";
             std::cout << chats[i].path().stem().string() << "\n";
@@ -105,7 +109,7 @@ std::string create_chat(const std::string& chats_dir) {
     std::string full_chat_name; // full path to the chat file (chats_dir + chat_name)
     std::string chat_path; // path to the chat file
 
-    std::cout << "\nYou're creating a new chat...";
+    std::cout << "You're creating a new chat...";
     std::cout << "\nEnter chat's name (leave empty for default: 'chat #...'): \n";
     while (true) {
         std::cout << "> ";

@@ -60,7 +60,7 @@ void create_config_file_if_not_exists(const std::string& config_dir, const std::
     }
 
     file << file_template;
-    std::cout << "✓ Created " << config_dir << "\n";
+    // std::cout << "✓ Created " << config_dir << "\n";
 }
 
 std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template) {
@@ -79,7 +79,7 @@ std::string create_file_if_not_exists(const std::string& chats_dir, const std::s
         return "";
     }
     file << file_template;
-    std::cout << "✓ Created " << final_path << "\n";
+    // std::cout << "✓ Created " << final_path << "\n";
     return final_path.string();
 }
 

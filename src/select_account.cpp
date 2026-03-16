@@ -1,4 +1,5 @@
 #include "select_account.h"
+#include "terminal.h"
 #include "provider.h"
 #include "json.hpp"
 #include <iostream>
@@ -23,8 +24,13 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
                     std::cout << "-- " << account["name"].get<std::string>() << "\n";
                 }   
 
+                
                 std::cout << "> ";
                 std::getline(std::cin, provider_name);
+
+                clear_lines(accounts["accounts"].size() + 2);
+                std::cout.flush();
+
                 if (provider_name == "/exit") break;
 
                 for (const auto& acc : accounts["accounts"]) {

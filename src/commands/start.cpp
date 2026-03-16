@@ -14,12 +14,12 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "colors.h"
+#include "ansi_codes.h"
 #include "tools.h"
 
 using json = nlohmann::json;
 
-using namespace colors;
+using namespace ansi;
 
 struct ChatValues {
     std::vector<Message> conversation;
@@ -88,7 +88,7 @@ void start() {
     auto values = chat_init(); // initializes the conversation vector
     if (!values) return;
 
-    std::cout << "\nEnter /help for available commands.\n";
+    std::cout << "Enter /help for available commands.\n";
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
     while (true) {
         std::cout << CYAN << "You: " << END;
