@@ -1,7 +1,7 @@
 #include "json.hpp"
-#include "http_utils.h"
+#include "utils/http_utils.h"
 #include "streaming.h"
-#include "tools.h"
+#include "types/tools.h"
 #include "anthropic.h"
 #include <curl/curl.h>
 #include <iostream>

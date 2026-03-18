@@ -1,5 +1,5 @@
-#include "chats.h"
-#include "utils.h"
+#include "commands/chats.h"
+#include "utils/utils.h"
 #include "json.hpp"
 #include <filesystem>
 #include <iostream>
@@ -7,8 +7,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "message.h"
-#include "terminal.h"
+#include "types/message.h"
+#include "utils/terminal.h"
 
 using json = nlohmann::json;
 

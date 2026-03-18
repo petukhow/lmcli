@@ -1,7 +1,7 @@
 #include "commands.h"
-#include "accounts.h"
+#include "loaders/accounts.h"
 #include "constants.h"
-#include "providers.h"
+#include "providers/providers.h"
 #include "json.hpp"
 #include <iostream>
 

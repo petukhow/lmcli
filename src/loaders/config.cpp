@@ -1,7 +1,7 @@
-#include "config.h"
+#include "loaders/config.h"
 #include "json.hpp"
 #include "json_io.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "constants.h"
 
 nlohmann::json load_config(const std::string& filename) {

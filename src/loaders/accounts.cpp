@@ -1,8 +1,8 @@
-#include "accounts.h"
+#include "loaders/accounts.h"
 #include "constants.h"
 #include "json.hpp"
 #include "json_io.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 nlohmann::json load_accounts(const std::string& filename) {
     const std::string full_path = get_config_path(filename);

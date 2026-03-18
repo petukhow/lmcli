@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <optional>
-#include "anthropic.h"
-#include "google.h"
-#include "open_ai_compatible.h"
+#include "providers/anthropic.h"
+#include "providers/google.h"
+#include "providers/open_ai_compatible.h"
 #include "json.hpp"
 
 TEST_CASE("Anthropic extract_delta with valid response") {

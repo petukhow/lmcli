@@ -1,11 +1,11 @@
 #include "chats.h"
 #include "commands.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include <filesystem>
 #include <iostream>
 #include <string>
 #include "constants.h"
-#include "accounts.h"
+#include "loaders/accounts.h"
 
 void remove_chat() {
     std::string remove_chat_name;

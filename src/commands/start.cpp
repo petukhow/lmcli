@@ -1,12 +1,12 @@
 #include "commands.h"
 #include "json.hpp"
-#include "provider.h"
+#include "providers/provider.h"
 #include "select_account.h"
 #include "constants.h"
 #include "chats.h"
-#include "config.h"
-#include "accounts.h"
-#include "message.h"
+#include "loaders/config.h"
+#include "loaders/accounts.h"
+#include "types/message.h"
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 #include "ansi_codes.h"
-#include "tools.h"
+#include "types/tools.h"
 
 using json = nlohmann::json;
 

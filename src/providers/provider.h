@@ -3,10 +3,10 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include "http_utils.h"
+#include "utils/http_utils.h"
 #include "json.hpp"
-#include "message.h"
-#include "streaming.h"
+#include "types/message.h"
+#include "providers/streaming.h"
 
 class Provider {
 protected:

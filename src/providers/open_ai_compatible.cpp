@@ -1,9 +1,9 @@
 #include "json.hpp"
 #include <exception>
 #include <iostream>
-#include "http_utils.h"
-#include "streaming.h"
-#include "tools.h"
+#include "utils/http_utils.h"
+#include "providers/streaming.h"
+#include "types/tools.h"
 #include "open_ai_compatible.h"
 #include <curl/curl.h>
 #include <optional>

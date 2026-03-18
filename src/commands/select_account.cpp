@@ -1,6 +1,6 @@
-#include "select_account.h"
-#include "terminal.h"
-#include "provider.h"
+#include "commands/select_account.h"
+#include "utils/terminal.h"
+#include "providers/provider.h"
 #include "json.hpp"
 #include <iostream>
 

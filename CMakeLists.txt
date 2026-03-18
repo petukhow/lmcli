@@ -15,7 +15,10 @@ file(GLOB_RECURSE SOURCES
 add_executable(lmcli ${SOURCES})
 add_subdirectory(tests)
 
-target_include_directories(lmcli PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(lmcli PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+)
 
 target_link_libraries(lmcli PRIVATE 
     CURL::libcurl

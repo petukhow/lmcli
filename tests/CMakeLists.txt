@@ -13,9 +13,12 @@ add_executable(tests
     ${CMAKE_SOURCE_DIR}/src/providers/open_ai_compatible.cpp
     ${CMAKE_SOURCE_DIR}/src/providers/google.cpp
     ${CMAKE_SOURCE_DIR}/src/providers/provider.cpp
-    ${CMAKE_SOURCE_DIR}/src/streaming.cpp
+    ${CMAKE_SOURCE_DIR}/src//providers/streaming.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/http_utils.cpp
 )
 
-target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(tests PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain CURL::libcurl)
