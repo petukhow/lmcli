@@ -52,7 +52,7 @@ static std::optional<ChatValues> chat_init() {
     }
 
     auto account = select_account(accounts, config);
-        if (!account) return std::nullopt;
+    if (!account) return std::nullopt;
 
     std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
@@ -78,14 +78,14 @@ static std::optional<ChatValues> chat_init() {
         conversation.push_back({"system", config["system_prompt"].get<std::string>(), "", {}});
     }
 
-    return ChatValues{std::move(conversation), std::move(account), chats_path, config["limit"]};
+    return ChatValues{std::move(conversation), std::move(account), std::move(chats_path), config["limit"]};
 }
 
 void start() {
     Message prompt;
     Message output; 
 
-    auto values = chat_init(); // initializes the conversation vector
+    auto values = chat_init(); 
     if (!values) return;
 
     std::cout << "Enter /help for available commands.\n";
@@ -134,6 +134,7 @@ void start() {
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation);
         }
+        
         if (output.is_failed) {
             std::cout << "Request failed: " << output.content << "\n";
             values->conversation.pop_back();
