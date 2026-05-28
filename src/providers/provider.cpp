@@ -1,5 +1,6 @@
 #include "utils/http_utils.h"
 #include "open_ai_compatible.h"
+#include "types/providers.h"
 #include "google.h"
 #include "streaming.h"
 #include "anthropic.h"
@@ -13,7 +14,7 @@
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
     std::unique_ptr<Provider> provider = nullptr;
 
-    if (accounts["type"].get<std::string>() == "openai-compatible") {
+    if (accounts["type"].get<std::string>() == Providers::OpenAICompatible.get_value()) {
         provider = std::make_unique<OpenAICompatible>(
         accounts["api_key"].get<std::string>(),
         accounts["api_url"].get<std::string>(),
@@ -24,7 +25,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
         );
     }
 
-    else if (accounts["type"].get<std::string>() == "anthropic") {
+    else if (accounts["type"].get<std::string>() == Providers::Anthropic.get_value()) {
         provider = std::make_unique<Anthropic>(
             accounts["api_key"].get<std::string>(),
             accounts["api_url"].get<std::string>(),
@@ -34,7 +35,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
             config["max_tokens"].get<size_t>()
         );
     }
-    else if (accounts["type"].get<std::string>() == "google") {
+    else if (accounts["type"].get<std::string>() == Providers::Google.get_value()) {
         provider = std::make_unique<Google>(
             accounts["api_key"].get<std::string>(),
             accounts["api_url"].get<std::string>(),
