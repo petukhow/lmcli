@@ -15,6 +15,7 @@ add_executable(tests
     ${CMAKE_SOURCE_DIR}/src/providers/provider.cpp
     ${CMAKE_SOURCE_DIR}/src//providers/streaming.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/http_utils.cpp
+    ${CMAKE_SOURCE_DIR}/src/types/roles.cpp
 )
 
 target_include_directories(tests PRIVATE

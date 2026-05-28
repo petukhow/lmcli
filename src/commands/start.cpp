@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "types/roles.h"
 #include "ansi_codes.h"
 #include "types/tools.h"
 
@@ -36,7 +37,7 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
 
             std::string result = read_file(path);
 
-            conversation.push_back({"tool", result, tool.id, {}});
+            conversation.push_back({Role::Tool, result, tool.id, {}});
         }
     }
 }
@@ -75,7 +76,7 @@ static std::optional<ChatValues> chat_init() {
     }
 
     if (conversation.empty()) {
-        conversation.push_back({"system", config["system_prompt"].get<std::string>(), "", {}});
+        conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
     }
 
     return ChatValues{std::move(conversation), std::move(account), std::move(chats_path), config["limit"]};
@@ -121,13 +122,13 @@ void start() {
             continue;
         }
 
-        values->conversation.push_back({"user", prompt.content, "", {}});
+        values->conversation.push_back({Role::User, prompt.content, "", {}});
 
         std::cout << YELLOW << "Model: " << END;
         output = values->account->send_request(values->conversation);
 
         if (!output.tool_calls.empty()) {
-            values->conversation.push_back({"assistant", "", "", output.tool_calls});
+            values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
 
             handle_tool_calls(output, values->conversation);
 
@@ -141,7 +142,7 @@ void start() {
             continue;
         }
         
-        values->conversation.push_back({"assistant", output.content, "", {}});
+        values->conversation.push_back({Role::Assistant, output.content, "", {}});
         std::cout << "\n\n";
 
         if (values->limit > 0) {

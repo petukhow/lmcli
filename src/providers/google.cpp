@@ -1,6 +1,8 @@
 #include "json.hpp"
+#include "types/roles.h"
 #include "utils/http_utils.h"
 #include "google.h"
+#include "types/roles.h"
 #include <curl/curl.h>
 #include <iostream>
 
@@ -18,15 +20,15 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
     request_body["generationConfig"]["maxOutputTokens"] = max_tokens;
 
     for (const auto& msg : conversation) {
-        if (msg.role == "system") {
+        if (msg.role == Role::System) {
             continue;
         }
         
         std::string google_role;  
-        if (msg.role == "assistant") {
+        if (msg.role == Role::Assistant) {
             google_role = "model";
         }
-        else if (msg.role == "user") {
+        else if (msg.role == Role::User) {
             google_role = "user";
         }      
 

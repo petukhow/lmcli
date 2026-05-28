@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 #include <optional>
 #include <vector>
+#include "types/roles.h"
 
 using json = nlohmann::json;
 
@@ -47,7 +48,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     for (const auto& msg : conversation) {
         json message = {{"role", msg.role}};
             
-        if (msg.role == "tool") {
+        if (msg.role == Role::Tool) {
              message["content"] = msg.content;
             message["tool_call_id"] = msg.tool_call_id;
         } else if (!msg.tool_calls.empty()) {

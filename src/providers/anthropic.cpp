@@ -1,6 +1,7 @@
 #include "json.hpp"
 #include "utils/http_utils.h"
 #include "streaming.h"
+#include "types/roles.h"
 #include "types/tools.h"
 #include "anthropic.h"
 #include <curl/curl.h>
@@ -38,11 +39,11 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     });
 
     for (const auto& msg : conversation) {
-        if (msg.role == "system") {
+        if (msg.role == Role::System) {
             continue;
         }
 
-        if (msg.role == "tool") {
+        if (msg.role == Role::Tool) {
             request_body["messages"].push_back({
         {"role", "user"},
         {"content", json::array({
@@ -54,7 +55,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
                 })}
             });
         } 
-        else if (msg.role == "assistant" && !msg.tool_calls.empty()) {
+        else if (msg.role == Role::Assistant && !msg.tool_calls.empty()) {
             json content = json::array();
             for (const auto& tool : msg.tool_calls) {
                 content.push_back({

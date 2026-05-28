@@ -24,7 +24,6 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
                     std::cout << "-- " << account["name"].get<std::string>() << "\n";
                 }   
 
-                
                 std::cout << "> ";
                 std::getline(std::cin, provider_name);
 

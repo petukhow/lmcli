@@ -1,4 +1,4 @@
-#include "commands/chats.h"
+#include "chats.h"
 #include "utils/utils.h"
 #include "json.hpp"
 #include <filesystem>
