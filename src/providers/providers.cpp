@@ -5,6 +5,5 @@
 #include "utils/utils.h"
 
 nlohmann::json load_providers() {
-    std::string full_path = get_system_data_path(PROVIDERS_FILE);
-    return load_json(full_path);
+    return load_json(get_system_data_path(PROVIDERS_FILE));
 }

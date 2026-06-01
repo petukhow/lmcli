@@ -1,6 +1,7 @@
 #include "json.hpp"
 #include <exception>
 #include <iostream>
+#include "loaders/tools.h"
 #include "utils/http_utils.h"
 #include "providers/streaming.h"
 #include "types/tools.h"
@@ -24,26 +25,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     request_body["max_tokens"] = max_tokens;
     request_body["messages"] = json::array();
     request_body["stream"] = true;
-    request_body["tools"] = json::array({
-    {
-        {"type", "function"},
-        {"function", {
-            {"name", "read_file"},
-            {"description", "Read the contents of a file at a given path"},
-            {"parameters", {
-                {"type", "object"},
-                {"properties", {
-                    {"file", {
-                        {"type", "string"},
-                        {"description", "Path to a file"}
-                    }}
-                }},
-                {"required", json::array({"file"})},
-                {"additionalProperties", false}
-                }}
-            }}
-        }
-    });
+    request_body["tools"] = load_tools();
 
     for (const auto& msg : conversation) {
         json message = {{"role", msg.role}};

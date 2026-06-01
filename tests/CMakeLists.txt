@@ -17,6 +17,10 @@ add_executable(tests
     ${CMAKE_SOURCE_DIR}/src/utils/http_utils.cpp
     ${CMAKE_SOURCE_DIR}/src/types/roles.cpp
     ${CMAKE_SOURCE_DIR}/src/types/providers.cpp
+    ${CMAKE_SOURCE_DIR}/src/loaders/tools.cpp
+    ${CMAKE_SOURCE_DIR}/src/loaders/json_io.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
+    
 )
 
 target_include_directories(tests PRIVATE

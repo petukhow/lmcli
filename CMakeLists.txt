@@ -34,6 +34,6 @@ set_target_properties(lmcli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-install(TARGETS lmcli DESTINATION bin)
 install(TARGETS lmcli RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES data/providers.json DESTINATION ${CMAKE_INSTALL_DATADIR}/lmcli)
+install(FILES data/tools.json DESTINATION ${CMAKE_INSTALL_DATADIR}/lmcli)

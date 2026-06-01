@@ -5,11 +5,9 @@
 #include "constants.h"
 
 nlohmann::json load_config(const std::string& filename) {
-    const std::string full_path = get_config_path(filename);
-    return load_json(full_path);
+    return load_json(get_config_path(filename));
 }
 
 void save_config(const nlohmann::json& config) {
-    const std::string full_path = get_config_path(CONFIG_FILE);
-    save_json(full_path, config);
+    save_json(get_config_path(CONFIG_FILE), config);
 }

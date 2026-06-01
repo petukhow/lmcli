@@ -1,4 +1,5 @@
 #include "json.hpp"
+#include "loaders/tools.h"
 #include "utils/http_utils.h"
 #include "streaming.h"
 #include "types/roles.h"
@@ -6,6 +7,7 @@
 #include "anthropic.h"
 #include <curl/curl.h>
 #include <iostream>
+#include "loaders/tools.h"
 
 using json = nlohmann::json;
 
@@ -21,22 +23,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     request_body["messages"] = json::array();
     request_body["system"] = system_prompt;
     request_body["stream"] = true;
-    request_body["tools"] = json::array({
-    {
-        {"name", "read_file"},
-        {"description", "Read the contents of a file at a given path"},
-        {"input_schema", {
-            {"type", "object"},
-            {"properties", {
-                {"file", {
-                    {"type", "string"},
-                    {"description", "Path to a file"}
-                }}
-            }},
-            {"required", json::array({"file"})}
-            }}
-        }
-    });
+    request_body["tools"] = load_tools();
 
     for (const auto& msg : conversation) {
         if (msg.role == Role::System) {

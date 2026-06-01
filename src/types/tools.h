@@ -10,6 +10,8 @@ struct ToolInfo {
 
 std::string read_file(const std::string filename);
 
+std::string exec_bash(const std::string& cmd);
+
 void to_json(nlohmann::json& j, const ToolInfo& t);
 
 void from_json(const nlohmann::json& j, ToolInfo& t);

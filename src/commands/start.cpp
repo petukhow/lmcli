@@ -39,6 +39,14 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
 
             conversation.push_back({Role::Tool, result, tool.id, {}});
         }
+        if (tool.name == "exec_bash") {
+            auto args = nlohmann::json::parse(tool.arguments);
+            std::string cmd = args["command"];
+
+            std::string result = exec_bash(cmd);
+
+            conversation.push_back({Role::Tool, result, tool.id, {}});
+        }
     }
 }
 
@@ -127,11 +135,9 @@ void start() {
         std::cout << YELLOW << "Model: " << END;
         output = values->account->send_request(values->conversation);
 
-        if (!output.tool_calls.empty()) {
+        while (!output.tool_calls.empty()) {
             values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
-
             handle_tool_calls(output, values->conversation);
-
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation);
         }
