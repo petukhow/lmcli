@@ -16,7 +16,7 @@
     },
     {
       "name": "exec_bash",
-      "description": "Execute a bash command and return its output",
+      "description": "Execute a bash command and return its output. Use this for running commands, writing files, compiling code, etc.",
       "input_schema": {
         "type": "object",
         "properties": {
