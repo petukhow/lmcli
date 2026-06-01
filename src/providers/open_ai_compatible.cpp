@@ -25,7 +25,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     request_body["max_tokens"] = max_tokens;
     request_body["messages"] = json::array();
     request_body["stream"] = true;
-    request_body["tools"] = load_tools();
+    request_body["tools"] = to_openai_tools(load_tools()["tools"]);
 
     for (const auto& msg : conversation) {
         json message = {{"role", msg.role}};

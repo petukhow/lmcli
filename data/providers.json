@@ -23,6 +23,13 @@
       "type": "google",
       "default_api_url": "https://generativelanguage.googleapis.com/v1beta/models/",
       "default_model": "gemini-3-flash-preview"
+    },
+    {
+      "name": "OpenRouter",
+      "type": "openai-compatible",
+      "default_api_url": "https://openrouter.ai/api/v1/chat/completions",
+      "default_model": "moonshotai/kimi-k2.6:free"
     }
     ]
 }
+

@@ -15,3 +15,5 @@ std::string exec_bash(const std::string& cmd);
 void to_json(nlohmann::json& j, const ToolInfo& t);
 
 void from_json(const nlohmann::json& j, ToolInfo& t);
+
+nlohmann::json to_openai_tools(const nlohmann::json& anthropic_tools);
