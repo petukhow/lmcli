@@ -47,7 +47,7 @@ std::string exec_bash(const std::string& cmd) {
 
             if (!std::getline(std::cin, answ)) break;
             
-            if (std::tolower(answ[0]) == 'y') {
+            if (!answ.empty() && std::tolower(answ[0]) == 'y') {
                 break;
             }
             else {
