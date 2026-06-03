@@ -4,22 +4,26 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 
 ## Features
 
-- 🤖 **Multi-provider support** — Anthropic, OpenAI, Groq, and any OpenAI-compatible API
-- ⚙️ **Configurable** — System prompts, token limits, and conversation history
-- 🔄 **Account switching** — Easily switch between different API accounts
-- 💬 **Interactive chat** — Simple conversational interface with context management
+- **Multi-provider support** — Anthropic, OpenAI, Groq, and any OpenAI-compatible API
+- **Configurable** — System prompts, token limits, and conversation history
+- **Account switching** — Easily switch between different API accounts
+- **Interactive chat** — Simple conversational interface with context management
+- **Agent mode** — Models can call tools across multiple turns
+- **Streaming responses** — Get model's answer instantly token-by-token
 
 ## Supported Providers
 
 - **Anthropic** (Claude models)
-- **OpenAI-compatible** (GPT models, services: Groq, OpenRouter, etc.)
-- **Google** (Gemini) - Untested due to regional restrictions
+- **Any OpenAI-compatible** (GPT models, services)
+- **OpenRouter**
+- **Groq**
+- **Google** (Gemini) - Experimental
 
 ## Installation
 
 ### Prerequisites
 
-- C++17 compiler (GCC 8+, Clang 7+, or MSVC 2019+)
+- C++17 compiler (GCC 8+, Clang 7+)
 - CMake 3.10+
 - libcurl
 - [nlohmann/json](https://github.com/nlohmann/json) (included in repo)
@@ -34,11 +38,6 @@ sudo cmake --install build
 ```
 
 The binary will be located at `build/bin/lmcli`.
-
-### Installing globally (optional)
-```bash
-sudo cp build/bin/lmcli /usr/local/bin/
-```
 
 ## Quick Start
 
@@ -101,19 +100,26 @@ Configuration files are stored in `~/.config/lmcli/`:
 {
   "system_prompt": "You are a helpful assistant.",
   "limit": 20,
-  "max_tokens": 1024
+  "max_tokens": 1024, 
+  "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
+  "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
 }
 ```
 
 - **system_prompt**: Default system message for all conversations
 - **limit**: Maximum number of messages to keep in context (older messages are pruned). Set to 0 to disable
 - **max_tokens**: Maximum tokens per API response
+- **blacklist**: Blacklisted commands (Commands the model is not allowed to execute)
+- **confirm_required**: These commands require user's confirmation
 
 ### `accounts.json`
 Stores your configured API accounts (API keys, models, endpoints).
 
 ### `providers.json`
 Defines available providers and their default settings. You can edit this to add custom OpenAI-compatible endpoints.
+
+### `tools.json` 
+Stores available tools for models.
 
 ## Examples
 
@@ -135,12 +141,3 @@ Prompt (or '/exit' to end the conversation):
 You: Hello!
 Model: Hi! How can I help you today?
 ```
-
-## Development
-
-Built as a learning project to explore:
-- Modern C++ (smart pointers, polymorphism, STL)
-- External library integration (libcurl, nlohmann/json)
-- CLI design patterns
-- Multi-provider API abstraction
----
