@@ -25,27 +25,31 @@ std::string read_file(const std::string filename) {
 }
 
 std::string exec_bash(const std::string& cmd) {
+    std::cerr << "[tool] " << cmd << "\n";
+
+    auto cfg = load_config(CONFIG_FILE);
     std::string result;
     char buf[4096];
     ssize_t bytes;
-
     int fd[2];
-
-    for (const auto &command : load_config(CONFIG_FILE)["blacklist"]) {
-        bool is_blacklisted = cmd.find(command) != std::string::npos;
+    
+    for (const auto &command : cfg) {
+        bool is_blacklisted = cmd.find(command.get<std::string>()) != std::string::npos;
         if (is_blacklisted) {
             return "command is not allowed.";
         }
     }
 
-    for (const auto &command : load_config(CONFIG_FILE)["confirm_required"]) {
-        bool is_confirm_required = cmd.find(command) != std::string::npos;
+    for (const auto &command : cfg["confirm_required"]) {
+        bool is_confirm_required = cmd.find(command.get<std::string>()) != std::string::npos;
+
         if (is_confirm_required) {
             std::string answ;
-            std::cout << "Model wants to execute bash command: " << cmd << "\n";
-            std::cout << "Continue? (y/n) ";
+            std::cerr << "\nModel wants to execute bash command: " << cmd << "\n";
+            std::cerr << "Continue? (y/n) ";
 
             if (!std::getline(std::cin, answ)) break;
+            std::cerr << "[got: '" << answ << "']\n";
             
             if (!answ.empty() && std::tolower(answ[0]) == 'y') {
                 break;

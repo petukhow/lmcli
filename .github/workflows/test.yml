@@ -15,3 +15,7 @@ jobs:
           cmake --build build -j$(nproc)
       - name: Run tests
         run: ./build/tests/tests
+      - name: Init config
+        run: |
+          mkdir -p ~/.config/lmcli
+          echo '{"system_prompt":"","limit":20,"max_tokens":1024,"blacklist":["reboot","shutdown","poweroff","halt","init 0","init 6"],"confirm_required":["rm","mv"]}' > ~/.config/lmcli/config.json

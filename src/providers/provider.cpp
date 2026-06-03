@@ -115,6 +115,7 @@ void Provider::event_handler(StreamContext* context) const {
 
             try {
                 nlohmann::json parsed = nlohmann::json::parse(response);
+                // std::cout << response << "\n";
 
                 if (parsed.contains("type") && parsed["type"] == "message_stop") break;
                 if (parsed.contains("candidates") && parsed["candidates"][0].contains("finishReason")) break;

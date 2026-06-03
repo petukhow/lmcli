@@ -31,8 +31,15 @@ struct ChatValues {
 
 static void handle_tool_calls(const Message& output, std::vector<Message>& conversation) {
     for (const auto& tool : output.tool_calls) {
+        json args;
+        try {
+            args = nlohmann::json::parse(tool.arguments);
+        } catch (const nlohmann::json::parse_error& e) {
+            conversation.push_back({Role::Tool, "Invalid tool args", tool.id, {}});
+            continue;
+        }
+
         if (tool.name == "read_file") {
-            auto args = nlohmann::json::parse(tool.arguments);
             std::string path = args["file"];
 
             std::string result = read_file(path);
@@ -40,7 +47,6 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
             conversation.push_back({Role::Tool, result, tool.id, {}});
         }
         else if (tool.name == "exec_bash") {
-            auto args = nlohmann::json::parse(tool.arguments);
             std::string cmd = args["command"];
 
             std::string result = exec_bash(cmd);

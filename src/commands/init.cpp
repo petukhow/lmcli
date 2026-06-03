@@ -24,6 +24,7 @@ void init() {
         "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
         "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
     })";
+    
     const char* accounts_template = R"({
         "accounts": []
     })";

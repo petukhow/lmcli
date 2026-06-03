@@ -27,11 +27,12 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     request_body["stream"] = true;
     request_body["tools"] = to_openai_tools(load_tools()["tools"]);
 
+    
     for (const auto& msg : conversation) {
         json message = {{"role", msg.role}};
             
         if (msg.role == Role::Tool) {
-             message["content"] = msg.content;
+            message["content"] = msg.content;
             message["tool_call_id"] = msg.tool_call_id;
         } else if (!msg.tool_calls.empty()) {
             message["tool_calls"] = json::array();
@@ -50,7 +51,6 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
         }
         
         request_body["messages"].push_back(message);
-        
     }
 
     body = request_body.dump();
@@ -89,16 +89,21 @@ std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json&
     return delta;
 }
 
-void OpenAICompatible::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
-    if (json["choices"][0]["delta"].contains("tool_calls")) {
-        auto& tool = json["choices"][0]["delta"]["tool_calls"][0];
-        
-        if (tool.contains("id")) context->pending_tool.id = tool["id"];
-        if (tool.contains("function")) {
-            if (tool["function"].contains("name")) context->pending_tool.name = tool["function"]["name"];
-            if (tool["function"].contains("arguments")) context->pending_tool.arguments = tool["function"]["arguments"];
+void OpenAICompatible::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {\
+    // std::cerr << "[extract] called\n";
+    if (json.contains("choices") && !json["choices"].empty()
+        && json["choices"][0].contains("delta") && !json["choices"][0]["delta"].empty()) {
+        if (json["choices"][0]["delta"].contains("tool_calls")) {
+            auto& tool = json["choices"][0]["delta"]["tool_calls"][0];
+            
+            if (tool.contains("id")) context->pending_tool.id = tool["id"];
+            if (tool.contains("function")) {
+                if (tool["function"].contains("name")) context->pending_tool.name = tool["function"]["name"];
+                if (tool["function"].contains("arguments")) context->pending_tool.arguments += tool["function"]["arguments"];
+            }
         }
     }
+
     if (json["choices"][0].contains("finish_reason")) {
         if (json["choices"][0]["finish_reason"] == "tool_calls") {
             if (!context->pending_tool.arguments.empty()) {
