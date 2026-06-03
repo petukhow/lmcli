@@ -20,7 +20,9 @@ void init() {
     const char* config_template = R"({
         "system_prompt": "You are a helpful assistant.",
         "limit": 20,
-        "max_tokens": 1024
+        "max_tokens": 1024,
+        "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
+        "confirm_required": ["rm", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
     })";
     const char* accounts_template = R"({
         "accounts": []

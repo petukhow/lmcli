@@ -31,22 +31,26 @@ std::string setup_chat() {
             std::cout << "> ";
             std::getline(std::cin, chat_name);
 
-            clear_lines(chats.size() + 3);
             std::cout.flush();
 
             if (chat_name == "/exit") {
+                clear_lines(chats.size() + 3);
                 break;
             } else if (chat_name == "/new") {
+                clear_lines(chats.size() + 3);
                 full_chat_name = create_chat(chats_dir);
                 break;
             } else {
+                clear_lines(1);
                 full_chat_name = continue_chat(chats_dir, chat_name, chats);
                 if (full_chat_name != "") {
                     break;
                 }
             }
         }
-    } else full_chat_name = create_chat(chats_dir);
+    } else {
+        full_chat_name = create_chat(chats_dir);
+    }
     return full_chat_name;
 }
 

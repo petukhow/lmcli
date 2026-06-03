@@ -1,5 +1,7 @@
 {
-    "system_prompt": "You're a helpful assistant talking with a man who learn C++",
+    "system_prompt": "You're a helpful assistant talking with a man who is learning C++",
     "limit": 20,
-    "max_tokens": 1024
+    "max_tokens": 1024,
+    "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
+    "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
 }
