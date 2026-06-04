@@ -6,7 +6,6 @@
 #include "types/tools.h"
 #include "anthropic.h"
 #include <curl/curl.h>
-#include <iostream>
 #include "loaders/tools.h"
 
 using json = nlohmann::json;
@@ -23,7 +22,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     request_body["messages"] = json::array();
     request_body["system"] = system_prompt;
     request_body["stream"] = true;
-    request_body["tools"] = load_tools();
+    request_body["tools"] = load_tools()["tools"];
 
     for (const auto& msg : conversation) {
         if (msg.role == Role::System) {
@@ -82,14 +81,11 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
 
 std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) const {
     std::string delta;
-    try {
-        if (json.contains("delta") && json["delta"].contains("text")) {
-            delta = json["delta"]["text"];
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Broken response's json.\n";  
-        return std::nullopt;
+
+    if (json.contains("delta") && json["delta"].contains("text")) {
+        delta = json["delta"]["text"];
     }
+
 
     return delta;
 }

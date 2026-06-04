@@ -1,6 +1,4 @@
 #include "json.hpp"
-#include <exception>
-#include <iostream>
 #include "loaders/tools.h"
 #include "utils/http_utils.h"
 #include "providers/streaming.h"
@@ -71,26 +69,20 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
 std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json& json) const {
     std::string delta;
 
-    try {
-        if (json["choices"][0]["delta"].contains("content") 
-            && !json["choices"][0]["delta"]["content"].is_null()) {
-            if (json.contains("choices")
-                && json["choices"][0].contains("delta")
-                && json["choices"][0]["delta"].contains("content"))
-            {
-                delta = json["choices"][0]["delta"]["content"];
-            }
+    if (json["choices"][0]["delta"].contains("content") 
+        && !json["choices"][0]["delta"]["content"].is_null()) {
+        if (json.contains("choices")
+            && json["choices"][0].contains("delta")
+            && json["choices"][0]["delta"].contains("content"))
+        {
+            delta = json["choices"][0]["delta"]["content"];
         }
-    } catch (const std::exception& e) {
-        std::cerr << "Broken response's json.\n";
-        return std::nullopt;
     }
 
     return delta;
 }
 
 void OpenAICompatible::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {\
-    // std::cerr << "[extract] called\n";
     if (json.contains("choices") && !json["choices"].empty()
         && json["choices"][0].contains("delta") && !json["choices"][0]["delta"].empty()) {
         if (json["choices"][0]["delta"].contains("tool_calls")) {

@@ -76,6 +76,8 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
         context.is_failed = true;
     }
 
+    std::cout << context.buffer << "\n";
+
     if (context.full_content.empty() && !context.buffer.empty()) {
     try {
         auto parsed = nlohmann::json::parse(context.buffer);

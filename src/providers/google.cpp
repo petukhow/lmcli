@@ -4,7 +4,6 @@
 #include "google.h"
 #include "types/roles.h"
 #include <curl/curl.h>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -53,16 +52,13 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
 
 std::optional<std::string> Google::extract_delta(const nlohmann::json& json) const {
     std::string delta;
-    try {  
-        if (json.contains("candidates") && json["candidates"][0].contains("content")
-            && json["candidates"][0]["content"].contains("parts")
-            && json["candidates"][0]["content"]["parts"][0].contains("text")) {
-            delta = json["candidates"][0]["content"]["parts"][0]["text"];
-        }
 
-    } catch (const std::exception& e) {
-        std::cerr << "Broken response's json.\n";  
+    if (json.contains("candidates") && json["candidates"][0].contains("content")
+        && json["candidates"][0]["content"].contains("parts")
+        && json["candidates"][0]["content"]["parts"][0].contains("text")) {
+        delta = json["candidates"][0]["content"]["parts"][0]["text"];
     }
+    
     return delta;
 }
 
