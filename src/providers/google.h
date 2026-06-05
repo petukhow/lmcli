@@ -13,4 +13,5 @@ public:
 
     std::optional<std::string> extract_delta(const nlohmann::json& json) const override;
     void extract_tool_call(const nlohmann::json& json, StreamContext* context) const override;
+    std::string event_delimiter() const override { return "\n"; }
 };

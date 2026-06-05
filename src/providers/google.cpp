@@ -1,11 +1,44 @@
 #include "json.hpp"
+#include "loaders/tools.h"
 #include "types/roles.h"
 #include "utils/http_utils.h"
 #include "google.h"
 #include "types/roles.h"
 #include <curl/curl.h>
+#include <optional>
+#include <iostream>
 
 using json = nlohmann::json;
+
+static nlohmann::json to_google_tools(const nlohmann::json& tools) {
+    nlohmann::json result = nlohmann::json::array();
+    for (const auto& tool : tools) {
+        result.push_back({
+            {"name", tool["name"]},
+            {"description", tool["description"]},
+            {"parameters", tool["input_schema"]},
+        });
+    }
+    return nlohmann::json::array({{
+    {"function_declarations", result}}
+    });
+}
+
+static std::optional<std::string> find_tool_name(const std::vector<Message>& conversation, const std::string& tool_call_id) {
+    std::string name;
+
+    for (size_t i = 0; i < conversation.size(); ++i) {
+        if (conversation[i].role == Role::Assistant) {
+            for (size_t j = 0; j < conversation[i].tool_calls.size(); ++j) {
+                if (conversation[i].tool_calls[j].id == tool_call_id) {
+                    name = conversation[i].tool_calls[j].name;
+                    return name;
+                }
+            }
+        }
+    }
+    return std::nullopt;
+}
 
 Message Google::send_request(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "x-goog-api-key: " + api_key;
@@ -17,24 +50,42 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
     request_body["contents"] = json::array();
     request_body["systemInstruction"]["parts"] = json::array({json{{"text", system_prompt}}});
     request_body["generationConfig"]["maxOutputTokens"] = max_tokens;
+    request_body["tools"] = to_google_tools(load_tools()["tools"]);
 
     for (const auto& msg : conversation) {
-        if (msg.role == Role::System) {
-            continue;
-        }
-        
-        std::string google_role;  
-        if (msg.role == Role::Assistant) {
-            google_role = "model";
-        }
-        else if (msg.role == Role::User) {
-            google_role = "user";
-        }      
+        if (msg.role == Role::System) continue;
 
-        request_body["contents"].push_back({
-            {"parts", json::array({json{{"text", msg.content}}})},
-            {"role", google_role}
-        });
+        if (!msg.tool_calls.empty()) {
+            json parts = json::array();
+            for (const auto& tool : msg.tool_calls) {
+                parts.push_back({
+                    {"functionCall", {
+                        {"name", tool.name},
+                        {"args", json::parse(tool.arguments)}
+                    }}
+                });
+            }
+            request_body["contents"].push_back({{"role", "model"}, {"parts", parts}});
+
+        } else if (msg.role == Role::Tool) {
+            auto name = find_tool_name(conversation, msg.tool_call_id);
+            if (!name) continue;
+            request_body["contents"].push_back({
+                {"role", "user"},
+                {"parts", json::array({{
+                    {"functionResponse", {
+                        {"name", *name},
+                        {"response", {{"output", msg.content}}}
+                    }}
+                }})}
+            });
+        } else {
+            std::string google_role = (msg.role == Role::Assistant) ? "model" : "user";
+            request_body["contents"].push_back({
+                {"role", google_role},
+                {"parts", json::array({json{{"text", msg.content}}})}
+            });
+        }
     }
     std::string body = request_body.dump();
         
@@ -63,5 +114,24 @@ std::optional<std::string> Google::extract_delta(const nlohmann::json& json) con
 }
 
 void Google::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
-    return;
+    if (!json.contains("candidates") || json["candidates"].empty()) return;
+    
+    auto& candidate = json["candidates"][0];
+    
+    if (!candidate.contains("content") || !candidate["content"].contains("parts") 
+        || candidate["content"]["parts"].empty()) return;
+    
+    auto& parts = candidate["content"]["parts"][0];
+    
+    if (parts.contains("functionCall")) {
+        auto& tool = parts["functionCall"];
+        if (tool.contains("name")) context->pending_tool.name = tool["name"];
+        if (tool.contains("args")) context->pending_tool.arguments = tool["args"].dump();
+    }
+    
+    if (candidate.contains("finishReason") && !context->pending_tool.name.empty()) {
+        context->tool_calls.push_back(context->pending_tool);
+        context->pending_tool = ToolInfo{};
+    }
 }
+

@@ -11,6 +11,21 @@
 
 using json = nlohmann::json;
 
+static nlohmann::json to_openai_tools(const nlohmann::json& tools) {
+    nlohmann::json result = nlohmann::json::array();
+    for (const auto& tool : tools) {
+        result.push_back({
+            {"type", "function"},
+            {"function", {
+                {"name", tool["name"]},
+                {"description", tool["description"]},
+                {"parameters", tool["input_schema"]}
+            }}
+        });
+    }
+    return result;
+}
+
 Message OpenAICompatible::send_request(const std::vector<Message>& conversation) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
@@ -100,7 +115,7 @@ void OpenAICompatible::extract_tool_call(const nlohmann::json& json, StreamConte
         if (json["choices"][0]["finish_reason"] == "tool_calls") {
             if (!context->pending_tool.arguments.empty()) {
                 context->tool_calls.push_back(context->pending_tool);
-                context->pending_tool.arguments.clear();
+                context->pending_tool = ToolInfo{};
             }
         }
     }

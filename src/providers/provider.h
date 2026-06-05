@@ -31,6 +31,7 @@ public:
     virtual std::optional<std::string> extract_delta(const nlohmann::json& json) const = 0;
     virtual void extract_tool_call(const nlohmann::json& json, StreamContext* context) const = 0;
     virtual void event_handler(StreamContext* context) const;
+    virtual std::string event_delimiter() const { return "\n\n"; }
     virtual ~Provider() = default;
 };
 

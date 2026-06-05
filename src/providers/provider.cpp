@@ -93,13 +93,14 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
 }
 
 void Provider::event_handler(StreamContext* context) const {
+    std::string delim = event_delimiter();
     size_t event_end;
-    while ((event_end = context->buffer.find("\n\n")) != std::string::npos) {
+    while ((event_end = context->buffer.find(delim)) != std::string::npos) {
         std::optional<std::string> delta;
         std::string response;
         
         std::string event = context->buffer.substr(0, event_end);
-        context->buffer.erase(0, event_end + 2);
+        context->buffer.erase(0, event_end + delim.size());
 
         while (!event.empty()) {
             size_t data_index = event.find("data: ");
@@ -117,10 +118,8 @@ void Provider::event_handler(StreamContext* context) const {
 
             try {
                 nlohmann::json parsed = nlohmann::json::parse(response);
-                // std::cout << response << "\n";
 
                 if (parsed.contains("type") && parsed["type"] == "message_stop") break;
-                if (parsed.contains("candidates") && parsed["candidates"][0].contains("finishReason")) break;
 
                 if (parsed.contains("error")) {
                     context->full_content = parsed["error"]["message"];

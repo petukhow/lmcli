@@ -108,7 +108,7 @@ void Anthropic::extract_tool_call(const nlohmann::json& json, StreamContext* con
         if (!context->tool_buffer.empty()) {
             context->pending_tool.arguments = context->tool_buffer;
             context->tool_calls.push_back(context->pending_tool);
-            context->tool_buffer.clear();
+            context->pending_tool = ToolInfo{};
         }
     }
 }

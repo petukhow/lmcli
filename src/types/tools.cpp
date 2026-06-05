@@ -102,17 +102,3 @@ void from_json(const nlohmann::json& j, ToolInfo& t) {
     j.at("arguments").get_to(t.arguments);
 }
 
-nlohmann::json to_openai_tools(const nlohmann::json& tools) {
-    nlohmann::json result = nlohmann::json::array();
-    for (const auto& tool : tools) {
-        result.push_back({
-            {"type", "function"},
-            {"function", {
-                {"name", tool["name"]},
-                {"description", tool["description"]},
-                {"parameters", tool["input_schema"]}
-            }}
-        });
-    }
-    return result;
-}
