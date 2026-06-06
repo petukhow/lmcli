@@ -33,7 +33,7 @@ std::string exec_bash(const std::string& cmd) {
     ssize_t bytes;
     int fd[2];
     
-    for (const auto &command : cfg) {
+    for (const auto &command : cfg["blacklist"]) {
         bool is_blacklisted = cmd.find(command.get<std::string>()) != std::string::npos;
         if (is_blacklisted) {
             return "command is not allowed.";
@@ -49,7 +49,6 @@ std::string exec_bash(const std::string& cmd) {
             std::cerr << "Continue? (y/n) ";
 
             if (!std::getline(std::cin, answ)) break;
-            std::cerr << "[got: '" << answ << "']\n";
             
             if (!answ.empty() && std::tolower(answ[0]) == 'y') {
                 break;

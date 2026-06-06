@@ -17,7 +17,7 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 - **Any OpenAI-compatible** (GPT models, services)
 - **OpenRouter**
 - **Groq**
-- **Google** (Gemini) - Experimental
+- **Google** (Gemini)
 
 ## Installation
 

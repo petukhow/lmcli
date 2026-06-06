@@ -5,6 +5,8 @@ std::string get_config_path(const std::string& filename);
 
 std::string get_config_dir();
 
+std::string get_log_path();
+
 void create_config_file_if_not_exists(const std::string& config_dir, const std::string& file_template);
 
 std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template);

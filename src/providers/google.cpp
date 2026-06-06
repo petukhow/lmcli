@@ -6,7 +6,7 @@
 #include "types/roles.h"
 #include <curl/curl.h>
 #include <optional>
-#include <iostream>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -58,12 +58,16 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
         if (!msg.tool_calls.empty()) {
             json parts = json::array();
             for (const auto& tool : msg.tool_calls) {
-                parts.push_back({
+                json part = {
                     {"functionCall", {
                         {"name", tool.name},
                         {"args", json::parse(tool.arguments)}
                     }}
-                });
+                };
+                if (tool.thought_signature.has_value()) {
+                    part["thoughtSignature"] = *tool.thought_signature;
+                }
+                parts.push_back(part);
             }
             request_body["contents"].push_back({{"role", "model"}, {"parts", parts}});
 
@@ -94,9 +98,9 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
 
     auto context = perform_request(body, headers, curl);
 
-    response.content = context.full_content;
+    response.content = std::move(context.full_content);
     response.is_failed = context.is_failed;
-    response.tool_calls = context.tool_calls;
+    response.tool_calls = std::move(context.tool_calls);
     
     return response;
 }
@@ -128,7 +132,11 @@ void Google::extract_tool_call(const nlohmann::json& json, StreamContext* contex
         if (tool.contains("name")) context->pending_tool.name = tool["name"];
         if (tool.contains("args")) context->pending_tool.arguments = tool["args"].dump();
     }
-    
+
+    if (parts.contains("thought_signature")) {
+        context->pending_tool.thought_signature = parts["thoughtSignature"];
+    }
+
     if (candidate.contains("finishReason") && !context->pending_tool.name.empty()) {
         context->tool_calls.push_back(context->pending_tool);
         context->pending_tool = ToolInfo{};
