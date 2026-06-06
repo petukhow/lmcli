@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "logging/logger.h"
 #include <cstring>
 #include <string>
 #include <fstream>
@@ -8,6 +9,7 @@
 std::string get_config_path(const std::string& filename) {
     const char* home = std::getenv("HOME");
     if (!home) {
+        log(LogLevel::Info, "Fallback reached in get_config_path!");
         return "./" + filename;  // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/" + filename;
@@ -16,6 +18,7 @@ std::string get_config_path(const std::string& filename) {
 std::string get_config_dir() {
     const char* home = std::getenv("HOME");
     if (!home) {
+        log(LogLevel::Info, "Fallback reached in get_config_dir!");
         return "./"; // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/";
@@ -25,7 +28,10 @@ std::string get_log_path(const std::string& filename) {
     const char* state_home = std::getenv("XDG_STATE_HOME");
     if (!state_home || std::string(state_home).empty()) {
         const char* home = std::getenv("HOME");
-        if (!home) return "./" + filename;
+        if (!home) {
+            log(LogLevel::Info, "Fallback reached in get_log_path!");
+            return "./" + filename;
+        }
         return std::string(home) + "/.local/state/lmcli/" + filename;
     }
     return std::string(state_home) + "/lmcli/" + filename;
@@ -64,12 +70,12 @@ void create_config_file_if_not_exists(const std::string& config_dir, const std::
     // Create the file
     std::ofstream file(config_dir);
     if (!file.is_open()) {
+        log(LogLevel::Error, "Could not create " + config_dir);
         std::cerr << "Error: Could not create " << config_dir << "\n";
         return;
     }
 
     file << file_template;
-    // std::cout << "✓ Created " << config_dir << "\n";
 }
 
 std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template) {
@@ -84,11 +90,11 @@ std::string create_file_if_not_exists(const std::string& chats_dir, const std::s
     }
     std::ofstream file(final_path);
     if (!file.is_open()) {
+        log(LogLevel::Error, "Could not create " + std::string(final_path));
         std::cerr << "Error: Could not create " << final_path << "\n";
         return "";
     }
     file << file_template;
-    // std::cout << "✓ Created " << final_path << "\n";
     return final_path.string();
 }
 
@@ -96,6 +102,7 @@ std::string create_file_if_not_exists(const std::string& chats_dir, const std::s
 std::string get_chats_dir() {
     const char* home = std::getenv("HOME");
     if (!home) {
+        log(LogLevel::Info, "Fallback reached in get_chats_dir!");
         return "./";  // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/chats/";
@@ -104,6 +111,7 @@ std::string get_chats_dir() {
 std::string get_chats_path(const std::string& filename) {
     const char* home = std::getenv("HOME");
     if (!home) {
+        log(LogLevel::Info, "Fallback reached in get_chats_path!");
         return "./" + filename;  // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/chats/" + filename;

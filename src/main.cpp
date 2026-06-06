@@ -1,7 +1,10 @@
 #include "commands/commands.h"
+#include "logging/logger.h"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
+    logger_init();
+
     if (argc == 1) {
         start();
         return 0;

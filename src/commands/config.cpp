@@ -6,6 +6,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include "logging/logger.h"
 
 using json = nlohmann::json;
 
@@ -28,6 +29,7 @@ static std::optional<size_t> get_positive_number(const std::string& field_name) 
             break;
         } catch (const std::invalid_argument&) {
             std::cerr << "Invalid argument.\n";
+            log(LogLevel::Error, "Invalid argument in get_positive_number given.");
             continue;
         }
     }
@@ -53,6 +55,7 @@ void edit_system_prompt() {
 
             config["system_prompt"] = new_system_prompt;
             save_config(config);
+            log(LogLevel::Info, "System prompt edited.");
             break;
         } else {
             if (std::tolower(user_answer[0]) == 'n') {
@@ -71,6 +74,7 @@ void edit_limit() {
     if (new_limit_value.has_value()) {
         config["limit"] = new_limit_value;
         save_config(config);
+        log(LogLevel::Info, "Messages limit edited.");
     }
 }
 
@@ -83,6 +87,7 @@ void edit_max_tokens() {
     if (new_tokens_value.has_value()) {
         config["max_tokens"] = new_tokens_value;
         save_config(config);
+        log(LogLevel::Info, "Max tokens parameter edited");
     }
 }
 

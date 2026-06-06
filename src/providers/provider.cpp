@@ -1,3 +1,4 @@
+#include "logging/logger.h"
 #include "utils/http_utils.h"
 #include "open_ai_compatible.h"
 #include "types/providers.h"
@@ -6,6 +7,7 @@
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"
+#include <curl/curl.h>
 #include <memory>
 #include <iostream>
 #include <optional>
@@ -47,6 +49,7 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     }
     else {
         std::cerr << "Unknown account type.\n";
+        log(LogLevel::Error, "Unknown account type");
         return nullptr;
     }
 
@@ -69,6 +72,10 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &context);
 
     result = curl_easy_perform(curl.get());
+
+    long http_code = 0;
+    curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
+    log(LogLevel::Debug, "HTTP code: " + std::to_string(http_code));
     
     if (result != CURLE_OK) {
         std::cerr << "curl_easy_perform() failed:\n";
@@ -117,6 +124,7 @@ void Provider::event_handler(StreamContext* context) const {
             if (response == "[DONE]") break;
 
             try {
+                log(LogLevel::Debug, "Response: " + response);
                 nlohmann::json parsed = nlohmann::json::parse(response);
 
                 if (parsed.contains("type") && parsed["type"] == "message_stop") break;
@@ -131,6 +139,7 @@ void Provider::event_handler(StreamContext* context) const {
                 extract_tool_call(parsed, context);
 
             } catch (const std::exception& e) {
+                log(LogLevel::Error, "Broken json.");
                 std::cerr << "Broken response's json.\n";
             }
 

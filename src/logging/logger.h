@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+extern bool logging;
 
 enum class LogLevel {
     Debug,
@@ -6,4 +8,6 @@ enum class LogLevel {
     Error
 };
 
-void log(const LogLevel& level);
+void log(LogLevel level, const std::string& event);
+
+void logger_init();

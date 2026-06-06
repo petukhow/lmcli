@@ -17,6 +17,7 @@
 #include "types/roles.h"
 #include "ansi_codes.h"
 #include "types/tools.h"
+#include "logging/logger.h"
 
 using json = nlohmann::json;
 
@@ -36,25 +37,32 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
             args = nlohmann::json::parse(tool.arguments);
         } catch (const nlohmann::json::parse_error& e) {
             conversation.push_back({Role::Tool, "Invalid tool args", tool.id, {}});
+            std::cerr << "\n" << "Parse error (invalid tool args given) " << "\n";
+            log(LogLevel::Error, "Invalid tool args given");
             continue;
         }
 
         if (tool.name == "read_file") {
             std::string path = args["file"];
+            log(LogLevel::Debug, "read_file path: " + path);
 
             std::string result = read_file(path);
+            log(LogLevel::Debug, "read_file result: " + result);
 
             conversation.push_back({Role::Tool, result, tool.id, {}});
         }
         else if (tool.name == "exec_bash") {
             std::string cmd = args["command"];
+            log(LogLevel::Debug, "exec_bash args: " + cmd);
 
             std::string result = exec_bash(cmd);
+            log(LogLevel::Debug, "exec_bash result: " + result);
 
             conversation.push_back({Role::Tool, result, tool.id, {}});
         }
         else {
             conversation.push_back({Role::Tool, "Unknown tool. You can use bash for writing/reading if you need.", tool.id, {}});
+            log(LogLevel::Error, "Model called unknown tool.");
         }
     }
 }
@@ -66,11 +74,14 @@ static std::optional<ChatValues> chat_init() {
 
     if (config.is_null() || accounts.is_null()) {
         std::cerr << "Failed to load config or accounts. Try 'lmcli init'.\n";
+        log(LogLevel::Error, "Failed to load config or accounts");
         return std::nullopt;
     }
 
     auto account = select_account(accounts, config);
-    if (!account) return std::nullopt;
+    if (!account) {
+        return std::nullopt;
+    }
 
     std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
@@ -78,7 +89,6 @@ static std::optional<ChatValues> chat_init() {
     json chats = load_chats(chats_path);
 
     if (chats.is_null()) {
-        std::cerr << "Failed to load chats. Try 'lmcli init'.\n";
         return std::nullopt;
     }
 
@@ -104,7 +114,10 @@ void start() {
     Message output; 
 
     auto values = chat_init(); 
-    if (!values) return;
+    if (!values) {
+        log(LogLevel::Error, "Chat values not initialized");
+        return;
+    } 
 
     std::cout << "Enter /help for available commands.\n";
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
@@ -114,7 +127,10 @@ void start() {
         if (prompt.content == "") continue;
 
         if (prompt.content[0] == '/') {
-            if (prompt.content == "/exit") break; 
+            if (prompt.content == "/exit") {
+                log(LogLevel::Info, "Exited from conversation");
+                break;
+            } 
             if (prompt.content == "/help") {
                 std::cout << "Available commands:\n";
                 std::cout << "  /exit - End the conversation\n";
@@ -132,32 +148,44 @@ void start() {
                 }
                 std::string arg2 = prompt.content.substr(i+1);
                 values->account->set_model(arg2);
+                log(LogLevel::Info, "Model changed.");
                 continue;
             }
             
-            std::cerr << "Unexpected command.\n";
+            std::cerr << "Unknown command.\n";
+            log(LogLevel::Error, "Unknown command");
             continue;
         }
 
         values->conversation.push_back({Role::User, prompt.content, "", {}});
+        log(LogLevel::Debug, "User prompted: " + prompt.content);
 
         std::cout << YELLOW << "Model: " << END;
         output = values->account->send_request(values->conversation);
+        log(LogLevel::Debug, "User prompted: " + prompt.content);
 
         while (!output.tool_calls.empty()) {
             values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
             handle_tool_calls(output, values->conversation);
+            log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation);
+
+            std::string is_failed = output.is_failed ? "true" : "false";
+            log(LogLevel::Debug, "API returned output: " + output.content);
+            log(LogLevel::Debug, "Is API request failed: " + is_failed);
+            log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
         }
         
         if (output.is_failed) {
-            std::cout << "Request failed: " << output.content << "\n";
+            std::cerr << "Request failed: " << output.content << "\n";
+            log(LogLevel::Error, "Request failed with error: " + output.content);
             values->conversation.pop_back();
             continue;
         }
         
         values->conversation.push_back({Role::Assistant, output.content, "", {}});
+        log(LogLevel::Debug, "Model's output (line 182, start.cpp): " + output.content);
         std::cout << "\n\n";
 
         if (values->limit > 0) {

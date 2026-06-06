@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "loaders/accounts.h"
 #include "constants.h"
+#include "logging/logger.h"
 #include "providers/providers.h"
 #include "json.hpp"
 #include <iostream>
@@ -41,6 +42,8 @@ void setup() {
         return;
     }
 
+    log(LogLevel::Info, "Provider selected.");
+
     for (const auto& provider : providers["providers"]) {
         if (provider["name"].get<std::string>() == provider_name) {
             type = provider["type"].get<std::string>();
@@ -55,7 +58,8 @@ void setup() {
                 bool duplicate = false;
                 for (const auto& acc : accounts["accounts"]) {
                     if (acc["name"].get<std::string>() == account_name) {
-                        std::cerr << "Error: Account with this name already exists.\n";
+                        std::cerr << "Error: Account with given name already exists.\n";
+                        log(LogLevel::Error, "Account with given name already exists");
                         duplicate = true;
                         break;
                     }
@@ -69,6 +73,7 @@ void setup() {
                     std::getline(std::cin, api_key);
                     if (api_key.empty()) {
                         std::cerr << "Error: API key cannot be empty.\n";
+                        log(LogLevel::Error, "Invalid API key entered.");
                         continue;
                     }
                     break;
@@ -90,11 +95,13 @@ void setup() {
 
                 accounts["accounts"].push_back(new_account);
                 save_accounts(accounts);
+                log(LogLevel::Info, "New account created");
                 break;
             }
     }
 
     if (new_account.empty()) {
         std::cout << "Unknown provider. Try again.\n";
+        log(LogLevel::Error, "Unknown provider");
     }
 }

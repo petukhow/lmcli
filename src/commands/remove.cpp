@@ -1,5 +1,6 @@
 #include "chats.h"
 #include "commands.h"
+#include "logging/logger.h"
 #include "utils/utils.h"
 #include <filesystem>
 #include <iostream>
@@ -17,6 +18,7 @@ void remove_chat() {
 
         if (chats.empty()) {
             std::cerr << "No chats to remove.\n";
+            log(LogLevel::Error, "No chats to remove.");
             return;
         }
         
@@ -37,6 +39,7 @@ void remove_chat() {
         }
         if (!is_found) {
             std::cerr << "Chat not found.\n";
+            log(LogLevel::Error, "Chat to remove not found.");
         }
     }
 }
@@ -62,6 +65,7 @@ void remove_chats() {
                 std::filesystem::remove(chat);  
             } 
             std::cout << "All chats removed successfully.\n";
+            log(LogLevel::Info, "All chats removed successfully");
             break;
             
         } else if (std::tolower(user_answer[0]) == 'n') break; 
@@ -90,12 +94,15 @@ void remove_account() {
                 is_found = true;
                 accounts["accounts"].erase(i);
                 save_accounts(accounts);
+                log(LogLevel::Info, "Accounts saved");
                 std::cout << "Removed successfully.\n";
+                log(LogLevel::Info, "Account " + remove_account_name + " removed.");
                 break;
             }
         }
         if (!is_found) {
             std::cerr << "Account not found.\n";
+            log(LogLevel::Error, "Account not found.");
         }
     }
 }
@@ -112,5 +119,6 @@ void remove(const std::string& subcommand) {
     }
     else {
         std::cerr << "Usage: lmcli remove [account|chat|chats]\n";
+        log(LogLevel::Error, "Unknown command executed.");
     }
 }

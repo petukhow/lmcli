@@ -1,5 +1,6 @@
 #include "json.hpp"
 #include "loaders/tools.h"
+#include "logging/logger.h"
 #include "utils/http_utils.h"
 #include "providers/streaming.h"
 #include "types/tools.h"
@@ -68,14 +69,24 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
 
     body = request_body.dump();
 
+    log(LogLevel::Debug, "Request body: " + body);
+    log(LogLevel::Info, "Sending request to Google: " + api_url);
+
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
+
+    log(LogLevel::Debug, "API key: " + x_api_key);
 
     auto context = perform_request(body, headers, curl);
 
     response.content = context.full_content;
     response.is_failed = context.is_failed;
     response.tool_calls = context.tool_calls;
+
+    log(LogLevel::Debug, "Got content: " + response.content);
+    log(LogLevel::Debug, "Got is_failed: " + std::string(response.is_failed ? "true" : "false"));
+    log(LogLevel::Debug, "Tool_calls count: " + std::to_string(response.tool_calls.size()));
+    
 
     return response;
     

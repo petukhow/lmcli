@@ -1,6 +1,7 @@
 #include "tools.h"
 #include "constants.h"
 #include "loaders/config.h"
+#include "logging/logger.h"
 #include <cstdio>
 #include <sstream>
 #include <iostream>
@@ -15,6 +16,7 @@ std::string read_file(const std::string filename) {
 
     if (!file.is_open()) {
         std::cerr << "Error: Could not open the file." << std::endl;
+        log(LogLevel::Error, "Could not open file " + filename);
         return "";
     }
 
@@ -36,6 +38,7 @@ std::string exec_bash(const std::string& cmd) {
     for (const auto &command : cfg["blacklist"]) {
         bool is_blacklisted = cmd.find(command.get<std::string>()) != std::string::npos;
         if (is_blacklisted) {
+            log(LogLevel::Info, "exec_bash declined: command is in blacklist: " + cmd);
             return "command is not allowed.";
         }
     }
@@ -61,12 +64,14 @@ std::string exec_bash(const std::string& cmd) {
 
     if (pipe(fd) == -1) {
         perror("pipe");
+        log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
         return "error: pipe/fork failed";
     }
     
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork");
+        log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
         return "error: pipe/fork failed";
     }
 
@@ -76,6 +81,7 @@ std::string exec_bash(const std::string& cmd) {
         dup2(fd[1], STDERR_FILENO);
         close(fd[1]);
         execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
+        log(LogLevel::Info, "Command executed: " + cmd);
         _exit(127);
     } else {
         close(fd[1]);

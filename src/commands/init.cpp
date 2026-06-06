@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "logging/logger.h"
 #include "utils/utils.h"
 #include "commands.h"
 #include <iostream>
@@ -14,6 +15,7 @@ void init() {
         std::filesystem::create_directories(chats_dir);
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << "\n";
+        log(LogLevel::Error, e.what());
         return;
     }
 
@@ -21,6 +23,7 @@ void init() {
         "system_prompt": "You are a helpful assistant.",
         "limit": 20,
         "max_tokens": 1024,
+        "logging": false,
         "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
         "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
     })";

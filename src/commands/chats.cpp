@@ -1,6 +1,8 @@
 #include "chats.h"
 #include "utils/utils.h"
 #include "json.hpp"
+#include "logging/logger.h"
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -21,6 +23,7 @@ std::string setup_chat() {
 
     if (!std::filesystem::exists(chats_dir)) {
         std::cerr << "Chats directory doesn't exist. Try 'lmcli init'";
+        log(LogLevel::Error, "Chats directory doesn't exist.");
         return "";
     }
 
@@ -64,6 +67,7 @@ void save_chat(const std::string& filePath, const std::vector<Message>& chat) {
         conversation << j.dump(4);
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
+        log(LogLevel::Error, e.what());
     }
 }
 
@@ -75,6 +79,7 @@ json load_chats(const std::string& filepath) {
         parsed = json::parse(file);
     } catch (const json::parse_error& e) {
         std::cerr << "Parse error: " << e.what() << "\n";
+        log(LogLevel::Error, e.what());
         return {};
     }
     return parsed;
@@ -85,6 +90,7 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
 
     if (!std::filesystem::exists(chats_dir)) {
         std::cerr << "\nChats directory not found. Try 'lmcli init'.\n";
+        log(LogLevel::Error, "Chats directory not found.");
         return chats;
     }
 
@@ -105,6 +111,7 @@ void print_chats(const std::vector<std::filesystem::directory_entry>& chats) {
         }
     } else {
         std::cerr << "No chats yet. Start a new chat to create one.\n\n";
+        log(LogLevel::Error, "Print chats request with no chats added.");
     }
 }
 
@@ -123,6 +130,7 @@ std::string create_chat(const std::string& chats_dir) {
 
         if (!chat_name.empty() && chat_name[0] == '/') {
             std::cerr << "Chat name cannot start with '/'. Try again.\n\n";
+            log(LogLevel::Error,"Tried to create a chat with '/' in the beginning of the filename.");
             continue;
         } else break;
     }
@@ -151,7 +159,8 @@ std::string continue_chat(const std::string& chats_dir, const std::string& chat_
         if (chat_index >= 1 && chat_index <= chats.size()) {
             return chats[chat_index-1].path().string();
         } else {
-            std::cout << "No chat with index " << chat_index << ".\n";
+            std::cerr << "No chat with index " << chat_index << ".\n";
+            log(LogLevel::Error, "No chat with given index found.");
         }
 
     } catch (const std::invalid_argument&) {
@@ -159,6 +168,7 @@ std::string continue_chat(const std::string& chats_dir, const std::string& chat_
             return full_chat_name;
     } else {
         std::cerr << "No chat with given name found. Try again.\n";
+        log(LogLevel::Error, "No chat with given name found.");
         return "";
         }
     }
