@@ -23,15 +23,14 @@ std::string get_config_dir() {
 
 std::string get_system_data_path(const std::string& filename) {
     const char* data_dirs = std::getenv("XDG_DATA_DIRS");
-    std::string first_data_dir;
-    if (!data_dirs) {
-        return "/usr/share/lmcli/" + filename; // Fallback to system path
-    }
-
-    std::string dirs_str = data_dirs;
+    std::string dirs_str = "/usr/local/share:/usr/share";
+    if (data_dirs != nullptr && !std::string(data_dirs).empty()) {
+        dirs_str = data_dirs;
+    } 
+    
     while (true) {
         size_t colon = dirs_str.find(':');
-        first_data_dir = (colon == std::string::npos) ? dirs_str : dirs_str.substr(0, colon);
+        std::string first_data_dir = (colon == std::string::npos) ? dirs_str : dirs_str.substr(0, colon);
 
         if (first_data_dir.empty()) return "/usr/share/lmcli/";
 

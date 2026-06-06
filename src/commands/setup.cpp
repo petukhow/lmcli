@@ -8,8 +8,12 @@
 using json = nlohmann::json;
 
 void setup() {
-    json providers = load_providers();
+    const json providers = load_providers();
     json accounts = load_accounts(ACCOUNTS_FILE);
+
+    if (providers.empty()) {
+        return;
+    }
 
     std::string provider_name; // user's choice
     json new_account; // user's new account
