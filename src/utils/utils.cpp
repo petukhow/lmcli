@@ -21,6 +21,16 @@ std::string get_config_dir() {
     return std::string(home) + "/.config/lmcli/";
 }
 
+std::string get_log_path(const std::string& filename) {
+    const char* state_home = std::getenv("XDG_STATE_HOME");
+    if (!state_home || std::string(state_home).empty()) {
+        const char* home = std::getenv("HOME");
+        if (!home) return "./" + filename;
+        return std::string(home) + "/.local/state/lmcli/" + filename;
+    }
+    return std::string(state_home) + "/lmcli/" + filename;
+}
+
 std::string get_system_data_path(const std::string& filename) {
     const char* data_dirs = std::getenv("XDG_DATA_DIRS");
     std::string dirs_str = "/usr/local/share:/usr/share";

@@ -22,6 +22,7 @@ add_executable(tests
     ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
     ${CMAKE_SOURCE_DIR}/src/types/tools.cpp
     ${CMAKE_SOURCE_DIR}/src/loaders/config.cpp
+    ${CMAKE_SOURCE_DIR}/src/logging/logger.cpp
     
 )
 
