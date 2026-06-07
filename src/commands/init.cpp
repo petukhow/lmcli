@@ -9,10 +9,12 @@
 void init() {
     std::string config_dir = get_config_dir();
     std::string chats_dir = get_chats_dir();
+    std::string log_dir = get_log_dir();
     
     try {
         std::filesystem::create_directories(config_dir);
         std::filesystem::create_directories(chats_dir);
+        std::filesystem::create_directories(log_dir);
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << "\n";
         log(LogLevel::Error, e.what());
