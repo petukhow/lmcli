@@ -3,27 +3,45 @@
 #include "loaders/config.h"
 #include "logging/logger.h"
 #include <cstdio>
-#include <sstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
-std::string read_file(const std::string filename) {
-    std::ifstream file(filename); 
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open the file." << std::endl;
-        log(LogLevel::Error, "Could not open file " + filename);
-        return "";
+static bool is_command_blacklisted(const nlohmann::json& cfg, const std::string& cmd) {
+    for (const auto &command : cfg["blacklist"]) {
+        bool is_blacklisted = cmd.find(command.get<std::string>()) != std::string::npos;
+        if (is_blacklisted) {
+            log(LogLevel::Info, "exec_bash declined: command is in blacklist: " + cmd);
+            return true;
+        }
     }
+    return false;
+}
 
-    std::ostringstream ss;
-    ss << file.rdbuf();
+static bool is_confirm_required(const nlohmann::json& cfg, const std::string& cmd) {
+    bool is_confirm_required = false;
+    if (cfg["confirm_required"] == "all") is_confirm_required = true;
 
-    return ss.str();
+    if (!is_confirm_required) {
+        for (const auto &command : cfg["confirm_required"]) {
+            is_confirm_required = cmd.find(command.get<std::string>()) != std::string::npos;
+        }
+    }
+    
+    if (is_confirm_required) {
+        std::string answ;
+        std::cerr << "\nModel wants to execute bash command: " << cmd << "\n";
+        std::cerr << "Continue? (y/n) ";
+
+        std::getline(std::cin, answ);
+        
+        if (!answ.empty() && std::tolower(answ[0]) == 'y') {
+            return true;
+        }
+    } 
+    return false;
 }
 
 std::string exec_bash(const std::string& cmd) {
@@ -31,67 +49,50 @@ std::string exec_bash(const std::string& cmd) {
 
     auto cfg = load_config(CONFIG_FILE);
     std::string result;
-    char buf[4096];
-    ssize_t bytes;
-    int fd[2];
     
-    for (const auto &command : cfg["blacklist"]) {
-        bool is_blacklisted = cmd.find(command.get<std::string>()) != std::string::npos;
-        if (is_blacklisted) {
-            log(LogLevel::Info, "exec_bash declined: command is in blacklist: " + cmd);
-            return "command is not allowed.";
+    if (is_command_blacklisted(cfg, cmd)) {
+        return "command is not allowed";
+    }
+
+    bool confirm_required = is_confirm_required(cfg, cmd);
+
+    if (confirm_required) {
+        int fd[2];
+        if (pipe(fd) == -1) {
+            perror("pipe");
+            log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
+            return "error: pipe/fork failed";
         }
-    }
+        
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
+            return "error: pipe/fork failed";
+        }
 
-    for (const auto &command : cfg["confirm_required"]) {
-        bool is_confirm_required = cmd.find(command.get<std::string>()) != std::string::npos;
+        if (pid == 0) {
+            close(fd[0]);
+            dup2(fd[1], STDOUT_FILENO);
+            dup2(fd[1], STDERR_FILENO);
+            close(fd[1]);
+            execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
+            log(LogLevel::Info, "Command executed: " + cmd);
+            _exit(127);
+        } else {
+            close(fd[1]);
 
-        if (is_confirm_required) {
-            std::string answ;
-            std::cerr << "\nModel wants to execute bash command: " << cmd << "\n";
-            std::cerr << "Continue? (y/n) ";
-
-            if (!std::getline(std::cin, answ)) break;
-            
-            if (!answ.empty() && std::tolower(answ[0]) == 'y') {
-                break;
+            char buf[4096];
+            ssize_t bytes;
+            while ((bytes = read(fd[0], buf, sizeof(buf))) > 0) {
+                result += std::string(buf, bytes);
             }
-            else {
-                return "command is not allowed by the user";
-            }
-        } 
-    }
 
-    if (pipe(fd) == -1) {
-        perror("pipe");
-        log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
-        return "error: pipe/fork failed";
-    }
-    
-    pid_t pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        log(LogLevel::Error, "Pipe/fork failed in tools.cpp");
-        return "error: pipe/fork failed";
-    }
-
-    if (pid == 0) {
-        close(fd[0]);
-        dup2(fd[1], STDOUT_FILENO);
-        dup2(fd[1], STDERR_FILENO);
-        close(fd[1]);
-        execl("/bin/sh", "sh", "-c", cmd.c_str(), NULL);
-        log(LogLevel::Info, "Command executed: " + cmd);
-        _exit(127);
+            int status = 0;
+            if (waitpid(pid, &status, 0) == -1) perror("waitpid");
+        }
     } else {
-        close(fd[1]);
-
-        while ((bytes = read(fd[0], buf, sizeof(buf))) > 0) {
-            result += std::string(buf, bytes);
-        }
-
-        int status = 0;
-        if (waitpid(pid, &status, 0) == -1) perror("waitpid");
+        return "command is not allowed by the user";
     }
 
     return result;

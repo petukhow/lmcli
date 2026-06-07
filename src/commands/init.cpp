@@ -27,7 +27,7 @@ void init() {
         "max_tokens": 1024,
         "logging": false,
         "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
-        "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
+        "confirm_required": "all"
     })";
     
     const char* accounts_template = R"({

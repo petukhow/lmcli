@@ -42,16 +42,7 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
             continue;
         }
 
-        if (tool.name == "read_file") {
-            std::string path = args["file"];
-            log(LogLevel::Debug, "read_file path: " + path);
-
-            std::string result = read_file(path);
-            log(LogLevel::Debug, "read_file result: " + result);
-
-            conversation.push_back({Role::Tool, result, tool.id, {}});
-        }
-        else if (tool.name == "exec_bash") {
+        if (tool.name == "exec_bash") {
             std::string cmd = args["command"];
             log(LogLevel::Debug, "exec_bash args: " + cmd);
 

@@ -10,8 +10,6 @@ struct ToolInfo {
     std::optional<std::string> thought_signature;
 };
 
-std::string read_file(const std::string filename);
-
 std::string exec_bash(const std::string& cmd);
 
 void to_json(nlohmann::json& j, const ToolInfo& t);

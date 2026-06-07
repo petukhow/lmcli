@@ -1,20 +1,6 @@
 {
   "tools": [
     {
-      "name": "read_file",
-      "description": "Read the contents of a file at a given path",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "file": {
-            "type": "string",
-            "description": "Path to a file"
-          }
-        },
-        "required": ["file"]
-      }
-    },
-    {
       "name": "exec_bash",
       "description": "Execute a bash command and return its output. Use this for running commands, writing files, compiling code, etc.",
       "input_schema": {
