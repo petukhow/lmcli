@@ -23,11 +23,18 @@ add_executable(tests
     ${CMAKE_SOURCE_DIR}/src/types/tools.cpp
     ${CMAKE_SOURCE_DIR}/src/loaders/config.cpp
     ${CMAKE_SOURCE_DIR}/src/logging/logger.cpp
+    ${CMAKE_SOURCE_DIR}/vendor/linenoise.c
     
 )
 
 target_include_directories(tests PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/vendor
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain CURL::libcurl)
+
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/vendor/linenoise.c 
+    PROPERTIES LANGUAGE C
+)

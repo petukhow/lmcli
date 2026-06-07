@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(GNUInstallDirs)
+enable_language(C)
 
 find_package(CURL REQUIRED)
 
 file(GLOB_RECURSE SOURCES 
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_SOURCE_DIR}/vendor/*.c"
+    "${CMAKE_SOURCE_DIR}/vendor/linenoise.c"
 )
 
 add_executable(lmcli ${SOURCES})
@@ -35,7 +36,7 @@ endif ()
 set_target_properties(lmcli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
-set_source_files_properties(${CMAKE_SOURCE_DIR}/vendor/linenoise/linenoise.c PROPERTIES LANGUAGE C)
+set_source_files_properties(${CMAKE_SOURCE_DIR}/vendor/linenoise.c PROPERTIES LANGUAGE C)
 
 install(TARGETS lmcli RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES data/providers.json DESTINATION ${CMAKE_INSTALL_DATADIR}/lmcli)

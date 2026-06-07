@@ -6,7 +6,7 @@
 #include <iostream>
 #include <filesystem>
 #include <optional>
-#include "/home/nerfed/mycode/lmcli/vendor/linenoise.h"
+#include "linenoise.h"
 
 std::optional<std::string> readline() {
     char* raw = linenoise("");
