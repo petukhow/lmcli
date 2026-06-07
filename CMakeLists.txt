@@ -10,6 +10,7 @@ find_package(CURL REQUIRED)
 
 file(GLOB_RECURSE SOURCES 
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_SOURCE_DIR}/vendor/*.c"
 )
 
 add_executable(lmcli ${SOURCES})
@@ -18,6 +19,7 @@ add_subdirectory(tests)
 target_include_directories(lmcli PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/vendor
 )
 
 target_link_libraries(lmcli PRIVATE 
@@ -33,6 +35,7 @@ endif ()
 set_target_properties(lmcli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+set_source_files_properties(${CMAKE_SOURCE_DIR}/vendor/linenoise/linenoise.c PROPERTIES LANGUAGE C)
 
 install(TARGETS lmcli RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES data/providers.json DESTINATION ${CMAKE_INSTALL_DATADIR}/lmcli)

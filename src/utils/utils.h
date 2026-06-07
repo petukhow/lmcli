@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include <optional>
+
+std::optional<std::string> readline();
 
 std::string get_config_path(const std::string& filename);
 

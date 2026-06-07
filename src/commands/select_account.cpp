@@ -4,13 +4,12 @@
 #include "json.hpp"
 #include <iostream>
 #include "logging/logger.h"
+#include "utils/utils.h"
 
 using json = nlohmann::json;
 
 std::unique_ptr<Provider> select_account(const json& accounts, const json& config) {
-    std::string provider_name;
-    std::unique_ptr<Provider> provider = nullptr;
-
+    std::unique_ptr<Provider> provider;
     // Check if accounts array exists and is not empty
     if (accounts.contains("accounts") && !accounts["accounts"].empty()) {
         if (accounts["accounts"].size() == 1) {
@@ -27,12 +26,13 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
                 }   
 
                 std::cout << "> ";
-                std::getline(std::cin, provider_name);
-                
+                const auto account = readline();
+                if (!account) break;
 
                 clear_lines(accounts["accounts"].size() + 2);
                 std::cout.flush();
 
+                const std::string provider_name = *account;
                 if (provider_name == "/exit") break;
                 log(LogLevel::Info, "Account selected: " + provider_name);
                 

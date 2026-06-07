@@ -5,6 +5,16 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <optional>
+#include "/home/nerfed/mycode/lmcli/vendor/linenoise.h"
+
+std::optional<std::string> readline() {
+    char* raw = linenoise("");
+    if (!raw) return std::nullopt;
+    const std::string result(raw);
+    free(raw);
+    return result;
+}
 
 std::string get_config_path(const std::string& filename) {
     const char* home = std::getenv("HOME");
@@ -58,13 +68,13 @@ std::string get_system_data_path(const std::string& filename) {
     } 
     
     while (true) {
-        size_t colon = dirs_str.find(':');
-        std::string first_data_dir = (colon == std::string::npos) ? dirs_str : dirs_str.substr(0, colon);
+        const size_t colon = dirs_str.find(':');
+        const std::string first_data_dir = (colon == std::string::npos) ? dirs_str : dirs_str.substr(0, colon);
 
         if (first_data_dir.empty()) return "/usr/share/lmcli/";
 
-        std::string base = first_data_dir.back() == '/' ? first_data_dir : first_data_dir + "/";
-        std::string cfg  = base + "lmcli/" + filename;
+        const std::string base = first_data_dir.back() == '/' ? first_data_dir : first_data_dir + "/";
+        const std::string cfg  = base + "lmcli/" + filename;
         if (std::filesystem::exists(cfg)) {
             return base + "lmcli/" + filename;
         } else {
@@ -94,8 +104,8 @@ void create_config_file_if_not_exists(const std::string& config_dir, const std::
 std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template) {
     size_t i = 1;
     std::filesystem::path final_path = chats_dir;
-    std::string stem = final_path.parent_path() / final_path.stem();
-    std::string extension = final_path.extension().string();
+    const std::string stem = final_path.parent_path() / final_path.stem();
+    const std::string extension = final_path.extension().string();
 
     while (std::filesystem::exists(final_path)) {
         final_path = stem + "_" + std::to_string(i) + extension;

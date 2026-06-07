@@ -4,6 +4,7 @@
 #include "logging/logger.h"
 #include "providers/providers.h"
 #include "json.hpp"
+#include "utils/utils.h"
 #include <iostream>
 
 using json = nlohmann::json;
@@ -18,15 +19,7 @@ void setup() {
 
     std::string provider_name; // user's choice
     json new_account; // user's new account
-
-    // config settings
-    std::string default_model;
-    std::string default_url;
-    std::string type;
-
-    // user's data
-    std::string account_name;
-    std::string api_key;
+    std::string api_key;   
     std::string user_model;
 
     std::cout << "Select a provider to set up (type '/exit' to quit):\n";
@@ -46,43 +39,47 @@ void setup() {
 
     for (const auto& provider : providers["providers"]) {
         if (provider["name"].get<std::string>() == provider_name) {
-            type = provider["type"].get<std::string>();
-            default_url = provider["default_api_url"].get<std::string>();
-            default_model = provider["default_model"].get<std::string>();
+            const std::string type = provider["type"].get<std::string>();
+            const std::string default_url = provider["default_api_url"].get<std::string>();
+            const std::string default_model = provider["default_model"].get<std::string>();
 
+            std::string account_name;
             while (true) {
                 std::cout << "Enter account name (Default: "
                     << provider["name"].get<std::string>() << "): ";
-                std::getline(std::cin, account_name);
+                auto aname = readline();
+                if (!aname) break;
+                account_name = aname->empty() ? provider["name"].get<std::string>() : *aname;
 
                 bool duplicate = false;
                 for (const auto& acc : accounts["accounts"]) {
                     if (acc["name"].get<std::string>() == account_name) {
                         std::cerr << "Error: Account with given name already exists.\n";
-                        log(LogLevel::Error, "Account with given name already exists");
+                        log(LogLevel::Error, "Account with given name already exists.");
                         duplicate = true;
                         break;
                     }
                 }
                 if (duplicate) continue;
 
-                if (account_name == "") account_name = provider["name"].get<std::string>();
-
                 while (true) {
                     std::cout << "Enter API key: ";
-                    std::getline(std::cin, api_key);
-                    if (api_key.empty()) {
+                    const auto akey = readline();
+                    if (!akey || akey->empty()) {
                         std::cerr << "Error: API key cannot be empty.\n";
                         log(LogLevel::Error, "Invalid API key entered.");
                         continue;
+                    }
+                    else {
+                        api_key = *akey;
                     }
                     break;
                 }
 
                 std::cout << "Enter model (Default: " << default_model << "): ";
-                std::getline(std::cin, user_model);
-                if (user_model == "") user_model = default_model;
-
+                auto umodel = readline();
+                if (!umodel) break;
+                user_model = umodel->empty() ? default_model : *umodel;
                 break;
             }
                 new_account = {

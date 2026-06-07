@@ -18,6 +18,7 @@
 #include "ansi_codes.h"
 #include "types/tools.h"
 #include "logging/logger.h"
+#include "utils/utils.h"
 
 using json = nlohmann::json;
 
@@ -43,7 +44,7 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
         }
 
         if (tool.name == "exec_bash") {
-            std::string cmd = args["command"];
+            const std::string cmd = args["command"];
             log(LogLevel::Debug, "exec_bash args: " + cmd);
 
             std::string result = exec_bash(cmd);
@@ -60,8 +61,8 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
 
 static std::optional<ChatValues> chat_init() {
     std::vector<Message> conversation;
-    json config = load_config(CONFIG_FILE);
-    json accounts = load_accounts(ACCOUNTS_FILE);
+    const json config = load_config(CONFIG_FILE);
+    const json accounts = load_accounts(ACCOUNTS_FILE);
 
     if (config.is_null() || accounts.is_null()) {
         std::cerr << "Failed to load config or accounts. Try 'lmcli init'.\n";
@@ -74,10 +75,10 @@ static std::optional<ChatValues> chat_init() {
         return std::nullopt;
     }
 
-    std::string chats_path = setup_chat();
+    const std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
 
-    json chats = load_chats(chats_path);
+    const json chats = load_chats(chats_path);
 
     if (chats.is_null()) {
         return std::nullopt;
@@ -114,7 +115,9 @@ void start() {
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
     while (true) {
         std::cout << CYAN << "You: " << END;
-        if (!std::getline(std::cin, prompt.content)) break; // user's prompt
+        const auto input = readline(); // user's prompt
+        if (!input) break;
+        prompt.content = *input;
         if (prompt.content == "") continue;
 
         if (prompt.content[0] == '/') {
@@ -129,15 +132,15 @@ void start() {
                 continue;
             }
             
-            size_t i = prompt.content.find(" ");
-            std::string arg1 = prompt.content.substr(0, i);
+            const size_t i = prompt.content.find(" ");
+            const std::string arg1 = prompt.content.substr(0, i);
 
             if (arg1 == "/model") {
                 if (i == std::string::npos) {
                     std::cerr << "Usage: /model [name]\n";
                     continue;
                 }
-                std::string arg2 = prompt.content.substr(i+1);
+                const std::string arg2 = prompt.content.substr(i+1);
                 values->account->set_model(arg2);
                 log(LogLevel::Info, "Model changed.");
                 continue;
@@ -162,7 +165,7 @@ void start() {
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation);
 
-            std::string is_failed = output.is_failed ? "true" : "false";
+            const std::string is_failed = output.is_failed ? "true" : "false";
             log(LogLevel::Debug, "API returned output: " + output.content);
             log(LogLevel::Debug, "Is API request failed: " + is_failed);
             log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));

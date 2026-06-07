@@ -33,7 +33,6 @@ std::string setup_chat() {
         while (true) {
             std::cout << "> ";
             std::getline(std::cin, chat_name);
-
             std::cout.flush();
 
             if (chat_name == "/exit") {

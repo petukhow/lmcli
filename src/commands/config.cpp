@@ -7,20 +7,22 @@
 #include <stdexcept>
 #include <string>
 #include "logging/logger.h"
+#include "utils/utils.h"
 
 using json = nlohmann::json;
 
 static std::optional<size_t> get_positive_number(const std::string& field_name) {
-    int raw_value;
-    std::string user_input;
     size_t new_value;
 
     while (true) {
         try {
             std::cout << "Enter new " << field_name << " value (enter to keep): ";
-            if (!std::getline(std::cin, user_input)) return std::nullopt;
-            if (user_input == "") return std::nullopt;
-            raw_value = std::stoi(user_input);
+            auto value = readline();
+            if (!value) break;
+            std::string user_input = *value;
+            if (user_input.empty()) return std::nullopt;
+            
+            int raw_value = std::stoi(user_input);
             if (raw_value < 0) {
                 std::cerr << field_name << " value couldn't be negative.\n";
                 continue;
