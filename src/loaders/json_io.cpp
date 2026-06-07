@@ -1,5 +1,4 @@
 #include <string>
-#include <iostream>
 #include "json.hpp"
 #include "logging/logger.h"
 #include <fstream>
@@ -16,7 +15,6 @@ std::optional<nlohmann::json> load_json(const std::string& filepath) {
         str = ss.str();     // Convert stringstream to std::string
     } else {
         // Handle file opening error
-        std::cerr << "Could not open file: " + filepath << "\n";
         log(LogLevel::Error, "Could not open file " + filepath); 
         return std::nullopt;
     }
@@ -25,12 +23,10 @@ std::optional<nlohmann::json> load_json(const std::string& filepath) {
         parsed = nlohmann::json::parse(str);
         log(LogLevel::Debug, "Parsing " + str);
     } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "Parse error: " << e.what() << "\n";
         log(LogLevel::Error, "Parse error: " + std::string(e.what()));
         return std::nullopt;
     }   
     if (parsed.empty()) {
-        std::cerr << "File " + filepath << " is empty. Try 'lmcli init'.";
         log(LogLevel::Error, filepath + " is empty");
         return std::nullopt;
     }
@@ -45,7 +41,6 @@ void save_json(const std::string& filepath, const nlohmann::json& data) {
         accs << data.dump(4);
         log(LogLevel::Info, filepath + " saved");
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
         log(LogLevel::Error, "Failed to save in file " + filepath + ":" + std::string(e.what()));
     }
 }

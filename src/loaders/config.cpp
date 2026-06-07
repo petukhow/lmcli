@@ -7,16 +7,9 @@
 
 nlohmann::json load_config(const std::string& filename) {
     log(LogLevel::Info, "Loading config...");
-    nlohmann::json defaults = {
-        {"system_prompt", "You're a helpful assistant."},
-        {"limit", 20},
-        {"max_tokens", 1024},
-        {"logging", false},
-        {"blacklist", nlohmann::json::array({"reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"})},
-        {"confirm_required", nlohmann::json::array({"rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"})}
-    };
+    nlohmann::json defaults = CONFIG_DEFAULT;
     // todo: remove repeated code at config.cpp and accounts.cpp
-    std::optional<nlohmann::json> config = load_json(get_config_path(filename));
+    const std::optional<nlohmann::json> config = load_json(get_config_path(filename));
     if (!config.has_value()) return defaults;
     defaults.update(*config);
     

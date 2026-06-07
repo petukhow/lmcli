@@ -10,7 +10,7 @@
 using json = nlohmann::json;
 
 void setup() {
-    const json providers = load_providers();
+    const json providers = load_providers(PROVIDERS_FILE);
     json accounts = load_accounts(ACCOUNTS_FILE);
 
     if (providers.empty()) {
@@ -45,9 +45,8 @@ void setup() {
 
             std::string account_name;
             while (true) {
-                std::cout << "Enter account name (Default: "
-                    << provider["name"].get<std::string>() << "): ";
-                auto aname = readline();
+                auto aname = readline("Enter account name (Default: "
+                    + provider["name"].get<std::string>() + "): ");
                 if (!aname) break;
                 account_name = aname->empty() ? provider["name"].get<std::string>() : *aname;
 
@@ -63,8 +62,7 @@ void setup() {
                 if (duplicate) continue;
 
                 while (true) {
-                    std::cout << "Enter API key: ";
-                    const auto akey = readline();
+                    const auto akey = readline("Enter API key: ");
                     if (!akey || akey->empty()) {
                         std::cerr << "Error: API key cannot be empty.\n";
                         log(LogLevel::Error, "Invalid API key entered.");
@@ -76,8 +74,7 @@ void setup() {
                     break;
                 }
 
-                std::cout << "Enter model (Default: " << default_model << "): ";
-                auto umodel = readline();
+                auto umodel = readline( "Enter model (Default: " + default_model + "): ");
                 if (!umodel) break;
                 user_model = umodel->empty() ? default_model : *umodel;
                 break;

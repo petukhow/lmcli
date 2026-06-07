@@ -7,11 +7,9 @@
 
 nlohmann::json load_accounts(const std::string& filename) {
     log(LogLevel::Info, "Loading accounts...");
-    nlohmann::json defaults = {
-        {"accounts", nlohmann::json::array({})}
-    };
+    nlohmann::json defaults = ACCOUNTS_DEFAULT;
     // todo: remove repeated code at config.cpp and accounts.cpp
-    std::optional<nlohmann::json> accounts = load_json(get_config_path(filename));
+    const std::optional<nlohmann::json> accounts = load_json(get_config_path(filename));
     if (!accounts.has_value()) return defaults;
     else return accounts;
 }

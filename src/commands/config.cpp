@@ -16,8 +16,7 @@ static std::optional<size_t> get_positive_number(const std::string& field_name) 
 
     while (true) {
         try {
-            std::cout << "Enter new " << field_name << " value (enter to keep): ";
-            auto value = readline();
+            auto value = readline("Enter new " + field_name + " value (enter to keep): ");
             if (!value) break;
             std::string user_input = *value;
             if (user_input.empty()) return std::nullopt;

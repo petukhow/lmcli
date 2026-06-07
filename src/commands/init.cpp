@@ -21,21 +21,8 @@ void init() {
         return;
     }
 
-    const char* config_template = R"({
-        "system_prompt": "You are a helpful assistant.",
-        "limit": 20,
-        "max_tokens": 1024,
-        "logging": false,
-        "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
-        "confirm_required": "all"
-    })";
-    
-    const char* accounts_template = R"({
-        "accounts": []
-    })";
-
-    create_config_file_if_not_exists(config_dir + CONFIG_FILE, config_template);
-    create_config_file_if_not_exists(config_dir + ACCOUNTS_FILE, accounts_template);
+    create_config_file_if_not_exists(config_dir + CONFIG_FILE, CONFIG_DEFAULT);
+    create_config_file_if_not_exists(config_dir + ACCOUNTS_FILE, ACCOUNTS_DEFAULT);
 
     std::cout << "\n✓ Initialization complete!\n";
     std::cout << "Next steps:\n";

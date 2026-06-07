@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "json.hpp"
 #include "loaders/tools.h"
 #include "logging/logger.h"
@@ -23,7 +24,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation) const 
     request_body["messages"] = json::array();
     request_body["system"] = system_prompt;
     request_body["stream"] = true;
-    request_body["tools"] = load_tools()["tools"];
+    request_body["tools"] = load_tools(TOOLS_FILE)["tools"];
 
     for (const auto& msg : conversation) {
         if (msg.role == Role::System) {
@@ -118,6 +119,7 @@ void Anthropic::extract_tool_call(const nlohmann::json& json, StreamContext* con
         if (!context->tool_buffer.empty()) {
             context->pending_tool.arguments = context->tool_buffer;
             context->tool_calls.push_back(context->pending_tool);
+            context->tool_buffer.clear();
             context->pending_tool = ToolInfo{};
         }
     }

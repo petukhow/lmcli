@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "json.hpp"
 #include "loaders/tools.h"
 #include "logging/logger.h"
@@ -39,7 +40,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     request_body["max_tokens"] = max_tokens;
     request_body["messages"] = json::array();
     request_body["stream"] = true;
-    request_body["tools"] = to_openai_tools(load_tools()["tools"]);
+    request_body["tools"] = to_openai_tools(load_tools(TOOLS_FILE)["tools"]);
 
     
     for (const auto& msg : conversation) {
@@ -70,7 +71,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     body = request_body.dump();
 
     log(LogLevel::Debug, "Request body: " + body);
-    log(LogLevel::Info, "Sending request to Google: " + api_url);
+    log(LogLevel::Info, "Sending request to OpenAI: " + api_url);
 
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());

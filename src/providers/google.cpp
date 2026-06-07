@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "json.hpp"
 #include "loaders/tools.h"
 #include "logging/logger.h"
@@ -51,7 +52,7 @@ Message Google::send_request(const std::vector<Message>& conversation) const {
     request_body["contents"] = json::array();
     request_body["systemInstruction"]["parts"] = json::array({json{{"text", system_prompt}}});
     request_body["generationConfig"]["maxOutputTokens"] = max_tokens;
-    request_body["tools"] = to_google_tools(load_tools()["tools"]);
+    request_body["tools"] = to_google_tools(load_tools(TOOLS_FILE)["tools"]);
 
     for (const auto& msg : conversation) {
         if (msg.role == Role::System) continue;

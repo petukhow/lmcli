@@ -7,9 +7,10 @@
 #include <filesystem>
 #include <optional>
 #include "linenoise.h"
+#include "json.hpp"
 
-std::optional<std::string> readline() {
-    char* raw = linenoise("");
+std::optional<std::string> readline(const std::string& prompt) {
+    char* raw = linenoise(prompt.c_str());
     if (!raw) return std::nullopt;
     const std::string result(raw);
     free(raw);
@@ -85,7 +86,7 @@ std::string get_system_data_path(const std::string& filename) {
     return "/usr/share/lmcli/" + filename;
 }
 
-void create_config_file_if_not_exists(const std::string& config_dir, const std::string& file_template) {
+void create_config_file_if_not_exists(const std::string& config_dir, const nlohmann::json& file_template) {
     if (std::filesystem::exists(config_dir)) {
         std::cout << "⚠ " << config_dir << " already exists, skipping\n";
         return;
@@ -101,7 +102,7 @@ void create_config_file_if_not_exists(const std::string& config_dir, const std::
     file << file_template;
 }
 
-std::string create_file_if_not_exists(const std::string& chats_dir, const std::string& file_template) {
+std::string create_file_if_not_exists(const std::string& chats_dir, const nlohmann::json& file_template) {
     size_t i = 1;
     std::filesystem::path final_path = chats_dir;
     const std::string stem = final_path.parent_path() / final_path.stem();

@@ -5,7 +5,12 @@
 #include "logging/logger.h"
 #include "utils/utils.h"
 
-nlohmann::json load_providers() {
+nlohmann::json load_providers(const std::string& filename) {
     log(LogLevel::Info, "Loading providers...");
-    return load_json(get_system_data_path(PROVIDERS_FILE));
+    nlohmann::json defaults = PROVIDERS_DEFAULT;
+    const std::optional<nlohmann::json> providers = load_json(get_config_path(filename));
+    if (!providers.has_value()) return defaults;
+    defaults.update(*providers);
+
+    return defaults;
 }

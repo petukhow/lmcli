@@ -40,6 +40,8 @@ static void handle_tool_calls(const Message& output, std::vector<Message>& conve
             conversation.push_back({Role::Tool, "Invalid tool args", tool.id, {}});
             std::cerr << "\n" << "Parse error (invalid tool args given) " << "\n";
             log(LogLevel::Error, "Invalid tool args given");
+            log(LogLevel::Error, e.what());
+            log(LogLevel::Debug, "args: " + tool.arguments);
             continue;
         }
 
@@ -89,7 +91,7 @@ static std::optional<ChatValues> chat_init() {
     }
 
     if (!conversation.empty()) {
-        if (conversation[0].content != config["system_prompt"]) {
+        if (conversation[0].content != config["system_prompt"].get<std::string>()) {
             conversation[0].content = config["system_prompt"];
         }
     }
@@ -114,8 +116,7 @@ void start() {
     std::cout << "Enter /help for available commands.\n";
     std::cout << "Prompt (or '/exit' to end the conversation): \n";
     while (true) {
-        std::cout << CYAN << "You: " << END;
-        const auto input = readline(); // user's prompt
+        const auto input = readline(CYAN + "You: " + END); // user's prompt
         if (!input) break;
         prompt.content = *input;
         if (prompt.content == "") continue;
@@ -180,7 +181,7 @@ void start() {
         
         values->conversation.push_back({Role::Assistant, output.content, "", {}});
         log(LogLevel::Debug, "Model's output (line 182, start.cpp): " + output.content);
-        std::cout << "\n\n";
+        std::cout << "\n";
 
         if (values->limit > 0) {
             while (values->conversation.size() > values->limit) {

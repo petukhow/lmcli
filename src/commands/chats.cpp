@@ -1,4 +1,5 @@
 #include "chats.h"
+#include "constants.h"
 #include "utils/utils.h"
 #include "json.hpp"
 #include "logging/logger.h"
@@ -136,16 +137,13 @@ std::string create_chat(const std::string& chats_dir) {
 
     full_chat_name = chats_dir + chat_name + ".json";
 
-    const char* chat_template = R"({
-        "conversation": []
-    })";
-
     size_t files_amount = std::distance(std::filesystem::directory_iterator(chats_dir),
     std::filesystem::directory_iterator{});
     if (chat_name == "") {
         full_chat_name = chats_dir + "chat #" + std::to_string(files_amount) + ".json";
     }
-    chat_path = create_file_if_not_exists(full_chat_name, chat_template);
+    chat_path = create_file_if_not_exists(full_chat_name, CHAT_DEFAULT);
+    clear_lines(3);
     return chat_path;
 }
 
@@ -171,5 +169,8 @@ std::string continue_chat(const std::string& chats_dir, const std::string& chat_
         return "";
         }
     }
+
+    clear_lines(chats.size() + 2);
+
     return "";
 }
