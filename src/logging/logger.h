@@ -10,4 +10,4 @@ enum class LogLevel {
 
 void log(LogLevel level, const std::string& event);
 
-void logger_init();
+bool logger_init();

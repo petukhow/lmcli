@@ -1,11 +1,11 @@
 #include "logger.h"
 #include <string>
-#include "loaders/config.h"
 #include "utils/utils.h"
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include "loaders/json_io.h"
 #include "constants.h"
 
 bool logging = false;
@@ -33,7 +33,16 @@ void log(LogLevel level, const std::string& event) {
     }
 }
 
-void logger_init() {
-    nlohmann::json config = load_config(CONFIG_FILE);
-    logging = config["logging"].get<bool>();
+// bool = "if logger initialized?"
+bool logger_init() {
+    // check if config loaded and logging settings are actual
+    std::optional<nlohmann::json> check_config = load_json(get_config_path(CONFIG_FILE));
+    if (!check_config.has_value()) {
+        logging = true; // enable alarm mode
+        return false; 
+    }
+    else {
+        logging = (*check_config)["logging"].get<bool>(); 
+        return true;
+    }
 }

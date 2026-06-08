@@ -3,7 +3,9 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    logger_init();
+    if (!logger_init()) {
+        std::cerr << "Warning: config not loaded, logging enabled by default.\n";
+    }
 
     if (argc == 1) {
         start();
