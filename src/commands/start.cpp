@@ -6,6 +6,7 @@
 #include "chats.h"
 #include "loaders/config.h"
 #include "loaders/accounts.h"
+#include "loaders/json_io.h"
 #include "types/message.h"
 #include <cstddef>
 #include <cstdio>
@@ -50,7 +51,7 @@ static std::optional<ChatValues> chat_init() {
     const std::string chats_path = setup_chat();
     if (chats_path.empty()) return std::nullopt;
 
-    const json chats = load_chats(chats_path);
+    const json chats = load_json(chats_path);
 
     if (chats.is_null()) {
         return std::nullopt;
