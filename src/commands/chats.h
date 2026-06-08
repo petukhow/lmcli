@@ -1,12 +1,9 @@
 #pragma once
 #include <string>
-#include "json.hpp"
 #include "types/message.h"
 #include <vector>
 
-void save_chat(const std::string& filepath, const std::vector<Message>& chat);
-
-nlohmann::json load_chats(const std::string& filepath);
+bool save_chat(const std::string& filepath, const std::vector<Message>& chat);
 
 std::string setup_chat();
 

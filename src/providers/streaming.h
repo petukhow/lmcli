@@ -13,6 +13,7 @@ struct StreamContext {
     const Provider* provider;
     std::vector<ToolInfo> tool_calls; 
     bool is_failed = false;
+    std::function<void(const std::string&)> callback;
 };
 
 size_t stream_callback(char *ptr, size_t size, size_t nmemb, void *userdata);

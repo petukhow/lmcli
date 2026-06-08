@@ -16,7 +16,7 @@
 #include <vector>
 #include "types/roles.h"
 #include "ansi_codes.h"
-#include "types/tools.h"
+#include "types/handle_tool_calls.h"
 #include "logging/logger.h"
 #include "utils/utils.h"
 
@@ -30,36 +30,6 @@ struct ChatValues {
     std::string chats_path;
     size_t limit;
 };
-
-static void handle_tool_calls(const Message& output, std::vector<Message>& conversation) {
-    for (const auto& tool : output.tool_calls) {
-        json args;
-        try {
-            args = nlohmann::json::parse(tool.arguments);
-        } catch (const nlohmann::json::parse_error& e) {
-            conversation.push_back({Role::Tool, "Invalid tool args", tool.id, {}});
-            std::cerr << "\n" << "Parse error (invalid tool args given) " << "\n";
-            log(LogLevel::Error, "Invalid tool args given");
-            log(LogLevel::Error, e.what());
-            log(LogLevel::Debug, "args: " + tool.arguments);
-            continue;
-        }
-
-        if (tool.name == "exec_bash") {
-            const std::string cmd = args["command"];
-            log(LogLevel::Debug, "exec_bash args: " + cmd);
-
-            std::string result = exec_bash(cmd);
-            log(LogLevel::Debug, "exec_bash result: " + result);
-
-            conversation.push_back({Role::Tool, result, tool.id, {}});
-        }
-        else {
-            conversation.push_back({Role::Tool, "Unknown tool. You can use bash for writing/reading if you need.", tool.id, {}});
-            log(LogLevel::Error, "Model called unknown tool.");
-        }
-    }
-}
 
 static std::optional<ChatValues> chat_init() {
     std::vector<Message> conversation;
@@ -156,7 +126,10 @@ void start() {
         log(LogLevel::Debug, "User prompted: " + prompt.content);
 
         std::cout << YELLOW << "Model: " << END;
-        output = values->account->send_request(values->conversation);
+        output = values->account->send_request(values->conversation, [](const std::string& delta) {
+            std::cout << delta;
+            std::cout.flush();
+        });
         log(LogLevel::Debug, "User prompted: " + prompt.content);
 
         while (!output.tool_calls.empty()) {
@@ -164,7 +137,10 @@ void start() {
             handle_tool_calls(output, values->conversation);
             log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
             output.tool_calls.clear();
-            output = values->account->send_request(values->conversation);
+            output = values->account->send_request(values->conversation, [](const std::string& delta) {
+                std::cout << delta;
+                std::cout.flush();
+            });
 
             const std::string is_failed = output.is_failed ? "true" : "false";
             log(LogLevel::Debug, "API returned output: " + output.content);

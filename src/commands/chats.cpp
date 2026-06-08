@@ -57,7 +57,7 @@ std::string setup_chat() {
     return full_chat_name;
 }
 
-void save_chat(const std::string& filePath, const std::vector<Message>& chat) {
+bool save_chat(const std::string& filePath, const std::vector<Message>& chat) {
     std::ofstream conversation;
     const json j = {{"conversation", chat}};
     
@@ -65,24 +65,13 @@ void save_chat(const std::string& filePath, const std::vector<Message>& chat) {
         conversation.exceptions(std::ofstream::failbit);
         conversation.open(filePath);
         conversation << j.dump(4);
+
+        return true;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
-        log(LogLevel::Error, e.what());
-    }
-}
 
-json load_chats(const std::string& filepath) {
-    std::ifstream file(filepath);
-    json parsed = {};
-
-    try {
-        parsed = json::parse(file);
-    } catch (const json::parse_error& e) {
-        std::cerr << "Parse error: " << e.what() << "\n";
         log(LogLevel::Error, e.what());
-        return {};
+        return false;
     }
-    return parsed;
 }
 
 std::vector<std::filesystem::directory_entry> store_chats(const std::string& chats_dir) {
@@ -90,7 +79,6 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
 
     if (!std::filesystem::exists(chats_dir)) {
         std::cerr << "\nChats directory not found. Try 'lmcli init'.\n";
-        log(LogLevel::Error, "Chats directory not found.");
         return chats;
     }
 
@@ -110,7 +98,6 @@ void print_chats(const std::vector<std::filesystem::directory_entry>& chats) {
             std::cout << chats[i].path().stem().string() << "\n";
         }
     } else {
-        std::cerr << "No chats yet. Start a new chat to create one.\n\n";
         log(LogLevel::Error, "Print chats request with no chats added.");
     }
 }

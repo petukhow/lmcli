@@ -8,6 +8,7 @@
 #include "provider.h"
 #include "json.hpp"
 #include <curl/curl.h>
+#include <functional>
 #include <memory>
 #include <iostream>
 #include <optional>
@@ -48,7 +49,6 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
         );
     }
     else {
-        std::cerr << "Unknown account type.\n";
         log(LogLevel::Error, "Unknown account type");
         return nullptr;
     }
@@ -56,12 +56,13 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers,
-    Curl& curl) const {
+StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers, 
+    Curl& curl, std::function<void(const std::string&)> callback) const {
     StreamContext context;
     nlohmann::json parsed;
     context.provider = this;
     context.is_failed = false;
+    context.callback = callback;
     
     CURLcode result;
 
@@ -78,13 +79,10 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     log(LogLevel::Debug, "HTTP code: " + std::to_string(http_code));
     
     if (result != CURLE_OK) {
-        std::cerr << "curl_easy_perform() failed:\n";
-        std::cerr << curl_easy_strerror(result) << "\n";
         context.is_failed = true;
     }
 
-    std::cout << context.buffer << "\n";
-
+    log(LogLevel::Debug, "buffer: " + context.buffer);
     if (context.full_content.empty() && !context.buffer.empty()) {
     try {
         auto parsed = nlohmann::json::parse(context.buffer);
@@ -99,7 +97,7 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     return context;
 }
 
-void Provider::event_handler(StreamContext* context) const {
+void Provider::event_handler(StreamContext* context, std::function<void(const std::string&)> callback) const {
     std::string delim = event_delimiter();
     size_t event_end;
     while ((event_end = context->buffer.find(delim)) != std::string::npos) {
@@ -144,8 +142,7 @@ void Provider::event_handler(StreamContext* context) const {
             }
 
             if (delta.has_value()) {
-                std::cout << *delta;
-                std::cout.flush();
+                callback(*delta);
                 context->full_content += *delta;
             }
             if (subevent_end == std::string::npos) event.clear();

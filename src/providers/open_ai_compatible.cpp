@@ -28,7 +28,7 @@ static nlohmann::json to_openai_tools(const nlohmann::json& tools) {
     return result;
 }
 
-Message OpenAICompatible::send_request(const std::vector<Message>& conversation) const {
+Message OpenAICompatible::send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
     json request_body;
@@ -78,7 +78,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
 
     log(LogLevel::Debug, "API key: " + x_api_key);
 
-    auto context = perform_request(body, headers, curl);
+    auto context = perform_request(body, headers, curl, callback);
 
     response.content = context.full_content;
     response.is_failed = context.is_failed;
@@ -87,10 +87,8 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation)
     log(LogLevel::Debug, "Got content: " + response.content);
     log(LogLevel::Debug, "Got is_failed: " + std::string(response.is_failed ? "true" : "false"));
     log(LogLevel::Debug, "Tool_calls count: " + std::to_string(response.tool_calls.size()));
-    
 
     return response;
-    
 }
 
 std::optional<std::string> OpenAICompatible::extract_delta(const nlohmann::json& json) const {
