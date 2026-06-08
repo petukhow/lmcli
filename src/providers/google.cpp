@@ -144,7 +144,7 @@ void Google::extract_tool_call(const nlohmann::json& json, StreamContext* contex
         if (tool.contains("args")) context->pending_tool.arguments = tool["args"].dump();
     }
 
-    if (parts.contains("thought_signature")) {
+    if (parts.contains("thoughtSignature")) {
         context->pending_tool.thought_signature = parts["thoughtSignature"];
     }
 

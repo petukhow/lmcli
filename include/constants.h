@@ -13,7 +13,7 @@ const nlohmann::json CONFIG_DEFAULT = {
         {"system_prompt", "You're a helpful assistant."},
         {"limit", 20},
         {"max_tokens", 1024},
-        {"logging", false},
+        {"logging", true},
         {"blacklist", nlohmann::json::array({"reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"})},
         {"confirm_required", "all"}
 };

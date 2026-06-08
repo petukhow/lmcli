@@ -8,6 +8,7 @@
 #include <optional>
 #include "linenoise.h"
 #include "json.hpp"
+#include "loaders/json_io.h"
 
 std::optional<std::string> readline(const std::string& prompt) {
     char* raw = linenoise(prompt.c_str());
@@ -139,4 +140,16 @@ std::string get_chats_path(const std::string& filename) {
         return "./" + filename;  // Fallback to current directory
     }
     return std::string(home) + "/.config/lmcli/chats/" + filename;
+}
+
+nlohmann::json load_file_with_defaults(const std::string& filename, nlohmann::json defaults) {
+    const std::optional<nlohmann::json> config = load_json(get_config_path(filename));
+    if (!config.has_value()) return defaults;
+    defaults.update(*config);
+    return defaults;
+}
+
+nlohmann::json load_file_or_default(const std::string& filename, const nlohmann::json& defaults) {
+    const auto data = load_json(get_config_path(filename));
+    return data.has_value() ? *data : defaults;
 }

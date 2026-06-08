@@ -7,13 +7,7 @@
 
 nlohmann::json load_config(const std::string& filename) {
     log(LogLevel::Info, "Loading config...");
-    nlohmann::json defaults = CONFIG_DEFAULT;
-    // todo: remove repeated code at config.cpp and accounts.cpp
-    const std::optional<nlohmann::json> config = load_json(get_config_path(filename));
-    if (!config.has_value()) return defaults;
-    defaults.update(*config);
-    
-    return defaults;
+    return load_file_with_defaults(filename, CONFIG_DEFAULT);
 }
 
 void save_config(const nlohmann::json& config) {

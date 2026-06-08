@@ -74,6 +74,8 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
 
     result = curl_easy_perform(curl.get());
 
+    log(LogLevel::Debug, "buffer: " + context.buffer);
+
     long http_code = 0;
     curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
     log(LogLevel::Debug, "HTTP code: " + std::to_string(http_code));
@@ -82,7 +84,6 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
         context.is_failed = true;
     }
 
-    log(LogLevel::Debug, "buffer: " + context.buffer);
     if (context.full_content.empty() && !context.buffer.empty()) {
     try {
         auto parsed = nlohmann::json::parse(context.buffer);

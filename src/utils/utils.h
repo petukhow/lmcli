@@ -22,3 +22,7 @@ std::string get_system_data_path(const std::string& filename);
 std::string get_chats_dir();
 
 std::string get_chats_path(const std::string& filename);
+
+nlohmann::json load_file_with_defaults(const std::string& filename, nlohmann::json defaults); 
+
+nlohmann::json load_file_or_default(const std::string& filename, const nlohmann::json& defaults);
