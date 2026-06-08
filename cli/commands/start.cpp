@@ -17,9 +17,10 @@
 #include <vector>
 #include "types/roles.h"
 #include "ansi_codes.h"
-#include "types/handle_tool_calls.h"
+#include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
 #include "utils/utils.h"
+#include "tools/ask_confirmation.h"
 
 using json = nlohmann::json;
 
@@ -135,7 +136,7 @@ void start() {
 
         while (!output.tool_calls.empty()) {
             values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
-            handle_tool_calls(output, values->conversation);
+            handle_tool_calls(output, values->conversation, ask_confirmation);
             log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
             output.tool_calls.clear();
             output = values->account->send_request(values->conversation, [](const std::string& delta) {

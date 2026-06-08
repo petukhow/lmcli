@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 #include "types/message.h"
-#include "utils/terminal.h"
+#include "terminal.h"
 
 using json = nlohmann::json;
 

@@ -1,17 +1,16 @@
 #pragma once
 #include "provider.h"
-#include "streaming.h"
 #include <string>
 
-class Google : public Provider {
+class Anthropic : public Provider {
 public:
-    Google(const std::string& api_key, const std::string& api_url,
+    Anthropic(const std::string& api_key, const std::string& api_url,
             const std::string& model, const std::string& system_prompt, size_t limit, size_t max_tokens)
-        : Provider(api_key, api_url + model + ":streamGenerateContent?alt=sse", model, system_prompt, limit, max_tokens) {}
+        : Provider(api_key, api_url, model, system_prompt, limit, max_tokens) {}
     
     Message send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback) const override;
 
     std::optional<std::string> extract_delta(const nlohmann::json& json) const override;
     void extract_tool_call(const nlohmann::json& json, StreamContext* context) const override;
-    std::string event_delimiter() const override { return "\n"; }
 };
+

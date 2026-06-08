@@ -7,34 +7,24 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 
+file(GLOB_RECURSE CORE_SOURCES "${CMAKE_SOURCE_DIR}/core/*.cpp")
+
 add_executable(tests
     main.cpp
-    ${CMAKE_SOURCE_DIR}/src/providers/anthropic.cpp
-    ${CMAKE_SOURCE_DIR}/src/providers/open_ai_compatible.cpp
-    ${CMAKE_SOURCE_DIR}/src/providers/google.cpp
-    ${CMAKE_SOURCE_DIR}/src/providers/provider.cpp
-    ${CMAKE_SOURCE_DIR}/src//providers/streaming.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/http_utils.cpp
-    ${CMAKE_SOURCE_DIR}/src/types/roles.cpp
-    ${CMAKE_SOURCE_DIR}/src/types/providers.cpp
-    ${CMAKE_SOURCE_DIR}/src/loaders/tools.cpp
-    ${CMAKE_SOURCE_DIR}/src/loaders/json_io.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
-    ${CMAKE_SOURCE_DIR}/src/types/tools.cpp
-    ${CMAKE_SOURCE_DIR}/src/loaders/config.cpp
-    ${CMAKE_SOURCE_DIR}/src/logging/logger.cpp
+    ${CORE_SOURCES}
     ${CMAKE_SOURCE_DIR}/vendor/linenoise.c
-    
 )
 
 target_include_directories(tests PRIVATE
+    ${CMAKE_SOURCE_DIR}/core
+    ${CMAKE_SOURCE_DIR}/cli
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/vendor
 )
+
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain CURL::libcurl)
 
 set_source_files_properties(
-    ${CMAKE_SOURCE_DIR}/vendor/linenoise.c 
+    ${CMAKE_SOURCE_DIR}/vendor/linenoise.c
     PROPERTIES LANGUAGE C
 )

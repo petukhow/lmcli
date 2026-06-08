@@ -3,7 +3,6 @@
 #include "open_ai_compatible.h"
 #include "types/providers.h"
 #include "google.h"
-#include "streaming.h"
 #include "anthropic.h"
 #include "provider.h"
 #include "json.hpp"

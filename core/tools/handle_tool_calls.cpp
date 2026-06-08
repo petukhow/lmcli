@@ -1,8 +1,10 @@
-#include "message.h"
+#include "types/message.h"
 #include "json.hpp"
 #include "logging/logger.h"
+#include "exec_bash.h"
+#include <functional>
 
-void handle_tool_calls(const Message& output, std::vector<Message>& conversation) {
+void handle_tool_calls(const Message& output, std::vector<Message>& conversation, const std::function<bool(const std::string&)>& confirm) {
     for (const auto& tool : output.tool_calls) {
         nlohmann::json args;
         try {
@@ -19,7 +21,7 @@ void handle_tool_calls(const Message& output, std::vector<Message>& conversation
             const std::string cmd = args["command"];
             log(LogLevel::Debug, "exec_bash args: " + cmd);
 
-            std::string result = exec_bash(cmd);
+            std::string result = exec_bash(cmd, confirm);
             log(LogLevel::Debug, "exec_bash result: " + result);
 
             conversation.push_back({Role::Tool, result, tool.id, {}});

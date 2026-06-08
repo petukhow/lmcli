@@ -2,6 +2,7 @@
 #include "json.hpp"
 #include "loaders/tools.h"
 #include "logging/logger.h"
+#include "providers/streaming.h"
 #include "types/roles.h"
 #include "utils/http_utils.h"
 #include "google.h"
