@@ -1,0 +1,49 @@
+#include "select_account.h"
+#include "providers/provider.h"
+#include "json.hpp"
+#include <iostream>
+#include "logging/logger.h"
+
+#include "ftxui/component/component.hpp"         
+#include "ftxui/component/component_options.hpp"
+#include <ftxui/component/screen_interactive.hpp>
+#include <vector>
+
+using json = nlohmann::json;
+using namespace ftxui; 
+
+std::unique_ptr<Provider> select_account(const json& accounts, const json& config) {
+    std::unique_ptr<Provider> provider;
+
+    if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
+        std::cerr << "Broken accounts.json config. Try 'lmcli setup' or 'lmcli init'";
+        log(LogLevel::Error, "Broken accounts.json config");
+        return provider;
+    }
+
+    auto accounts_json = accounts["accounts"];
+
+    if (accounts["accounts"].size() == 1) {
+        provider = Provider::create(accounts_json[0], config);
+        std::cout << "Automatically selected the only available account: " 
+            << accounts["accounts"][0]["name"].get<std::string>() << "\n";
+            log(LogLevel::Info, "Automatically selected the only available account: " + accounts_json[0]["name"].get<std::string>());
+    } else {
+        auto screen = ScreenInteractive::Fullscreen();
+        std::vector<std::string> entries;
+
+        for (const auto& account : accounts_json) {
+            entries.push_back(account["name"].get<std::string>());
+        }   
+
+        int selected = 0;
+        MenuOption option;
+        option.on_enter = screen.ExitLoopClosure();
+        auto menu = Menu(&entries, &selected, option);
+
+        screen.Loop(menu);
+        provider = Provider::create(accounts_json[selected], config);
+        log(LogLevel::Info, "Account selected: " + accounts_json[selected]["name"].get<std::string>());
+    }
+    return provider;
+}
