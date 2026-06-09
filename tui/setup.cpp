@@ -19,10 +19,7 @@ using namespace ftxui;
 
 void setup() {
     const json providers = load_providers(PROVIDERS_FILE);
-
-    if (providers.empty()) {
-        return;
-    }
+    if (providers.empty()) return;
 
     auto screen = ftxui::ScreenInteractive::Fullscreen();
 
@@ -66,14 +63,15 @@ void setup() {
     json accounts = load_accounts(ACCOUNTS_FILE);
     std::string final_name;
     auto accounts_json = accounts["accounts"];
-    auto final_component = component | CatchEvent([&](Event event) {
+    bool confirmed = false;
+    auto final_component = CatchEvent(component, [&](Event event) {
+        if (event == Event::Escape) {
+            screen.Exit();
+            return true;
+        }
         if (event == Event::Return) {
             if (api_key.empty()) return true;
-            for (const auto& acc : accounts_json) {
-                if (acc["name"].get<std::string>() == final_name) {
-                    return true;
-                }
-            }
+            confirmed = true;
             screen.Exit();
             return true;
         }
@@ -81,7 +79,7 @@ void setup() {
     });
 
     auto renderer = Renderer(final_component, [&] {
-        std::string final_name = account_name.empty() ? default_name : account_name;
+        final_name = account_name.empty() ? default_name : account_name;
         bool duplicate = false;
         for (const auto& acc : accounts_json) {
             if (acc["name"].get<std::string>() == final_name) {
@@ -93,7 +91,7 @@ void setup() {
             hbox(text(" Account name > "), input_acc->Render()),
             hbox(text(" API Key      > "), input_api_key->Render()),
             hbox(text(" Model        > "), input_user_model->Render()),
-            duplicate ? text(" Account with this name already exists!") | color(Color::Red) 
+            duplicate ? text(" Account with this name already exists! ") | color(Color::Yellow) 
                     : text(""),
                 api_key.empty() ? text(" API key cannot be empty!") | color(Color::Red) : text(""),
         }) | border;
@@ -101,8 +99,24 @@ void setup() {
 
     screen.Loop(renderer);
 
+    if (!confirmed) return;
     if (account_name.empty()) account_name = default_name;
     if (user_model.empty()) user_model = default_model;
+
+    std::string base_name = account_name;
+    int i = 1;
+    while (true) {
+        bool exists = false;
+        for (const auto& acc : accounts_json) {
+            if (acc["name"].get<std::string>() == account_name) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) break;
+        account_name = base_name + "-" + std::to_string(i);
+        i++;
+    }
 
     new_account = {
         {"type", type},
