@@ -23,18 +23,18 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
 
     auto accounts_json = accounts["accounts"];
 
-    if (accounts["accounts"].size() == 1) {
+    if (accounts_json.size() == 1) {
         provider = Provider::create(accounts_json[0], config);
         std::cout << "Automatically selected the only available account: " 
-            << accounts["accounts"][0]["name"].get<std::string>() << "\n";
+            << accounts_json[0]["name"].get<std::string>() << "\n";
             log(LogLevel::Info, "Automatically selected the only available account: " + accounts_json[0]["name"].get<std::string>());
     } else {
         auto screen = ScreenInteractive::Fullscreen();
         std::vector<std::string> entries;
-
         for (const auto& account : accounts_json) {
             entries.push_back(account["name"].get<std::string>());
         }   
+        entries.push_back("Exit");
 
         int selected = 0;
         MenuOption option;
@@ -42,6 +42,8 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
         auto menu = Menu(&entries, &selected, option);
 
         screen.Loop(menu);
+        if (size_t(selected) == entries.size()-1) return provider;
+
         provider = Provider::create(accounts_json[selected], config);
         log(LogLevel::Info, "Account selected: " + accounts_json[selected]["name"].get<std::string>());
     }

@@ -133,7 +133,7 @@ std::string create_chat(const std::string& chats_dir) {
     auto renderer = Renderer(component, [&] {
         return vbox({
             separator(),
-            hbox(text("Chat name: "), chatname->Render()),
+            hbox(text(" Chat name > "), chatname->Render()),
             separator(),
         }) |
         border;
