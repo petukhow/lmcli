@@ -3,11 +3,11 @@
 #include "json.hpp"
 #include <iostream>
 #include "logging/logger.h"
+#include <vector>
 
 #include "ftxui/component/component.hpp"         
 #include "ftxui/component/component_options.hpp"
 #include <ftxui/component/screen_interactive.hpp>
-#include <vector>
 
 using json = nlohmann::json;
 using namespace ftxui; 
