@@ -3,7 +3,6 @@
 #include <cstring>
 #include <string>
 #include <fstream>
-#include <iostream>
 #include <filesystem>
 #include <optional>
 #include "linenoise.h"
@@ -89,14 +88,12 @@ std::string get_system_data_path(const std::string& filename) {
 
 void create_config_file_if_not_exists(const std::string& config_dir, const nlohmann::json& file_template) {
     if (std::filesystem::exists(config_dir)) {
-        std::cout << "⚠ " << config_dir << " already exists, skipping\n";
         return;
     }
     // Create the file
     std::ofstream file(config_dir);
     if (!file.is_open()) {
         log(LogLevel::Error, "Could not create " + config_dir);
-        std::cerr << "Error: Could not create " << config_dir << "\n";
         return;
     }
 
@@ -116,7 +113,6 @@ std::string create_file_if_not_exists(const std::string& chats_dir, const nlohma
     std::ofstream file(final_path);
     if (!file.is_open()) {
         log(LogLevel::Error, "Could not create " + std::string(final_path));
-        std::cerr << "Error: Could not create " << final_path << "\n";
         return "";
     }
     file << file_template;

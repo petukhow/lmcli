@@ -14,6 +14,7 @@
 #include <ftxui/component/component_options.hpp>
 #include <memory>
 #include <optional>
+#include <pthread.h>
 #include <string>
 #include <vector>
 #include "types/roles.h"
@@ -94,8 +95,7 @@ void start() {
     } 
 
     auto screen = ScreenInteractive::Fullscreen();
-    InputOption::Spacious();
-    auto input_prompt = Input(&prompt.content, "Hello!");
+    auto input_prompt = Input(&prompt.content, " write something...");
     auto component = Container::Horizontal({
         input_prompt
     });
@@ -135,68 +135,73 @@ void start() {
             log(LogLevel::Info, "User prompted: " + prompt.content);
             prompt.content.clear();
 
-            std::thread([&]{
+            std::thread t([&]{
                 try {
-                auto output = values->account->send_request(values->conversation, [&](const std::string& delta) {
-                    screen.Post([&, delta] {
-                        streaming_buffer += delta;
-                        screen.RequestAnimationFrame();
-                    });
-                });
-                while (!output.tool_calls.empty()) {
-                    values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
-                    handle_tool_calls(output, values->conversation, [&](const std::string& cmd) {
-                        std::promise<bool> promise;
-                        auto future = promise.get_future();
-                        screen.Post([&, cmd] {
-                            pending_command = cmd;
-                            active_promise = &promise;
-                            screen.RequestAnimationFrame();
-                            return false;
-                        });
-                        return future.get();
-                    });
-                    log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
-                    output.tool_calls.clear();
-                    output = values->account->send_request(values->conversation, [&](const std::string& delta) {
+                    auto output = values->account->send_request(values->conversation, [&](const std::string& delta) {
                         screen.Post([&, delta] {
                             streaming_buffer += delta;
                             screen.RequestAnimationFrame();
                         });
                     });
+                    while (!output.tool_calls.empty()) {
+                        screen.Post([&] {
+                            values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
+                            handle_tool_calls(output, values->conversation, [&](const std::string& cmd) {
+                                std::promise<bool> promise;
+                                auto future = promise.get_future();
+                                screen.Post([&, cmd] {
+                                    pending_command = cmd;
+                                    active_promise = &promise;
+                                    screen.RequestAnimationFrame();
+                                    return false;
+                                });
+                                return future.get();
+                            });
+                        });
+                        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
+                        output.tool_calls.clear();
+                        output = values->account->send_request(values->conversation, [&](const std::string& delta) {
+                            screen.Post([&, delta] {
+                                streaming_buffer += delta;
+                                screen.RequestAnimationFrame();
+                            });
+                        });
 
-                    const std::string is_failed = output.is_failed ? "true" : "false";
-                    log(LogLevel::Debug, "API returned output: " + output.content);
-                    log(LogLevel::Debug, "Is API request failed: " + is_failed);
-                    log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
-                }
-                
-                if (output.is_failed) {
-                    log(LogLevel::Error, "Request failed with error: " + output.content);
-                    values->conversation.pop_back();
-                }
-                else {
-                    screen.Post([&, output] {
-                    values->conversation.push_back({Role::Assistant, output.content, "", {}});
-                    streaming_buffer.clear();
-                    });
-                }
-                log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
-
-                if (values->limit > 0) {
-                    while (values->conversation.size() > values->limit) {
-                        values->conversation.erase(values->conversation.begin() + 1);
+                        const std::string is_failed = output.is_failed ? "true" : "false";
+                        log(LogLevel::Debug, "API returned output: " + output.content);
+                        log(LogLevel::Debug, "Is API request failed: " + is_failed);
+                        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
                     }
-                }
-            } catch (const std::exception& e) {
-                log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
-            }}).detach();
+                    
+                    if (output.is_failed) {
+                        log(LogLevel::Error, "Request failed with error: " + output.content);
+                        screen.Post([&] {
+                            values->conversation.pop_back();
+                        });
+                    }
+                    else {
+                        screen.Post([&, output] {
+                            values->conversation.push_back({Role::Assistant, output.content, "", {}});
+                            streaming_buffer.clear();
+                        });
+                    }
+                    log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
 
+                    if (values->limit > 0) {
+                        while (values->conversation.size() > values->limit) {
+                            screen.Post([&] {
+                                values->conversation.erase(values->conversation.begin() + 1);
+                            });
+                        }
+                    }
+                } catch (const std::exception& e) {
+                    log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
+                }});
+            t.join();
             return true;
         }
         return false;
     });
-
     auto renderer = Renderer(final_component, [&] {
         Elements messages;
         for (const auto& msg : values->conversation) {
@@ -223,6 +228,5 @@ void start() {
     });
 
     screen.Loop(renderer);
-
     save_chat(values->chats_path, values->conversation);
 }

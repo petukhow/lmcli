@@ -1,13 +1,13 @@
 #include "select_account.h"
 #include "providers/provider.h"
 #include "json.hpp"
-#include <iostream>
 #include "logging/logger.h"
 #include <vector>
 
 #include "ftxui/component/component.hpp"         
 #include "ftxui/component/component_options.hpp"
 #include <ftxui/component/screen_interactive.hpp>
+#include "render.h"
 
 using json = nlohmann::json;
 using namespace ftxui; 
@@ -37,7 +37,14 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
         option.on_enter = screen.ExitLoopClosure();
         auto menu = Menu(&entries, &selected, option);
 
-        screen.Loop(menu);
+        auto renderer = Renderer(menu, [&] {
+            return vbox({
+                text("Select an account to continue:") | color(Color::White),
+                menu->Render(),
+            }) | border;
+        });
+
+        screen.Loop(renderer);
         if (size_t(selected) == entries.size()-1) return provider;
 
         provider = Provider::create(accounts_json[selected], config);
