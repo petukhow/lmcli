@@ -47,7 +47,7 @@ TEST_CASE("Anthropic extract_delta with empty response") {
     nlohmann::json response = {};
 
     auto result = anthropic.extract_delta(response);
-    CHECK(result == "");
+    CHECK(result == std::nullopt);
 }
 
 TEST_CASE("Google extract_delta with empty response") {
@@ -55,7 +55,7 @@ TEST_CASE("Google extract_delta with empty response") {
     nlohmann::json response = {};
 
     auto result = google.extract_delta(response);
-    CHECK(result == "");
+    CHECK(result == std::nullopt);
 }
 
 TEST_CASE("OpenAI compatible extract_delta with empty response") {
@@ -79,7 +79,7 @@ TEST_CASE("Google's extract_delta accesses to an empty array") {
     nlohmann::json response = {{"candidates", {}}};
 
     auto result = google.extract_delta(response);
-    CHECK(result == "");
+    CHECK(result == std::nullopt);
 }
 
 TEST_CASE("Anthropic's extract_delta accesses to an empty array") {
@@ -87,5 +87,5 @@ TEST_CASE("Anthropic's extract_delta accesses to an empty array") {
     nlohmann::json response = {{"delta", {}}};
 
     auto result = anthropic.extract_delta(response);
-    CHECK(result == "");
+    CHECK(result == std::nullopt);
 }

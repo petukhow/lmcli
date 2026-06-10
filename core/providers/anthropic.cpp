@@ -8,6 +8,7 @@
 #include "types/tools.h"
 #include "anthropic.h"
 #include <curl/curl.h>
+#include <optional>
 #include "loaders/tools.h"
 
 using json = nlohmann::json;
@@ -92,13 +93,12 @@ Message Anthropic::send_request(const std::vector<Message>& conversation, std::f
 }
 
 std::optional<std::string> Anthropic::extract_delta(const nlohmann::json& json) const {
-    std::string delta;
+    if (!json.contains("delta") || json["delta"].empty()) return std::nullopt;
 
-    if (json.contains("delta") && json["delta"].contains("text")) {
-        delta = json["delta"]["text"];
-    }
+    auto delta = json["delta"];
+    if (!delta.contains("text") || delta["text"].is_null()) return std::nullopt;
 
-    return delta;
+    return delta["text"];
 }
 
 void Anthropic::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {

@@ -118,15 +118,18 @@ Message Google::send_request(const std::vector<Message>& conversation, std::func
 }
 
 std::optional<std::string> Google::extract_delta(const nlohmann::json& json) const {
-    std::string delta;
+    if (!json.contains("candidates") || !json["candidates"].is_array() || json["candidates"].empty()) return std::nullopt;
 
-    if (json.contains("candidates") && json["candidates"][0].contains("content")
-        && json["candidates"][0]["content"].contains("parts")
-        && json["candidates"][0]["content"]["parts"][0].contains("text")) {
-        delta = json["candidates"][0]["content"]["parts"][0]["text"];
-    }
-    
-    return delta;
+    auto candidates = json["candidates"][0];
+    if (!candidates.contains("content") || candidates["content"].empty()) return std::nullopt;
+
+    auto content = candidates["content"];
+    if (!content.contains("parts") || !content["parts"].is_array() || content["parts"].empty()) return std::nullopt;
+
+    auto parts = content["parts"][0];
+    if (!parts.contains("text") || parts["text"].is_null()) return std::nullopt;
+
+    return parts["text"];
 }
 
 void Google::extract_tool_call(const nlohmann::json& json, StreamContext* context) const {
