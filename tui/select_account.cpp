@@ -16,7 +16,6 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
     std::unique_ptr<Provider> provider;
 
     if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
-        std::cerr << "Broken accounts.json config. Try 'lmcli setup' or 'lmcli init'";
         log(LogLevel::Error, "Broken accounts.json config");
         return provider;
     }
@@ -25,9 +24,6 @@ std::unique_ptr<Provider> select_account(const json& accounts, const json& confi
 
     if (accounts_json.size() == 1) {
         provider = Provider::create(accounts_json[0], config);
-        std::cout << "Automatically selected the only available account: " 
-            << accounts_json[0]["name"].get<std::string>() << "\n";
-            log(LogLevel::Info, "Automatically selected the only available account: " + accounts_json[0]["name"].get<std::string>());
     } else {
         auto screen = ScreenInteractive::Fullscreen();
         std::vector<std::string> entries;

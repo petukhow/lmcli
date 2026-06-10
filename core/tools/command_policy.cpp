@@ -6,10 +6,8 @@ bool is_confirm_required(const nlohmann::json& cfg, const std::string& cmd) {
     bool is_confirm_required = false;
     if (cfg["confirm_required"] == "all") return true;
 
-    if (!is_confirm_required) {
-        for (const auto &command : cfg["confirm_required"]) {
-            is_confirm_required = cmd.find(command.get<std::string>()) != std::string::npos;
-        }
+    for (const auto &command : cfg["confirm_required"]) {
+        is_confirm_required |= cmd.find(command.get<std::string>()) != std::string::npos;
     }
     return is_confirm_required;
 }
