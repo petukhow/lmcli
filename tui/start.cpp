@@ -1,3 +1,12 @@
+/*
+thread invariants:
+    1. every single editing/reading of data in working thread should be handled using screen.Post()
+    2. every waitings (future.get()) are only allowed in working thread (if UI thread sleeps = bad UX)
+    3. always join (t.join) thread after Loop
+    4. only one working thread. busy flag is always initialized before thread
+    5. active_promise is only valid when pending_command not empty (set_value only with this check) 
+*/
+
 #include "commands.h"
 #include "json.hpp"
 #include "providers/provider.h"
@@ -10,11 +19,8 @@
 #include "types/message.h"
 #include <cstddef>
 #include <cstdio>
-#include <ftxui/component/animation.hpp>
-#include <ftxui/component/component_options.hpp>
 #include <memory>
 #include <optional>
-#include <pthread.h>
 #include <string>
 #include <vector>
 #include "types/roles.h"
@@ -25,10 +31,14 @@
 #include "ftxui/component/component_base.hpp"
 #include <ftxui/component/screen_interactive.hpp>
 #include "ftxui/component/event.hpp"
+#include <ftxui/component/animation.hpp>
+#include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
 
 #include <thread>
+#include <atomic>
 #include <future>
+#include <pthread.h>
 
 using json = nlohmann::json;
 using namespace ftxui;
@@ -86,7 +96,9 @@ void start() {
     Message output; 
     std::string streaming_buffer;
     std::string pending_command;
+    std::atomic<bool> busy = false;
     std::promise<bool>* active_promise = nullptr;
+    std::thread t;
 
     auto values = chat_init(); 
     if (!values) {
@@ -95,7 +107,7 @@ void start() {
     } 
 
     auto screen = ScreenInteractive::Fullscreen();
-    auto input_prompt = Input(&prompt.content, " write something...");
+    auto input_prompt = Input(&prompt.content, " Write something...");
     auto component = Container::Horizontal({
         input_prompt
     });
@@ -118,6 +130,7 @@ void start() {
         }
 
         if (event == Event::Return) {
+            if (busy) return true;
             auto trimmed = prompt.content;
             trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
             if (trimmed.empty()) {
@@ -131,13 +144,16 @@ void start() {
                 screen.Exit();
                 return true;
             }
-            values->conversation.push_back({Role::User, prompt.content, "", {}});
+            values->conversation.push_back({Role::User, prompt.content,
+                "", {}});
             log(LogLevel::Info, "User prompted: " + prompt.content);
             prompt.content.clear();
 
-            std::thread t([&]{
+            busy = true;
+            t = std::thread([&]{
                 try {
-                    auto output = values->account->send_request(values->conversation, [&](const std::string& delta) {
+                    auto output = values->account->send_request(values->conversation,
+                        [&](const std::string& delta) {
                         screen.Post([&, delta] {
                             streaming_buffer += delta;
                             screen.RequestAnimationFrame();
@@ -145,22 +161,35 @@ void start() {
                     });
                     while (!output.tool_calls.empty()) {
                         screen.Post([&] {
-                            values->conversation.push_back({Role::Assistant, "", "", output.tool_calls});
-                            handle_tool_calls(output, values->conversation, [&](const std::string& cmd) {
-                                std::promise<bool> promise;
-                                auto future = promise.get_future();
-                                screen.Post([&, cmd] {
-                                    pending_command = cmd;
-                                    active_promise = &promise;
-                                    screen.RequestAnimationFrame();
-                                    return false;
-                                });
-                                return future.get();
-                            });
+                            values->conversation.push_back({Role::Assistant, "", 
+                                "", output.tool_calls});
                         });
-                        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
+                        auto results = handle_tool_calls(output, [&](const std::string& cmd) {
+                            std::promise<bool> promise;
+                            auto future = promise.get_future();
+                            screen.Post([&, cmd] {
+                                pending_command = cmd;
+                                active_promise = &promise;
+                                screen.RequestAnimationFrame();
+                            });
+                            return future.get();
+                        });
+
+                        std::promise<void> posted;
+                        auto posted_future = posted.get_future();
+                        screen.Post([&, results] {
+                            for (const auto& msg : results) {
+                                values->conversation.push_back(msg);  
+                            }
+                            posted.set_value();
+                        });
+                        posted_future.get();
+
+                        log(LogLevel::Debug, "Number of tool calls: "
+                            + std::to_string(output.tool_calls.size()));
                         output.tool_calls.clear();
-                        output = values->account->send_request(values->conversation, [&](const std::string& delta) {
+                        output = values->account->send_request(values->conversation,
+                            [&](const std::string& delta) {
                             screen.Post([&, delta] {
                                 streaming_buffer += delta;
                                 screen.RequestAnimationFrame();
@@ -170,7 +199,8 @@ void start() {
                         const std::string is_failed = output.is_failed ? "true" : "false";
                         log(LogLevel::Debug, "API returned output: " + output.content);
                         log(LogLevel::Debug, "Is API request failed: " + is_failed);
-                        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
+                        log(LogLevel::Debug, "Number of tool calls: "
+                            + std::to_string(output.tool_calls.size()));
                     }
                     
                     if (output.is_failed) {
@@ -181,23 +211,30 @@ void start() {
                     }
                     else {
                         screen.Post([&, output] {
-                            values->conversation.push_back({Role::Assistant, output.content, "", {}});
+                            values->conversation.push_back({Role::Assistant, output.content,
+                                "", {}});
                             streaming_buffer.clear();
                         });
                     }
                     log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
 
                     if (values->limit > 0) {
-                        while (values->conversation.size() > values->limit) {
-                            screen.Post([&] {
+                        screen.Post([&] {
+                            while (values->conversation.size() > values->limit) {    
                                 values->conversation.erase(values->conversation.begin() + 1);
-                            });
-                        }
+                            }
+                        });
                     }
+                    std::promise<void> finished;
+                    std::future<void> finished_ftr;
+                    screen.Post([&] { finished.set_value(); });
+                    finished_ftr.get();
+                    busy = false;
                 } catch (const std::exception& e) {
                     log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
-                }});
-            t.join();
+                    busy = false;
+                }}
+            );
             return true;
         }
         return false;
@@ -228,5 +265,10 @@ void start() {
     });
 
     screen.Loop(renderer);
+    
+    if (!pending_command.empty()) {
+        active_promise->set_value(false);
+    }
+    if (t.joinable()) t.join();
     save_chat(values->chats_path, values->conversation);
 }
