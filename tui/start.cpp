@@ -1,10 +1,9 @@
 /*
 thread invariants:
-    1. every single editing of data in working thread should be handled using screen.Post()
+    1. every single editing of shared data should be handled using screen.Post() (UI thread only)
     2. every waitings (future.get()) are only allowed in working thread (if UI thread sleeps = bad UX)
-    3. always join (t.join) thread after Loop
-    4. only one working thread. busy flag is always initialized before thread
-    5. active_promise is only valid when pending_command not empty (set_value only with this check) 
+    3. only one working thread. busy flag is always initialized before thread
+    4. active_promise is only valid when pending_command not empty (set_value only with this check) 
 */
 
 #include "commands.h"
@@ -26,6 +25,8 @@ thread invariants:
 #include "types/roles.h"
 #include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
+#include "loaders/theme.h"
+#include "types/theme.h"
 
 #include "ftxui/component/component.hpp"         
 #include "ftxui/component/component_base.hpp"
@@ -48,6 +49,7 @@ struct ChatValues {
     std::unique_ptr<Provider> account;
     std::string chats_path;
     size_t limit;
+    Theme theme;
 };
 
 static std::optional<ChatValues> chat_init() {
@@ -88,15 +90,17 @@ static std::optional<ChatValues> chat_init() {
         conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
     }
 
-    return ChatValues{std::move(conversation), std::move(account), std::move(chats_path), config["limit"]};
+    const auto theme = load_theme(config["theme"].get<std::string>());
+    return ChatValues{std::move(conversation), std::move(account), std::move(chats_path), config["limit"], theme};
 }
 
 void start() {
     Message prompt;
-    Message output; 
     std::string streaming_buffer;
     std::string pending_command;
+    int scroll_up = 0;
     std::atomic<bool> busy = false;
+    std::atomic<bool> cancelled = false;
     std::promise<bool>* active_promise = nullptr;
     std::thread t;
 
@@ -107,12 +111,55 @@ void start() {
     } 
 
     auto screen = ScreenInteractive::Fullscreen();
-    auto input_prompt = Input(&prompt.content, " Write something...");
+    InputOption input_option;
+    input_option.transform = [&](InputState state) {
+        state.element |= color(values->theme.prompt_color);
+        return state.element;
+    };
+    auto input_prompt = Input(&prompt.content, "Write something...", input_option);
     auto component = Container::Horizontal({
         input_prompt
     });
 
     auto final_component = component | CatchEvent([&](Event event) {
+        if (event == Event::Escape) {
+            if (busy) {
+                cancelled = true;
+                return true;
+            }
+            return false;
+        }
+        if (event.is_mouse() && event.mouse().button == Mouse::WheelUp) {
+            scroll_up += 3;
+            screen.RequestAnimationFrame();
+            return true;
+        }
+        if (event.is_mouse() && event.mouse().button == Mouse::WheelDown) {
+            scroll_up = std::max(0, scroll_up - 3);
+            screen.RequestAnimationFrame();
+            return true;
+        }
+        if (event == Event::ArrowUp) {
+            scroll_up += 1;
+            screen.RequestAnimationFrame();
+            return true;
+        }
+        if (event == Event::ArrowDown) {
+            scroll_up = std::max(0, scroll_up - 1);
+            screen.RequestAnimationFrame();
+            return true;
+        }
+        if (event == Event::PageUp) {
+            scroll_up += 5;
+            screen.RequestAnimationFrame();
+            return true;
+        }
+        if (event == Event::PageDown) {
+            scroll_up = std::max(0, scroll_up - 5);
+            screen.RequestAnimationFrame();
+            return true;
+        }
+
         if (!pending_command.empty()) {
             if (event == Event::Character("y")) {
                 active_promise->set_value(true);
@@ -151,21 +198,22 @@ void start() {
             log(LogLevel::Info, "User prompted: " + prompt.content);
             prompt.content.clear();
 
+            scroll_up = 0;
+            cancelled = false;
             busy = true;
             t = std::thread([&]{
                 try {
-                    auto output = values->account->send_request(values->conversation,
+                    auto local_conv = values->conversation;
+                    auto output = values->account->send_request(local_conv,
                         [&](const std::string& delta) {
                         screen.Post([&, delta] {
                             streaming_buffer += delta;
                             screen.RequestAnimationFrame();
                         });
-                    });
-                    while (!output.tool_calls.empty()) {
-                        screen.Post([&] {
-                            values->conversation.push_back({Role::Assistant, "", 
-                                "", output.tool_calls});
-                        });
+                    }, &cancelled);
+
+                    while (!output.tool_calls.empty() && !cancelled) {
+                        local_conv.push_back({Role::Assistant, "", "", output.tool_calls});
                         auto results = handle_tool_calls(output, [&](const std::string& cmd) {
                             std::promise<bool> promise;
                             auto future = promise.get_future();
@@ -176,61 +224,56 @@ void start() {
                             });
                             return future.get();
                         });
-
-                        std::promise<void> posted;
-                        auto posted_future = posted.get_future();
-                        screen.Post([&, results] {
-                            for (const auto& msg : results) {
-                                values->conversation.push_back(msg);  
-                            }
-                            posted.set_value();
-                        });
-                        posted_future.get();
-
+                        for (const auto& msg : results) {
+                            local_conv.push_back(msg);
+                        }
                         log(LogLevel::Debug, "Number of tool calls: "
                             + std::to_string(output.tool_calls.size()));
                         output.tool_calls.clear();
-                        output = values->account->send_request(values->conversation,
+                        output = values->account->send_request(local_conv,
                             [&](const std::string& delta) {
                             screen.Post([&, delta] {
                                 streaming_buffer += delta;
                                 screen.RequestAnimationFrame();
                             });
-                        });
-
+                        }, &cancelled);
                         const std::string is_failed = output.is_failed ? "true" : "false";
                         log(LogLevel::Debug, "API returned output: " + output.content);
                         log(LogLevel::Debug, "Is API request failed: " + is_failed);
                         log(LogLevel::Debug, "Number of tool calls: "
                             + std::to_string(output.tool_calls.size()));
                     }
-                    
-                    if (output.is_failed) {
+
+                    if (cancelled) {
+                        log(LogLevel::Info, "Request cancelled by user");
+                        auto partial = streaming_buffer;
+                        screen.Post([&, local_conv, partial] {
+                            values->conversation = local_conv;
+                            if (!partial.empty()) {
+                                values->conversation.push_back(
+                                    {Role::Assistant, partial, "", {}});
+                            }
+                            streaming_buffer.clear();
+                        });
+                    } else if (output.is_failed) {
                         log(LogLevel::Error, "Request failed with error: " + output.content);
                         screen.Post([&] {
                             values->conversation.pop_back();
+                            streaming_buffer.clear();
                         });
-                    }
-                    else {
-                        screen.Post([&, output] {
-                            values->conversation.push_back({Role::Assistant, output.content,
-                                "", {}});
+                    } else {
+                        local_conv.push_back({Role::Assistant, output.content, "", {}});
+                        if (values->limit > 0) {
+                            while (local_conv.size() > values->limit) {
+                                local_conv.erase(local_conv.begin() + 1);
+                            }
+                        }
+                        screen.Post([&, local_conv] {
+                            values->conversation = local_conv;
                             streaming_buffer.clear();
                         });
                     }
                     log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
-
-                    if (values->limit > 0) {
-                        screen.Post([&] {
-                            while (values->conversation.size() > values->limit) {    
-                                values->conversation.erase(values->conversation.begin() + 1);
-                            }
-                        });
-                    }
-                    std::promise<void> finished;
-                    std::future<void> finished_ftr = finished.get_future();
-                    screen.Post([&] { finished.set_value(); });
-                    finished_ftr.get();
                     busy = false;
                 } catch (const std::exception& e) {
                     log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
@@ -241,29 +284,50 @@ void start() {
         }
         return false;
     });
+    const auto& theme = values->theme;
     auto renderer = Renderer(final_component, [&] {
         Elements messages;
         for (const auto& msg : values->conversation) {
             if (msg.role == Role::User) {
-                messages.push_back(paragraph("You: " + msg.content));
+                messages.push_back(vbox({
+                    hbox(text("❯ ") | color(theme.prompt_color), paragraph(msg.content) | color(theme.user_color)),
+                    text(""),
+                }));
             } else if (msg.role == Role::Assistant) {
-                messages.push_back(paragraph("Model: " + msg.content));
+                messages.push_back(vbox({
+                    paragraph(msg.content) | color(theme.assistant_color),
+                    text(""),
+                }));
             }
         }
 
         if (!streaming_buffer.empty()) {
-            messages.push_back(paragraph("Model: " + streaming_buffer));
+            messages.push_back(vbox({
+                paragraph(streaming_buffer) | color(theme.streaming_color),
+                text(""),
+            }));
         }
 
         if (!pending_command.empty()) {
-            messages.push_back(text("Allow: " + pending_command + "? (y/n)") | color(Color::Yellow));
+            messages.push_back(
+                text("Allow: " + pending_command + "? (y/n)") | color(theme.status_color));
         }
 
+        if (!messages.empty()) {
+            int target = static_cast<int>(messages.size()) - 1 - scroll_up;
+            target = std::max(0, target);
+            scroll_up = static_cast<int>(messages.size()) - 1 - target;
+            messages[target] = messages[target] | focus;
+        }
+
+        auto input_line = hbox(text("❯ ") | color(theme.prompt_color), input_prompt->Render());
+        if (busy) input_line = input_line | dim;
+
         return vbox({
-            vbox(messages) | flex,
-            separator(),
-            hbox(text("> "), input_prompt->Render()),
-        }) | border;
+            vbox(messages) | yframe | flex,
+            separator() | color(theme.separator_color),
+            input_line,
+        });
     });
 
     screen.Loop(renderer);
