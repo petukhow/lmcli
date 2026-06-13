@@ -14,7 +14,7 @@ struct Message {
 };
 
 inline void to_json(nlohmann::json& j, const Message& m) {
-    j = nlohmann::json{{"role", m.role}, {"content", m.content},
+    j = nlohmann::json{{"role", role_to_string(m.role)}, {"content", m.content},
     {"is_failed", m.is_failed}, {"tool_call_id", m.tool_call_id}, {"tool_calls", m.tool_calls}};
 }
 

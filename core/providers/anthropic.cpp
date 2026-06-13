@@ -62,7 +62,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation, std::f
         else {
             request_body["messages"].push_back({
             {"content", msg.content},
-            {"role", msg.role}
+            {"role", role_to_string(msg.role)}
             });
         }
     }

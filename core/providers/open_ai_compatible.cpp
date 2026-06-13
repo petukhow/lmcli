@@ -44,7 +44,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation,
 
     
     for (const auto& msg : conversation) {
-        json message = {{"role", msg.role}};
+        json message = {{"role", role_to_string(msg.role)}};
             
         if (msg.role == Role::Tool) {
             message["content"] = msg.content;

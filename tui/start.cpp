@@ -1,6 +1,6 @@
 /*
 thread invariants:
-    1. every single editing/reading of data in working thread should be handled using screen.Post()
+    1. every single editing of data in working thread should be handled using screen.Post()
     2. every waitings (future.get()) are only allowed in working thread (if UI thread sleeps = bad UX)
     3. always join (t.join) thread after Loop
     4. only one working thread. busy flag is always initialized before thread
@@ -131,6 +131,8 @@ void start() {
 
         if (event == Event::Return) {
             if (busy) return true;
+            if (t.joinable()) t.join();
+            
             auto trimmed = prompt.content;
             trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
             if (trimmed.empty()) {
@@ -226,7 +228,7 @@ void start() {
                         });
                     }
                     std::promise<void> finished;
-                    std::future<void> finished_ftr;
+                    std::future<void> finished_ftr = finished.get_future();
                     screen.Post([&] { finished.set_value(); });
                     finished_ftr.get();
                     busy = false;
