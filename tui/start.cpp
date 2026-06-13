@@ -44,6 +44,34 @@ thread invariants:
 using json = nlohmann::json;
 using namespace ftxui;
 
+static bool handle_scroll(Event event, int& scroll_up) {
+    if (event.is_mouse() && event.mouse().button == Mouse::WheelUp) {
+        scroll_up += 3;
+        return true;
+    }
+    if (event.is_mouse() && event.mouse().button == Mouse::WheelDown) {
+        scroll_up = std::max(0, scroll_up - 3);
+        return true;
+    }
+    if (event == Event::ArrowUp) {
+        scroll_up += 1;
+        return true;
+    }
+    if (event == Event::ArrowDown) {
+        scroll_up = std::max(0, scroll_up - 1);
+        return true;
+    }
+    if (event == Event::PageUp) {
+        scroll_up += 5;
+        return true;
+    }
+    if (event == Event::PageDown) {
+        scroll_up = std::max(0, scroll_up - 5);
+        return true;
+    }
+    return false;
+}
+
 struct ChatValues {
     std::vector<Message> conversation;
     std::unique_ptr<Provider> account;
@@ -129,33 +157,7 @@ void start() {
             }
             return false;
         }
-        if (event.is_mouse() && event.mouse().button == Mouse::WheelUp) {
-            scroll_up += 3;
-            screen.RequestAnimationFrame();
-            return true;
-        }
-        if (event.is_mouse() && event.mouse().button == Mouse::WheelDown) {
-            scroll_up = std::max(0, scroll_up - 3);
-            screen.RequestAnimationFrame();
-            return true;
-        }
-        if (event == Event::ArrowUp) {
-            scroll_up += 1;
-            screen.RequestAnimationFrame();
-            return true;
-        }
-        if (event == Event::ArrowDown) {
-            scroll_up = std::max(0, scroll_up - 1);
-            screen.RequestAnimationFrame();
-            return true;
-        }
-        if (event == Event::PageUp) {
-            scroll_up += 5;
-            screen.RequestAnimationFrame();
-            return true;
-        }
-        if (event == Event::PageDown) {
-            scroll_up = std::max(0, scroll_up - 5);
+        if (handle_scroll(event, scroll_up)) {
             screen.RequestAnimationFrame();
             return true;
         }
