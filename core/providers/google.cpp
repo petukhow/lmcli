@@ -43,7 +43,8 @@ static std::optional<std::string> find_tool_name(const std::vector<Message>& con
     return std::nullopt;
 }
 
-Message Google::send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback) const {
+Message Google::send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback,
+    std::atomic<bool>* cancelled) const {
     const std::string x_api_key = "x-goog-api-key: " + api_key;
     CurlSlist headers;
     json request_body;
@@ -104,7 +105,7 @@ Message Google::send_request(const std::vector<Message>& conversation, std::func
 
     log(LogLevel::Debug, "API key: " + x_api_key);
 
-    auto context = perform_request(body, headers, curl, callback);
+    auto context = perform_request(body, headers, curl, callback, cancelled);
 
     response.content = std::move(context.full_content);
     response.is_failed = context.is_failed;

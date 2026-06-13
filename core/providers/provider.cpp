@@ -55,12 +55,14 @@ std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const
     return provider;
 }
 
-StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers, 
-    Curl& curl, std::function<void(const std::string&)> callback) const {
+StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers,
+    Curl& curl, std::function<void(const std::string&)> callback,
+    std::atomic<bool>* cancelled) const {
     StreamContext context;
     nlohmann::json parsed;
     context.provider = this;
     context.is_failed = false;
+    context.cancelled = cancelled;
     context.callback = callback;
     
     CURLcode result;

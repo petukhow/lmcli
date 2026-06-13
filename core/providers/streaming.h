@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <atomic>
 #include "types/tools.h"
 #include <vector>
 
@@ -11,8 +12,9 @@ struct StreamContext {
     std::string full_content;
     ToolInfo pending_tool;
     const Provider* provider;
-    std::vector<ToolInfo> tool_calls; 
+    std::vector<ToolInfo> tool_calls;
     bool is_failed = false;
+    std::atomic<bool>* cancelled = nullptr;
     std::function<void(const std::string&)> callback;
 };
 

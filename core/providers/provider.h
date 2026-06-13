@@ -11,7 +11,8 @@
 class Provider {
 protected:
     StreamContext perform_request(const std::string& body, const CurlSlist& headers,
-        Curl& curl, std::function<void(const std::string&)> callback) const;
+        Curl& curl, std::function<void(const std::string&)> callback,
+        std::atomic<bool>* cancelled = nullptr) const;
 
     std::string api_key;
     std::string api_url;
@@ -28,7 +29,8 @@ public:
     static std::unique_ptr<Provider> create(const nlohmann::json& accounts, const nlohmann::json& config);
     void set_model(const std::string& new_model) { model = new_model; }
         
-    virtual Message send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback) const = 0;
+    virtual Message send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback,
+        std::atomic<bool>* cancelled = nullptr) const = 0;
     virtual std::optional<std::string> extract_delta(const nlohmann::json& json) const = 0;
     virtual void extract_tool_call(const nlohmann::json& json, StreamContext* context) const = 0;
     virtual void event_handler(StreamContext* context, std::function<void(const std::string&)> callback) const;

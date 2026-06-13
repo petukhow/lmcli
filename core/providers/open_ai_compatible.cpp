@@ -28,7 +28,8 @@ static nlohmann::json to_openai_tools(const nlohmann::json& tools) {
     return result;
 }
 
-Message OpenAICompatible::send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback) const {
+Message OpenAICompatible::send_request(const std::vector<Message>& conversation, std::function<void(const std::string&)> callback,
+    std::atomic<bool>* cancelled) const {
     const std::string x_api_key = "Authorization: Bearer " + api_key;
     CurlSlist headers;
     json request_body;
@@ -78,7 +79,7 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation,
 
     log(LogLevel::Debug, "API key: " + x_api_key);
 
-    auto context = perform_request(body, headers, curl, callback);
+    auto context = perform_request(body, headers, curl, callback, cancelled);
 
     response.content = context.full_content;
     response.is_failed = context.is_failed;
