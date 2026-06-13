@@ -6,6 +6,7 @@ const std::string CONFIG_FILE = "config.json";
 const std::string ACCOUNTS_FILE = "accounts.json";
 const std::string PROVIDERS_FILE = "providers.json";
 const std::string TOOLS_FILE = "tools.json";
+const std::string THEMES_FILE = "themes.json";
 const std::string LOGS_FILE = "lmcli.log";
 
 const nlohmann::json ACCOUNTS_DEFAULT = {{"accounts", nlohmann::json::array({})}};
@@ -15,7 +16,8 @@ const nlohmann::json CONFIG_DEFAULT = {
         {"max_tokens", 1024},
         {"logging", true},
         {"blacklist", nlohmann::json::array({"reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"})},
-        {"confirm_required", "all"}
+        {"confirm_required", "all"},
+        {"theme", "tech"}
 };
 const nlohmann::json TOOLS_DEFAULT = {
     {"tools", nlohmann::json::array({
