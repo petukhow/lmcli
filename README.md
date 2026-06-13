@@ -8,6 +8,7 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 - **Configurable** — System prompts, token limits, and conversation history
 - **Account switching** — Easily switch between different API accounts
 - **Interactive chat** — Simple conversational interface with context management
+- **TUI/CLI modes** — Choose a terminal mode you want
 - **Agent mode** — Models can call tools across multiple turns
 - **Streaming responses** — Get model's answer instantly token-by-token
 
@@ -101,14 +102,17 @@ Configuration files are stored in `~/.config/lmcli/`:
   "system_prompt": "You are a helpful assistant.",
   "limit": 20,
   "max_tokens": 1024, 
+  "logging": "all", // Logs (if enabled) are stored in `~/.local/state/lmcli/`
   "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
-  "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"]
+  "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"],
+  "theme": "tech"
 }
 ```
 
 - **system_prompt**: Default system message for all conversations
 - **limit**: Maximum number of messages to keep in context (older messages are pruned). Set to 0 to disable
 - **max_tokens**: Maximum tokens per API response
+- **Logging**: Store logs locally
 - **blacklist**: Blacklisted commands (Commands the model is not allowed to execute)
 - **confirm_required**: These commands require user's confirmation
 
