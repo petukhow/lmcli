@@ -13,6 +13,20 @@ struct Message {
     bool is_failed = false;
 };
 
+inline void trim_history(std::vector<Message>& conv, size_t limit) {
+    while (limit < conv.size()) {
+        if (conv.size() < 2) return;
+
+        conv.erase(conv.begin()+1);
+        // we need to remove all the tool calls with this id so it doesn't break during API request
+        while (conv.size() >= 2 && conv[1].role == Role::Tool) {
+            conv.erase(conv.begin()+1);
+        }
+        continue;
+    }
+    return;
+}
+
 inline void to_json(nlohmann::json& j, const Message& m) {
     j = nlohmann::json{{"role", role_to_string(m.role)}, {"content", m.content},
     {"is_failed", m.is_failed}, {"tool_call_id", m.tool_call_id}, {"tool_calls", m.tool_calls}};

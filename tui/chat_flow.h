@@ -20,7 +20,7 @@ struct ChatSession {
     std::string error_message;
     std::string streaming_buffer;
     std::string pending_command;
-    int scroll_up = 0;
+    float scroll_pos = 1.0f;
     std::atomic<bool> busy{false};
     std::atomic<bool> cancelled{false};
     std::promise<bool>* active_promise = nullptr;

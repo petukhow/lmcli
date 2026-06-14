@@ -16,6 +16,7 @@ thread invariants:
 #include "types/roles.h"
 
 #include "ftxui/component/component.hpp"
+#include <algorithm>
 #include <ftxui/component/screen_interactive.hpp>
 #include "ftxui/component/event.hpp"
 #include <ftxui/component/component_options.hpp>
@@ -26,29 +27,21 @@ thread invariants:
 
 using namespace ftxui;
 
-static bool handle_scroll(Event event, int& scroll_up) {
-    if (event.is_mouse() && event.mouse().button == Mouse::WheelUp) {
-        scroll_up += 3;
+static bool handle_scroll(Event event, float& scroll_pos) {
+    if ((event.is_mouse() && event.mouse().button == Mouse::WheelUp)
+        || event == Event::ArrowUp
+        || event == Event::PageUp
+    ) {
+        scroll_pos -= 0.05f;
+        scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
-    if (event.is_mouse() && event.mouse().button == Mouse::WheelDown) {
-        scroll_up = std::max(0, scroll_up - 3);
-        return true;
-    }
-    if (event == Event::ArrowUp) {
-        scroll_up += 1;
-        return true;
-    }
-    if (event == Event::ArrowDown) {
-        scroll_up = std::max(0, scroll_up - 1);
-        return true;
-    }
-    if (event == Event::PageUp) {
-        scroll_up += 5;
-        return true;
-    }
-    if (event == Event::PageDown) {
-        scroll_up = std::max(0, scroll_up - 5);
+    if ((event.is_mouse() && event.mouse().button == Mouse::WheelDown)
+        || event == Event::ArrowDown
+        || event == Event::PageDown
+    ) {
+        scroll_pos += 0.05f;
+        scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
     return false;
@@ -126,9 +119,7 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
         });
     } else {
         local_conv.push_back({Role::Assistant, output.content, "", {}});
-        if (session->limit > 0) {
-            while (local_conv.size() > session->limit) local_conv.erase(local_conv.begin() + 1);
-        }
+        trim_history(local_conv, session->limit);
         screen.Post([&, local_conv] {
             session->conversation = local_conv;
             session->streaming_buffer.clear();
@@ -164,7 +155,7 @@ void start() {
             }
             return false;
         }
-        if (handle_scroll(event, session->scroll_up)) {
+        if (handle_scroll(event, session->scroll_pos)) {
             screen.RequestAnimationFrame();
             return true;
         }
@@ -208,7 +199,7 @@ void start() {
             log(LogLevel::Info, "User prompted: " + session->prompt.content);
             session->prompt.content.clear();
 
-            session->scroll_up = 0;
+            session->scroll_pos = 1.0f;
             session->cancelled = false;
             session->busy = true;
             session->worker = std::thread([&]{
@@ -253,18 +244,11 @@ void start() {
                 paragraph("Allow: " + session->pending_command + "? (y/n)") | color(theme.status_color));
         }
 
-        if (!messages.empty()) {
-            int target = static_cast<int>(messages.size()) - 1 - session->scroll_up;
-            target = std::max(0, target);
-            session->scroll_up = static_cast<int>(messages.size()) - 1 - target;
-            messages[target] = messages[target] | focus;
-        }
-
         auto input_line = hbox(text("› ") | color(Color::GrayDark), input_prompt->Render());
         if (session->busy) input_line = input_line | dim;
 
         return vbox({
-            vbox(messages) | yframe | flex,
+            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | frame | flex,
             separator() | color(theme.separator_color),
             !session->error_message.empty()
                 ? paragraph("✗ " + session->error_message) | color(Color::Red)
@@ -272,7 +256,7 @@ void start() {
             input_line,
             separator() | color(theme.separator_color),
             session->busy
-                ? paragraph(" esc to interrupt 𐤟 /help for commands") | color(Color::GrayDark)
+                ? paragraph(" esc to interrupt") | color(Color::GrayDark)
                 : emptyElement()
         });
     });
