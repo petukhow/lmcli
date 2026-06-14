@@ -16,6 +16,7 @@ struct StreamContext {
     bool is_failed = false;
     std::atomic<bool>* cancelled = nullptr;
     std::function<void(const std::string&)> callback;
+    std::string raw_response;
 };
 
 size_t stream_callback(char *ptr, size_t size, size_t nmemb, void *userdata);

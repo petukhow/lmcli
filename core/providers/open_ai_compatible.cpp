@@ -77,8 +77,6 @@ Message OpenAICompatible::send_request(const std::vector<Message>& conversation,
     headers.append("Content-Type: application/json");
     headers.append(x_api_key.c_str());
 
-    log(LogLevel::Debug, "API key: " + x_api_key);
-
     auto context = perform_request(body, headers, curl, callback, cancelled);
 
     response.content = context.full_content;

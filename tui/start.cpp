@@ -1,9 +1,10 @@
 /*
 thread invariants:
-    1. every single editing of shared data should be handled using screen.Post() (UI thread only)
+    1. every single editing of shared data must be handled using screen.Post() (UI thread only)
     2. every waitings (future.get()) are only allowed in working thread (if UI thread sleeps = bad UX)
-    3. only one working thread. busy flag is always initialized before thread
+    3. only one working thread. busy flag must be initialized before thread
     4. active_promise is only valid when pending_command not empty (set_value only with this check) 
+    5. a data of the worker thread must be handled by copy in screen.Post lambda; session - by reference
 */
 
 #include "chat_flow.h"
@@ -113,9 +114,14 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
         });
     } else if (output.is_failed) {
         log(LogLevel::Error, "Request failed with error: " + output.content);
-        screen.Post([&] {
+        auto err = output.content;
+        screen.Post([&, err] {
+            std::string failed_prompt = session->conversation.back().content;
             session->conversation.pop_back();
+            session->prompt.content = failed_prompt;
+            session->error_message = err;
             session->streaming_buffer.clear();
+            screen.RequestAnimationFrame();
         });
     } else {
         local_conv.push_back({Role::Assistant, output.content, "", {}});
@@ -189,6 +195,7 @@ void start() {
                 return true;
             }
             session->prompt.content = trimmed;
+            session->error_message.clear();
 
             if (session->prompt.content.empty()) return false;
             if (session->prompt.content == "/exit") {
@@ -258,6 +265,9 @@ void start() {
         return vbox({
             vbox(messages) | yframe | flex,
             separator() | color(theme.separator_color),
+            !session->error_message.empty()
+                ? paragraph("✗ " + session->error_message) | color(Color::Red)
+                : emptyElement(),
             input_line,
         });
     });

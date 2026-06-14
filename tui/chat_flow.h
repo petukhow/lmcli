@@ -17,6 +17,7 @@ struct ChatSession {
     Theme theme;
 
     Message prompt;
+    std::string error_message;
     std::string streaming_buffer;
     std::string pending_command;
     int scroll_up = 0;

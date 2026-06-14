@@ -75,9 +75,7 @@ Message Anthropic::send_request(const std::vector<Message>& conversation, std::f
     headers.append("Content-Type: application/json");
     headers.append("anthropic-version: 2023-06-01");
     headers.append(x_api_key.c_str());
-
-    log(LogLevel::Debug, "API key: " + x_api_key);
-
+    
     auto context = perform_request(body, headers, curl, callback, cancelled);
 
     response.content = std::move(context.full_content);

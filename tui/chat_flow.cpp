@@ -57,6 +57,6 @@ std::unique_ptr<ChatSession> chat_init() {
     session->account = std::move(account);
     session->chats_path = std::move(chats_path);
     session->limit = config["limit"];
-    session->theme = theme;
+    session->theme = std::move(theme);
     return session;
 }

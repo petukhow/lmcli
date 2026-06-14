@@ -7,6 +7,8 @@ size_t stream_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
         return 0;
     }
     context->buffer.append(ptr, size * nmemb);
+    // archived response, won't be consumed by event handler (buffer is) - used for error parsing
+    context->raw_response.append(ptr, size * nmemb); 
     log(LogLevel::Debug, "raw buffer: " + context->buffer);
     context->provider->event_handler(context, context->callback);
 

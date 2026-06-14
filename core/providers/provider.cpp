@@ -76,6 +76,7 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
     result = curl_easy_perform(curl.get());
 
     log(LogLevel::Debug, "buffer: " + context.buffer);
+    log(LogLevel::Debug, "raw response: " + context.raw_response);
 
     long http_code = 0;
     curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE, &http_code);
@@ -85,14 +86,17 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
         context.is_failed = true;
     }
 
-    if (context.full_content.empty() && !context.buffer.empty()) {
-    try {
-        auto parsed = nlohmann::json::parse(context.buffer);
-        if (parsed.contains("error")) {
-            context.full_content = parsed["error"]["message"];
-            context.is_failed = true;
-        }
-    } catch (...) {
+    log(LogLevel::Debug, "fallback check: full_content empty=" + std::to_string(context.full_content.empty()) + " raw empty=" + std::to_string(context.raw_response.empty()));
+
+    if (context.full_content.empty() && !context.raw_response.empty()) {
+        try {
+            auto parsed = nlohmann::json::parse(context.raw_response);
+            if (parsed.contains("error") && parsed["error"].contains("message")) {
+                context.full_content = parsed["error"]["message"];
+                context.is_failed = true;
+            }
+        } catch (const std::exception& e) {
+            log(LogLevel::Error, "fallback parse failed: " + std::string(e.what()));
         }
     }
 
