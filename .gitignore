@@ -1,6 +1,6 @@
 config.json
 accounts.json
-
+.claude/
 build/
 .cache/
 .vscode/

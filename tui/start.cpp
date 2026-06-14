@@ -11,6 +11,7 @@ thread invariants:
 #include "commands.h"
 #include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
+#include "types/message.h"
 #include "types/roles.h"
 
 #include "ftxui/component/component.hpp"
@@ -18,6 +19,8 @@ thread invariants:
 #include "ftxui/component/event.hpp"
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <memory>
+#include <vector>
 
 using namespace ftxui;
 
@@ -49,6 +52,84 @@ static bool handle_scroll(Event event, int& scroll_up) {
     return false;
 }
 
+static std::vector<Message> confirm_tool_calls(const Message& output,
+    ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
+    return handle_tool_calls(output, [&](const std::string& cmd) {
+            std::promise<bool> promise;
+            auto future = promise.get_future();
+            screen.Post([&, cmd] {
+                session->pending_command = cmd;
+                session->active_promise = &promise;
+                screen.RequestAnimationFrame();
+            });
+            return future.get();
+        });
+}
+
+// A second thread for core logic in UI function (API requests, tool calls handling, context management)
+static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractive& screen) {
+    auto local_conv = session->conversation;
+    auto output = session->account->send_request(local_conv,
+        [&](const std::string& delta) {
+        screen.Post([&, delta] {
+            session->streaming_buffer += delta;
+            screen.RequestAnimationFrame();
+        });
+    }, &session->cancelled);
+
+    while (!output.tool_calls.empty() && !session->cancelled) {
+        local_conv.push_back({Role::Assistant, "", "", output.tool_calls});
+        auto results = confirm_tool_calls(output, screen, session);
+
+        for (const auto& msg : results) local_conv.push_back(msg);
+
+        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
+
+        output.tool_calls.clear();
+        output = session->account->send_request(local_conv,
+            [&](const std::string& delta) {
+            screen.Post([&, delta] {
+                session->streaming_buffer += delta;
+                screen.RequestAnimationFrame();
+            });
+        }, &session->cancelled);
+
+        const std::string is_failed = output.is_failed ? "true" : "false";
+        log(LogLevel::Debug, "API returned output: " + output.content);
+        log(LogLevel::Debug, "Is API request failed: " + is_failed);
+        log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
+    }
+
+    if (session->cancelled) {
+        log(LogLevel::Info, "Request cancelled by user");
+        auto partial = session->streaming_buffer;
+        screen.Post([&, local_conv, partial] {
+            session->conversation = local_conv;
+            if (!partial.empty()) {
+                session->conversation.push_back(
+                    {Role::Assistant, partial, "", {}});
+            }
+            session->streaming_buffer.clear();
+        });
+    } else if (output.is_failed) {
+        log(LogLevel::Error, "Request failed with error: " + output.content);
+        screen.Post([&] {
+            session->conversation.pop_back();
+            session->streaming_buffer.clear();
+        });
+    } else {
+        local_conv.push_back({Role::Assistant, output.content, "", {}});
+        if (session->limit > 0) {
+            while (local_conv.size() > session->limit) local_conv.erase(local_conv.begin() + 1);
+        }
+        screen.Post([&, local_conv] {
+            session->conversation = local_conv;
+            session->streaming_buffer.clear();
+        });
+    }
+    log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
+}
+
 void start() {
     auto session = chat_init();
     if (!session) {
@@ -62,7 +143,8 @@ void start() {
         state.element |= color(session->theme.prompt_color);
         return state.element;
     };
-    auto input_prompt = Input(&session->prompt.content, "Write something...", input_option);
+    auto input_prompt = Input(&session->prompt.content,
+        "Write something...", input_option);
     auto component = Container::Horizontal({
         input_prompt
     });
@@ -123,77 +205,7 @@ void start() {
             session->busy = true;
             session->worker = std::thread([&]{
                 try {
-                    auto local_conv = session->conversation;
-                    auto output = session->account->send_request(local_conv,
-                        [&](const std::string& delta) {
-                        screen.Post([&, delta] {
-                            session->streaming_buffer += delta;
-                            screen.RequestAnimationFrame();
-                        });
-                    }, &session->cancelled);
-
-                    while (!output.tool_calls.empty() && !session->cancelled) {
-                        local_conv.push_back({Role::Assistant, "", "", output.tool_calls});
-                        auto results = handle_tool_calls(output, [&](const std::string& cmd) {
-                            std::promise<bool> promise;
-                            auto future = promise.get_future();
-                            screen.Post([&, cmd] {
-                                session->pending_command = cmd;
-                                session->active_promise = &promise;
-                                screen.RequestAnimationFrame();
-                            });
-                            return future.get();
-                        });
-                        for (const auto& msg : results) {
-                            local_conv.push_back(msg);
-                        }
-                        log(LogLevel::Debug, "Number of tool calls: "
-                            + std::to_string(output.tool_calls.size()));
-                        output.tool_calls.clear();
-                        output = session->account->send_request(local_conv,
-                            [&](const std::string& delta) {
-                            screen.Post([&, delta] {
-                                session->streaming_buffer += delta;
-                                screen.RequestAnimationFrame();
-                            });
-                        }, &session->cancelled);
-                        const std::string is_failed = output.is_failed ? "true" : "false";
-                        log(LogLevel::Debug, "API returned output: " + output.content);
-                        log(LogLevel::Debug, "Is API request failed: " + is_failed);
-                        log(LogLevel::Debug, "Number of tool calls: "
-                            + std::to_string(output.tool_calls.size()));
-                    }
-
-                    if (session->cancelled) {
-                        log(LogLevel::Info, "Request cancelled by user");
-                        auto partial = session->streaming_buffer;
-                        screen.Post([&, local_conv, partial] {
-                            session->conversation = local_conv;
-                            if (!partial.empty()) {
-                                session->conversation.push_back(
-                                    {Role::Assistant, partial, "", {}});
-                            }
-                            session->streaming_buffer.clear();
-                        });
-                    } else if (output.is_failed) {
-                        log(LogLevel::Error, "Request failed with error: " + output.content);
-                        screen.Post([&] {
-                            session->conversation.pop_back();
-                            session->streaming_buffer.clear();
-                        });
-                    } else {
-                        local_conv.push_back({Role::Assistant, output.content, "", {}});
-                        if (session->limit > 0) {
-                            while (local_conv.size() > session->limit) {
-                                local_conv.erase(local_conv.begin() + 1);
-                            }
-                        }
-                        screen.Post([&, local_conv] {
-                            session->conversation = local_conv;
-                            session->streaming_buffer.clear();
-                        });
-                    }
-                    log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
+                    worker(session, screen);
                     session->busy = false;
                 } catch (const std::exception& e) {
                     log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
