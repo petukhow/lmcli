@@ -90,6 +90,7 @@ StreamContext Provider::perform_request(const std::string& body, const CurlSlist
 
     if (context.full_content.empty() && !context.raw_response.empty()) {
         try {
+            log(LogLevel::Debug, "fallback raw_response: [" + context.raw_response + "]");
             auto parsed = nlohmann::json::parse(context.raw_response);
             if (parsed.contains("error") && parsed["error"].contains("message")) {
                 context.full_content = parsed["error"]["message"];

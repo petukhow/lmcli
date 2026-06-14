@@ -20,6 +20,7 @@ thread invariants:
 #include "ftxui/component/event.hpp"
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 #include <memory>
 #include <vector>
 
@@ -229,7 +230,7 @@ void start() {
         for (const auto& msg : session->conversation) {
             if (msg.role == Role::User) {
                 messages.push_back(vbox({
-                    hbox(text("❯ ") | color(theme.prompt_color), paragraph(msg.content) | color(theme.user_color)),
+                    hbox(text("› ") | color(theme.prompt_color), paragraph(msg.content) | color(theme.user_color)),
                     text(""),
                 }));
             } else if (msg.role == Role::Assistant) {
@@ -249,7 +250,7 @@ void start() {
 
         if (!session->pending_command.empty()) {
             messages.push_back(
-                text("Allow: " + session->pending_command + "? (y/n)") | color(theme.status_color));
+                paragraph("Allow: " + session->pending_command + "? (y/n)") | color(theme.status_color));
         }
 
         if (!messages.empty()) {
@@ -259,7 +260,7 @@ void start() {
             messages[target] = messages[target] | focus;
         }
 
-        auto input_line = hbox(text("❯ ") | color(theme.prompt_color), input_prompt->Render());
+        auto input_line = hbox(text("› ") | color(Color::GrayDark), input_prompt->Render());
         if (session->busy) input_line = input_line | dim;
 
         return vbox({
@@ -269,6 +270,10 @@ void start() {
                 ? paragraph("✗ " + session->error_message) | color(Color::Red)
                 : emptyElement(),
             input_line,
+            separator() | color(theme.separator_color),
+            session->busy
+                ? paragraph(" esc to interrupt 𐤟 /help for commands") | color(Color::GrayDark)
+                : emptyElement()
         });
     });
 
