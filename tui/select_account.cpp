@@ -7,7 +7,6 @@
 #include "ftxui/component/component.hpp"         
 #include "ftxui/component/component_options.hpp"
 #include <ftxui/component/screen_interactive.hpp>
-#include "render.h"
 
 using json = nlohmann::json;
 using namespace ftxui; 

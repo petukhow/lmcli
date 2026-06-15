@@ -10,6 +10,11 @@ thread invariants:
 #include "chat_flow.h"
 #include "chats.h"
 #include "commands.h"
+#include "constants.h"
+#include "loaders/accounts.h"
+#include "loaders/config.h"
+#include "providers/provider.h"
+#include "render.h"
 #include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
 #include "types/message.h"
@@ -148,70 +153,110 @@ void start() {
     });
 
     auto final_component = component | CatchEvent([&](Event event) {
-        if (event == Event::Escape) {
-            if (session->busy) {
-                session->cancelled = true;
-                return true;
-            }
-            return false;
-        }
-        if (handle_scroll(event, session->scroll_pos)) {
-            screen.RequestAnimationFrame();
-            return true;
-        }
+        switch (session->render_mode) {
+            case Mode::Main:
+                if (event == Event::Escape) {
+                    if (session->busy) {
+                        session->cancelled = true;
+                        return true;
+                    }
+                    return false;
+                }
 
-        if (!session->pending_command.empty()) {
-            if (event == Event::Character("y")) {
-                session->active_promise->set_value(true);
-                session->pending_command.clear();
-                screen.RequestAnimationFrame();
-                return true;
-            }
-            if (event == Event::Character("n")) {
-                session->active_promise->set_value(false);
-                session->pending_command.clear();
-                screen.RequestAnimationFrame();
-                return true;
-            }
-            return true;
-        }
+                if (handle_scroll(event, session->scroll_pos)) {
+                    screen.RequestAnimationFrame();
+                    return true;
+                }
 
-        if (event == Event::Return) {
-            if (session->busy) return true;
-            if (session->worker.joinable()) session->worker.join();
+                if (!session->pending_command.empty()) {
+                    if (event == Event::Character("y")) {
+                        session->active_promise->set_value(true);
+                        session->pending_command.clear();
+                        screen.RequestAnimationFrame();
+                        return true;
+                    }
+                    if (event == Event::Character("n")) {
+                        session->active_promise->set_value(false);
+                        session->pending_command.clear();
+                        screen.RequestAnimationFrame();
+                        return true;
+                    }
+                    return true;
+                }
 
-            auto trimmed = session->prompt.content;
-            trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
-            if (trimmed.empty()) {
-                session->prompt.content.clear();
+                if (event == Event::Return) {
+                    if (session->busy) return true;
+                    if (session->worker.joinable()) session->worker.join();
+                    if (session->prompt.content == "/account") {
+                        auto accounts = load_accounts(ACCOUNTS_FILE);
+                        auto config = load_config(CONFIG_FILE);
+                        MenuSettings menu_settings;
+
+                        if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
+                            log(LogLevel::Error, "Broken accounts.json config");
+                            return true;
+                        }
+                        
+                        auto accounts_list = accounts["accounts"];
+
+                        if (accounts_list.size() == 1) {
+                            session->account = Provider::create(accounts_list[0], config);
+                            log(LogLevel::Info, "Account selected: " + accounts_list[0]["name"].get<std::string>());
+                            return true;
+                        }
+
+                        menu_settings.menu_cursor = 0;
+                        for (const auto& account : accounts) {
+                            menu_settings.menu_items.push_back(account["name"].get<std::string>());
+                        }
+                        session->render_mode = Mode::Menu;
+
+                        menu_settings.on_select = [&session, accounts_list, config](int cursor) {
+                            session->account = Provider::create(accounts_list[cursor], config);
+                            log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
+                        };
+                    } 
+
+                    auto trimmed = session->prompt.content;
+                    trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
+                    if (trimmed.empty()) {
+                        session->prompt.content.clear();
+                        return true;
+                    }
+                    session->prompt.content = trimmed;
+                    session->error_message.clear();
+
+                    if (session->prompt.content.empty()) return false;
+                    if (session->prompt.content == "/exit") {
+                        screen.Exit();
+                        return true;
+                    }
+                    session->conversation.push_back({Role::User, session->prompt.content,
+                        "", {}});
+                    log(LogLevel::Info, "User prompted: " + session->prompt.content);
+                    session->prompt.content.clear();
+
+                    session->scroll_pos = 1.0f;
+                    session->cancelled = false;
+                    session->busy = true;
+                    session->worker = std::thread([&]{
+                        try {
+                            worker(session, screen);
+                            session->busy = false;
+                        } catch (const std::exception& e) {
+                            log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
+                            session->busy = false;
+                        }}
+                    );
+                    return true;
+                }
+                return false;
+            case Mode::Menu:
+                
                 return true;
-            }
-            session->prompt.content = trimmed;
-            session->error_message.clear();
+            case Mode::Form:
 
-            if (session->prompt.content.empty()) return false;
-            if (session->prompt.content == "/exit") {
-                screen.Exit();
                 return true;
-            }
-            session->conversation.push_back({Role::User, session->prompt.content,
-                "", {}});
-            log(LogLevel::Info, "User prompted: " + session->prompt.content);
-            session->prompt.content.clear();
-
-            session->scroll_pos = 1.0f;
-            session->cancelled = false;
-            session->busy = true;
-            session->worker = std::thread([&]{
-                try {
-                    worker(session, screen);
-                    session->busy = false;
-                } catch (const std::exception& e) {
-                    log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
-                    session->busy = false;
-                }}
-            );
-            return true;
         }
         return false;
     });

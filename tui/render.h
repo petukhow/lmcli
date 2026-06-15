@@ -1,11 +1,22 @@
 #pragma once
+#include <functional>
 #include <string>
+#include <vector>
 
-#include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/color.hpp>
-#include <ftxui/screen/screen.hpp>
+enum class Mode {
+    Main,
+    Menu,
+    Form
+};
 
-using namespace ftxui;
+struct Form {
+    std::string acc_name;
+    std::string api_key;
+    std::string model_name;
+};
 
-void show_message(const std::string& msg, Color c = Color::Yellow);
+struct MenuSettings {
+    std::vector<std::string> menu_items;
+    std::function<void(int)> on_select;
+    int menu_cursor;
+};

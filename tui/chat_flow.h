@@ -8,6 +8,7 @@
 #include "types/message.h"
 #include "types/theme.h"
 #include "providers/provider.h"
+#include "render.h"
 
 struct ChatSession {
     std::vector<Message> conversation;
@@ -25,6 +26,10 @@ struct ChatSession {
     std::atomic<bool> cancelled{false};
     std::promise<bool>* active_promise = nullptr;
     std::thread worker;
+
+    Mode render_mode;
+    Form form_draft;
+    MenuSettings menu_settings;
 };
 
 std::unique_ptr<ChatSession> chat_init();

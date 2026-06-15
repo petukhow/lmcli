@@ -16,7 +16,6 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
-#include "render.h"
 
 using namespace ftxui;
 
@@ -42,7 +41,6 @@ void remove(const std::string& subcommand) {
 
     if (entries[selected] == "Chat") {
         if (chats.empty()) {
-            show_message("No chats to remove.");
             return;
         }
 
@@ -63,12 +61,10 @@ void remove(const std::string& subcommand) {
         if (entries[selected] == "Exit") return;
 
         std::filesystem::remove(chats[selected].path());
-        show_message("Removed successfully", Color::Green);
     }
 
     if (entries[selected] == "Chats") {
         if (chats.empty()) {
-            show_message("No chats to remove.");
             return;
         }
         std::vector<std::string> confirm_entries = {"Yes", "No"};
@@ -94,7 +90,6 @@ void remove(const std::string& subcommand) {
             std::filesystem::remove(chat);
         }
         log(LogLevel::Info, "All chats removed successfully");
-        show_message("All chats removed successfully.", Color::Green);
     }
 
     if (entries[selected] == "Account") {
@@ -105,7 +100,6 @@ void remove(const std::string& subcommand) {
 
         if (accounts["accounts"].empty()) {
             log(LogLevel::Error, "No accounts to remove.");
-            show_message("No accounts to remove.");
             return;
         }
 
@@ -127,7 +121,6 @@ void remove(const std::string& subcommand) {
                 save_accounts(accounts);
                 log(LogLevel::Info, "Account " + entries[selected] + " removed.");
                 log(LogLevel::Info, "Accounts saved");
-                show_message("Removed successfully!", Color::Green);
                 return;
             }
         }
