@@ -11,6 +11,7 @@ thread invariants:
 #include "chats.h"
 #include "commands.h"
 #include "constants.h"
+#include "json.hpp"
 #include "loaders/accounts.h"
 #include "loaders/config.h"
 #include "providers/provider.h"
@@ -31,6 +32,22 @@ thread invariants:
 #include <vector>
 
 using namespace ftxui;
+
+static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json config) {
+    return Provider::create(accounts_list[cursor], config);
+}
+
+static Element render_menu(const ChatSession& cs) {
+    Elements lines;
+    for (size_t i = 0; cs.menu_settings.menu_items.size(); ++i) {
+        auto line = text(cs.menu_settings.menu_items[1]);
+        if (i == cs.menu_settings.menu_cursor) {
+            line = line | inverted;
+        }
+        lines.push_back(line);
+    }
+    return vbox(lines);
+}
 
 static bool handle_scroll(Event event, float& scroll_pos) {
     if ((event.is_mouse() && event.mouse().button == Mouse::WheelUp)
@@ -153,7 +170,7 @@ void start() {
     });
 
     auto final_component = component | CatchEvent([&](Event event) {
-        switch (session->render_mode) {
+        switch (session->mode) {
             case Mode::Main:
                 if (event == Event::Escape) {
                     if (session->busy) {
@@ -200,21 +217,24 @@ void start() {
                         auto accounts_list = accounts["accounts"];
 
                         if (accounts_list.size() == 1) {
-                            session->account = Provider::create(accounts_list[0], config);
+                            session->account = select_acc(accounts_list, 0, config);
                             log(LogLevel::Info, "Account selected: " + accounts_list[0]["name"].get<std::string>());
                             return true;
                         }
 
                         menu_settings.menu_cursor = 0;
-                        for (const auto& account : accounts) {
+                        for (const auto& account : accounts_list) {
                             menu_settings.menu_items.push_back(account["name"].get<std::string>());
                         }
-                        session->render_mode = Mode::Menu;
 
-                        menu_settings.on_select = [&session, accounts_list, config](int cursor) {
-                            session->account = Provider::create(accounts_list[cursor], config);
+                        menu_settings.on_select = [&session, accounts_list, config](size_t cursor) {
+                            session->account = select_acc(accounts_list, cursor, config);
                             log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
+                            return true;
                         };
+
+                        session->mode = Mode::Menu;
+                        return true;
                     } 
 
                     auto trimmed = session->prompt.content;
@@ -252,7 +272,23 @@ void start() {
                 }
                 return false;
             case Mode::Menu:
-                
+                if (event == Event::Escape) {
+                    return true;
+                }
+                if (event == Event::ArrowDown) {
+                    auto c = session->menu_settings.menu_cursor;
+                    auto size = session->menu_settings.menu_items.size()-1;
+                    if (c < size) ++c; 
+                }
+                if (event == Event::ArrowUp) {
+                    auto c = session->menu_settings.menu_cursor;
+                    if (c > 0) --c; 
+                }
+                if (event == Event::Return) {
+                    auto c = session->menu_settings.menu_cursor;
+                    session->menu_settings.on_select(c);
+                    session->mode = Mode::Menu;
+                }
                 return true;
             case Mode::Form:
 
@@ -295,6 +331,7 @@ void start() {
         return vbox({
             vbox(messages) | focusPositionRelative(0, session->scroll_pos) | frame | flex,
             separator() | color(theme.separator_color),
+            session->mode == Mode::Menu ? render_menu(*session) : emptyElement(),
             !session->error_message.empty()
                 ? paragraph("✗ " + session->error_message) | color(Color::Red)
                 : emptyElement(),

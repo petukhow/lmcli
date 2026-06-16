@@ -17,6 +17,6 @@ struct Form {
 
 struct MenuSettings {
     std::vector<std::string> menu_items;
-    std::function<void(int)> on_select;
-    int menu_cursor;
+    std::function<void(size_t)> on_select;
+    size_t menu_cursor;
 };
