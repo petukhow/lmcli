@@ -49,6 +49,14 @@ static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     return vbox(lines);
 }
 
+static void open_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
+    cs->menu_settings.menu_cursor = 0;
+    cs->menu_settings.menu_items.clear();
+    for (const auto& account : accounts_list) {
+        cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
+    }
+}
+
 static bool handle_scroll(Event event, float& scroll_pos) {
     if ((event.is_mouse() && event.mouse().button == Mouse::WheelUp)
         || event == Event::ArrowUp
@@ -223,10 +231,7 @@ void start() {
                             return true;
                         }
 
-                        session->menu_settings.menu_cursor = 0;
-                        for (const auto& account : accounts_list) {
-                            session->menu_settings.menu_items.push_back(account["name"].get<std::string>());
-                        }
+                        open_menu(session, accounts_list);
 
                         session->menu_settings.on_select = [session = session.get(), accounts_list, config](size_t cursor) {
                             session->account = select_acc(accounts_list, cursor, config);
@@ -289,7 +294,7 @@ void start() {
                     screen.RequestAnimationFrame();
                 }
                 if (event == Event::Return) {
-                    auto c = session->menu_settings.menu_cursor;
+                    auto& c = session->menu_settings.menu_cursor;
                     session->menu_settings.on_select(c);
                     session->menu_settings = {};
                     screen.RequestAnimationFrame();
