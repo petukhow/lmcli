@@ -8,12 +8,12 @@
 static Theme default_theme() {
     return Theme{
         "tech",
+        ftxui::Color::Cyan,
+        ftxui::Color::White,
+        ftxui::Color::Yellow,
         ftxui::Color::White,
         ftxui::Color::Cyan,
-        ftxui::Color::Yellow,
-        ftxui::Color::Blue,
-        ftxui::Color::Green,
-        ftxui::Color::CyanLight,
+        ftxui::Color::White,
         ftxui::Color::GrayDark,
     };
 }

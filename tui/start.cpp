@@ -11,6 +11,7 @@ thread invariants:
 #include "chats.h"
 #include "commands.h"
 #include "constants.h"
+#include "ftxui/dom/elements.hpp"
 #include "json.hpp"
 #include "loaders/accounts.h"
 #include "loaders/config.h"
@@ -40,18 +41,26 @@ static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list,
 static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     Elements lines;
     for (size_t i = 0; i < cs->menu_settings.menu_items.size(); ++i) {
-        auto line = paragraph(cs->menu_settings.menu_items[i]);
-        if (i == cs->menu_settings.menu_cursor) {
-            line = line | inverted;
+        auto line = text(cs->menu_settings.menu_items[i]);
+        if (cs->menu_settings.menu_cursor == i) {
+            line = hbox(text("› "), line) | color(cs->theme.prompt_color);
+        }
+        else {
+            line = hbox(text("› "), line) | dim;
         }
         lines.push_back(line);
     }
-    return vbox(lines);
+    return vbox({
+        text("Select an account:"),
+        vbox(lines),
+        text("")
+    });
 }
 
 static void open_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
     cs->menu_settings.menu_cursor = 0;
     cs->menu_settings.menu_items.clear();
+    cs->prompt.content.clear();
     for (const auto& account : accounts_list) {
         cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
     }
@@ -62,7 +71,7 @@ static bool handle_scroll(Event event, float& scroll_pos) {
         || event == Event::ArrowUp
         || event == Event::PageUp
     ) {
-        scroll_pos -= 0.1f;
+        scroll_pos -= 0.05f;
         scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
@@ -70,7 +79,7 @@ static bool handle_scroll(Event event, float& scroll_pos) {
         || event == Event::ArrowDown
         || event == Event::PageDown
     ) {
-        scroll_pos += 0.1f;
+        scroll_pos += 0.05f;
         scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
@@ -135,6 +144,7 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
                     {Role::Assistant, partial, "", {}});
             }
             session->streaming_buffer.clear();
+            screen.RequestAnimationFrame();
         });
     } else if (output.is_failed) {
         log(LogLevel::Error, "Request failed with error: " + output.content);
@@ -153,6 +163,7 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
         screen.Post([&, local_conv] {
             session->conversation = local_conv;
             session->streaming_buffer.clear();
+            screen.RequestAnimationFrame();
         });
     }
     log(LogLevel::Debug, "Model's output (after tool call): " + output.content);
@@ -177,6 +188,8 @@ void start() {
         input_prompt
     });
 
+    Element footer;
+    const auto& theme = session->theme;
     auto final_component = component | CatchEvent([&](Event event) {
         switch (session->mode) {
             case Mode::Main:
@@ -247,6 +260,7 @@ void start() {
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
                     if (trimmed.empty()) {
                         session->prompt.content.clear();
+                        screen.RequestAnimationFrame();
                         return true;
                     }
                     session->prompt.content = trimmed;
@@ -279,7 +293,6 @@ void start() {
                 return false;
             case Mode::Menu:
                 if (event == Event::Escape) {
-                    screen.RequestAnimationFrame();
                     session->menu_settings = {};
                     session->mode = Mode::Main;
                 }
@@ -307,7 +320,6 @@ void start() {
         }
         return false;
     });
-    const auto& theme = session->theme;
     auto renderer = Renderer(final_component, [&] {
         Elements messages;
         for (const auto& msg : session->conversation) {
@@ -340,25 +352,38 @@ void start() {
                     | color(theme.status_color) | xflex);
         }
 
-        auto input_line = hbox({
-            text("› ") | color(Color::GrayDark),
-            input_prompt->Render() | xflex,
-        });
+        switch (session->mode) {
+            case Mode::Main: {                  
+                auto input_line = hbox({
+                    text("› ") | color(Color::GreenLight),
+                    input_prompt->Render() | xflex,
+                });
+                footer = vbox({
+                    !session->error_message.empty()
+                        ? paragraph("✗ " + session->error_message) | color(Color::Red)
+                        : emptyElement(),
+                    input_line,
+                    separator() | color(theme.separator_color),
+                    session->busy
+                        ? paragraph(" esc to interrupt") | color(Color::GrayDark)
+                        : emptyElement(),
+                });
+                break;
+            }   
 
-        if (session->busy) input_line = input_line | dim;
+            case Mode::Menu: 
+                footer = render_menu(session);
+                break;
+
+            case Mode::Form:
+                footer = emptyElement();
+                break;
+        }
 
         return vbox({
-            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | vscroll_indicator | yframe | flex,
+            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | yframe | flex,
             separator() | color(theme.separator_color),
-            session->mode == Mode::Menu ? render_menu(session) : emptyElement(),
-            !session->error_message.empty()
-                ? paragraph("✗ " + session->error_message) | color(Color::Red)
-                : emptyElement(),
-            input_line,
-            separator() | color(theme.separator_color),
-            session->busy
-                ? paragraph(" esc to interrupt") | color(Color::GrayDark)
-                : emptyElement()
+            footer
         });
     });
 
