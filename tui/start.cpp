@@ -62,7 +62,7 @@ static bool handle_scroll(Event event, float& scroll_pos) {
         || event == Event::ArrowUp
         || event == Event::PageUp
     ) {
-        scroll_pos -= 0.05f;
+        scroll_pos -= 0.1f;
         scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
@@ -70,7 +70,7 @@ static bool handle_scroll(Event event, float& scroll_pos) {
         || event == Event::ArrowDown
         || event == Event::PageDown
     ) {
-        scroll_pos += 0.05f;
+        scroll_pos += 0.1f;
         scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
         return true;
     }
@@ -348,7 +348,7 @@ void start() {
         if (session->busy) input_line = input_line | dim;
 
         return vbox({
-            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | frame | flex,
+            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | vscroll_indicator | yframe | flex,
             separator() | color(theme.separator_color),
             session->mode == Mode::Menu ? render_menu(session) : emptyElement(),
             !session->error_message.empty()
