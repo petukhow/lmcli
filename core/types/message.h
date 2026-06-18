@@ -14,15 +14,15 @@ struct Message {
 };
 
 inline void trim_history(std::vector<Message>& conv, size_t limit) {
+    if (limit == 0) return;
     while (limit < conv.size()) {
         if (conv.size() < 2) return;
 
         conv.erase(conv.begin()+1);
-        // we need to remove all the tool calls with this id so it doesn't break during API request
+        // we need to remove all the tool calls so it doesn't break during API request
         while (conv.size() >= 2 && conv[1].role == Role::Tool) {
             conv.erase(conv.begin()+1);
         }
-        continue;
     }
     return;
 }

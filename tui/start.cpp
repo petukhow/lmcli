@@ -33,15 +33,15 @@ thread invariants:
 
 using namespace ftxui;
 
-static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json config) {
+static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, const nlohmann::json& config) {
     return Provider::create(accounts_list[cursor], config);
 }
 
-static Element render_menu(const ChatSession& cs) {
+static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     Elements lines;
-    for (size_t i = 0; cs.menu_settings.menu_items.size(); ++i) {
-        auto line = text(cs.menu_settings.menu_items[1]);
-        if (i == cs.menu_settings.menu_cursor) {
+    for (size_t i = 0; i < cs->menu_settings.menu_items.size(); ++i) {
+        auto line = paragraph(cs->menu_settings.menu_items[i]);
+        if (i == cs->menu_settings.menu_cursor) {
             line = line | inverted;
         }
         lines.push_back(line);
@@ -172,9 +172,11 @@ void start() {
     auto final_component = component | CatchEvent([&](Event event) {
         switch (session->mode) {
             case Mode::Main:
+                screen.RequestAnimationFrame();
                 if (event == Event::Escape) {
                     if (session->busy) {
                         session->cancelled = true;
+                        screen.RequestAnimationFrame();
                         return true;
                     }
                     return false;
@@ -207,7 +209,6 @@ void start() {
                     if (session->prompt.content == "/account") {
                         auto accounts = load_accounts(ACCOUNTS_FILE);
                         auto config = load_config(CONFIG_FILE);
-                        MenuSettings menu_settings;
 
                         if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
                             log(LogLevel::Error, "Broken accounts.json config");
@@ -222,12 +223,12 @@ void start() {
                             return true;
                         }
 
-                        menu_settings.menu_cursor = 0;
+                        session->menu_settings.menu_cursor = 0;
                         for (const auto& account : accounts_list) {
-                            menu_settings.menu_items.push_back(account["name"].get<std::string>());
+                            session->menu_settings.menu_items.push_back(account["name"].get<std::string>());
                         }
 
-                        menu_settings.on_select = [&session, accounts_list, config](size_t cursor) {
+                        session->menu_settings.on_select = [session = session.get(), accounts_list, config](size_t cursor) {
                             session->account = select_acc(accounts_list, cursor, config);
                             log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
                             return true;
@@ -273,21 +274,26 @@ void start() {
                 return false;
             case Mode::Menu:
                 if (event == Event::Escape) {
-                    return true;
+                    screen.RequestAnimationFrame();
+                    session->menu_settings = {};
+                    session->mode = Mode::Main;
                 }
                 if (event == Event::ArrowDown) {
-                    auto c = session->menu_settings.menu_cursor;
-                    auto size = session->menu_settings.menu_items.size()-1;
-                    if (c < size) ++c; 
+                    auto& c = session->menu_settings.menu_cursor;
+                    if (c + 1 < session->menu_settings.menu_items.size()) ++c;
+                    screen.RequestAnimationFrame();
                 }
                 if (event == Event::ArrowUp) {
-                    auto c = session->menu_settings.menu_cursor;
-                    if (c > 0) --c; 
+                    auto& c = session->menu_settings.menu_cursor;
+                    if (c > 0) --c;
+                    screen.RequestAnimationFrame();
                 }
                 if (event == Event::Return) {
                     auto c = session->menu_settings.menu_cursor;
                     session->menu_settings.on_select(c);
-                    session->mode = Mode::Menu;
+                    session->menu_settings = {};
+                    screen.RequestAnimationFrame();
+                    session->mode = Mode::Main;
                 }
                 return true;
             case Mode::Form:
@@ -302,12 +308,15 @@ void start() {
         for (const auto& msg : session->conversation) {
             if (msg.role == Role::User) {
                 messages.push_back(vbox({
-                    hbox(text("› ") | color(theme.prompt_color), paragraph(msg.content) | color(theme.user_color)),
+                    hbox({
+                        text("› ") | color(theme.prompt_color),
+                        paragraph(msg.content) | color(theme.user_color) | xflex,
+                    }),
                     text(""),
                 }));
             } else if (msg.role == Role::Assistant) {
                 messages.push_back(vbox({
-                    paragraph(msg.content) | color(theme.assistant_color),
+                    paragraph(msg.content) | color(theme.assistant_color) | xflex,
                     text(""),
                 }));
             }
@@ -315,23 +324,28 @@ void start() {
 
         if (!session->streaming_buffer.empty()) {
             messages.push_back(vbox({
-                paragraph(session->streaming_buffer) | color(theme.streaming_color),
+                paragraph(session->streaming_buffer) | color(theme.streaming_color) | xflex,
                 text(""),
             }));
         }
 
         if (!session->pending_command.empty()) {
             messages.push_back(
-                paragraph("Allow: " + session->pending_command + "? (y/n)") | color(theme.status_color));
+                paragraph("Allow: " + session->pending_command + "? (y/n)")
+                    | color(theme.status_color) | xflex);
         }
 
-        auto input_line = hbox(text("› ") | color(Color::GrayDark), input_prompt->Render());
+        auto input_line = hbox({
+            text("› ") | color(Color::GrayDark),
+            input_prompt->Render() | xflex,
+        });
+
         if (session->busy) input_line = input_line | dim;
 
         return vbox({
             vbox(messages) | focusPositionRelative(0, session->scroll_pos) | frame | flex,
             separator() | color(theme.separator_color),
-            session->mode == Mode::Menu ? render_menu(*session) : emptyElement(),
+            session->mode == Mode::Menu ? render_menu(session) : emptyElement(),
             !session->error_message.empty()
                 ? paragraph("✗ " + session->error_message) | color(Color::Red)
                 : emptyElement(),

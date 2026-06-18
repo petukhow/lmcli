@@ -12,26 +12,25 @@
 using json = nlohmann::json;
 
 static std::optional<size_t> get_positive_number(const std::string& field_name) {
-    size_t new_value;
     while (true) {
         try {
             auto value = readline("Enter new " + field_name + " value (enter to keep): ");
-            if (!value) break;
+            if (!value) return std::nullopt;          
             std::string user_input = *value;
             if (user_input.empty()) return std::nullopt;
-            
             int raw_value = std::stoi(user_input);
             if (raw_value < 0) {
                 continue;
-            } 
-            new_value = static_cast<size_t>(raw_value);
-            break;
+            }
+            return static_cast<size_t>(raw_value);       
         } catch (const std::invalid_argument&) {
             log(LogLevel::Error, "Invalid argument in get_positive_number given.");
             continue;
+        } catch (const std::out_of_range&) {
+            log(LogLevel::Error, "Number out of range in get_positive_number.");
+            continue;
         }
     }
-    return new_value;
 }
 
 void edit_system_prompt() {
