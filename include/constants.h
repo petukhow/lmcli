@@ -1,16 +1,17 @@
 #pragma once
 #include "json.hpp"
-#include <string>
 
-const std::string CONFIG_FILE = "config.json";
-const std::string ACCOUNTS_FILE = "accounts.json";
-const std::string PROVIDERS_FILE = "providers.json";
-const std::string TOOLS_FILE = "tools.json";
-const std::string THEMES_FILE = "themes.json";
-const std::string LOGS_FILE = "lmcli.log";
+inline const std::string APP_NAME = "lmcli";
 
-const nlohmann::json ACCOUNTS_DEFAULT = {{"accounts", nlohmann::json::array({})}};
-const nlohmann::json CONFIG_DEFAULT = {
+inline const std::string CONFIG_FILE = "config.json";
+inline const std::string ACCOUNTS_FILE = "accounts.json";
+inline const std::string PROVIDERS_FILE = "providers.json";
+inline const std::string TOOLS_FILE = "tools.json";
+inline const std::string THEMES_FILE = "themes.json";
+inline const std::string LOGS_FILE = "lmcli.log";
+
+inline const nlohmann::json ACCOUNTS_DEFAULT = {{"accounts", nlohmann::json::array({})}};
+inline const nlohmann::json CONFIG_DEFAULT = {
         {"system_prompt", "You're a helpful assistant."},
         {"limit", 20},
         {"max_tokens", 1024},
@@ -19,7 +20,7 @@ const nlohmann::json CONFIG_DEFAULT = {
         {"confirm_required", "all"},
         {"theme", "tech"}
 };
-const nlohmann::json TOOLS_DEFAULT = {
+inline const nlohmann::json TOOLS_DEFAULT = {
     {"tools", nlohmann::json::array({
         {
             {"name", "exec_bash"},
@@ -37,7 +38,7 @@ const nlohmann::json TOOLS_DEFAULT = {
         }
     })}
 };
-const nlohmann::json PROVIDERS_DEFAULT = {
+inline const nlohmann::json PROVIDERS_DEFAULT = {
     {"providers", nlohmann::json::array({
         {
             {"name", "Anthropic"},
@@ -71,4 +72,4 @@ const nlohmann::json PROVIDERS_DEFAULT = {
         }
     })}
 };
-const nlohmann::json CHAT_DEFAULT = {{"conversation", nlohmann::json::array({})}};
+inline const nlohmann::json CHAT_DEFAULT = {{"conversation", nlohmann::json::array({})}};
