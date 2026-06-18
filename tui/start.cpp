@@ -11,26 +11,29 @@ thread invariants:
 #include "chats.h"
 #include "commands.h"
 #include "constants.h"
-#include "ftxui/dom/elements.hpp"
 #include "json.hpp"
 #include "loaders/accounts.h"
 #include "loaders/config.h"
 #include "providers/provider.h"
+#include "providers/providers.h"
 #include "render.h"
 #include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
 #include "types/message.h"
 #include "types/roles.h"
+#include <algorithm>
+#include <vector>
+#include <memory>
 
 #include "ftxui/component/component.hpp"
-#include <algorithm>
+#include "ftxui/dom/elements.hpp"
 #include <ftxui/component/screen_interactive.hpp>
 #include "ftxui/component/event.hpp"
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
-#include <memory>
-#include <vector>
+
+
 
 using namespace ftxui;
 
@@ -57,12 +60,21 @@ static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     });
 }
 
-static void open_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
+static void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
     cs->menu_settings.menu_cursor = 0;
     cs->menu_settings.menu_items.clear();
     cs->prompt.content.clear();
     for (const auto& account : accounts_list) {
         cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
+    }
+}
+
+static void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers) {
+    cs->menu_settings.menu_cursor = 0;
+    cs->menu_settings.menu_items.clear();
+    cs->prompt.content.clear();
+    for (const auto& provider : providers) {
+        cs->menu_settings.menu_items.push_back(provider["name"].get<std::string>());
     }
 }
 
@@ -184,9 +196,19 @@ void start() {
     };
     auto input_prompt = Input(&session->prompt.content,
         "Write something...", input_option);
-    auto component = Container::Horizontal({
-        input_prompt
+
+    auto form_name_input = Input(&session->form_draft.acc_name, "Account");
+    auto form_key_input = Input(&session->form_draft.api_key, "API key");
+    auto form_model_input = Input(&session->form_draft.model_name, "Model");
+    auto form_container = Container::Vertical({
+        form_name_input, form_key_input, form_model_input
     });
+
+    int active_tab = 0;
+    auto component = Container::Tab({
+        Container::Horizontal({input_prompt}),
+        form_container
+    }, &active_tab);
 
     Element footer;
     const auto& theme = session->theme;
@@ -227,12 +249,13 @@ void start() {
                 if (event == Event::Return) {
                     if (session->busy) return true;
                     if (session->worker.joinable()) session->worker.join();
+
                     if (session->prompt.content == "/account") {
                         auto accounts = load_accounts(ACCOUNTS_FILE);
                         auto config = load_config(CONFIG_FILE);
 
                         if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
-                            log(LogLevel::Error, "Broken accounts.json config");
+                            log(LogLevel::Error, "Broken or empty accounts.json config");
                             return true;
                         }
                         
@@ -244,7 +267,7 @@ void start() {
                             return true;
                         }
 
-                        open_menu(session, accounts_list);
+                        open_acc_menu(session, accounts_list);
 
                         session->menu_settings.on_select = [session = session.get(), accounts_list, config](size_t cursor) {
                             session->account = select_acc(accounts_list, cursor, config);
@@ -255,6 +278,67 @@ void start() {
                         session->mode = Mode::Menu;
                         return true;
                     } 
+
+                    if (session->prompt.content == "/setup") {
+                        const auto providers = load_providers(PROVIDERS_FILE);
+                        if (providers.empty()) return true;
+
+                        auto providers_list = providers["providers"];
+                        open_prov_menu(session, providers_list);
+
+                        session->menu_settings.on_select = [session = session.get(), providers_list](size_t cursor) {
+                            const auto& provider = providers_list[cursor];
+                            const std::string type = provider["type"].get<std::string>();
+                            const std::string default_url = provider["default_api_url"].get<std::string>();
+                            const std::string default_model = provider["default_model"].get<std::string>();
+                            const std::string default_name = provider["name"].get<std::string>();
+
+                            log(LogLevel::Info, "Provider for setup: " + default_name);
+
+                            session->form_draft.default_name = default_name;
+                            session->form_draft.default_model = default_model;
+
+                            session->form_draft.on_submit = [session, type, default_url, default_model, default_name]() {
+                                auto& draft = session->form_draft;
+                                std::string acc_name = draft.acc_name.empty() ? default_name : draft.acc_name;
+                                std::string model = draft.model_name.empty() ? default_model : draft.model_name;
+
+                                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                auto& accounts_list = accounts["accounts"];
+
+                                std::string base_name = acc_name;
+                                int i = 1;
+                                while (true) {
+                                    bool exists = false;
+                                    for (const auto& acc : accounts_list) {
+                                        if (acc["name"].get<std::string>() == acc_name) {
+                                            exists = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!exists) break;
+                                    acc_name = base_name + "-" + std::to_string(i++);
+                                }
+
+                                nlohmann::json new_account = {
+                                    {"type", type},
+                                    {"name", acc_name},
+                                    {"api_key", draft.api_key},
+                                    {"api_url", default_url},
+                                    {"model", model}
+                                };
+
+                                accounts["accounts"].push_back(new_account);
+                                save_accounts(accounts);
+                                log(LogLevel::Info, "New account created: " + acc_name);
+                            };
+
+                            session->mode = Mode::Form;
+                        };
+
+                        session->mode = Mode::Menu;
+                        return true;
+                    }
 
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
@@ -310,13 +394,31 @@ void start() {
                     auto& c = session->menu_settings.menu_cursor;
                     session->menu_settings.on_select(c);
                     session->menu_settings = {};
+                    if (session->mode == Mode::Form) {
+                        active_tab = 1;
+                    } else {
+                        session->mode = Mode::Main;
+                    }
                     screen.RequestAnimationFrame();
-                    session->mode = Mode::Main;
                 }
                 return true;
             case Mode::Form:
-
-                return true;
+                if (event == Event::Escape) {
+                    session->mode = Mode::Main;
+                    active_tab = 0;
+                    screen.RequestAnimationFrame();
+                    return true;
+                }
+                if (event == Event::Return) {
+                    if (session->form_draft.api_key.empty()) return true;
+                    session->form_draft.on_submit();
+                    session->form_draft = {};
+                    session->mode = Mode::Main;
+                    active_tab = 0;
+                    screen.RequestAnimationFrame();
+                    return true;
+                }
+                return false;
         }
         return false;
     });
@@ -375,9 +477,24 @@ void start() {
                 footer = render_menu(session);
                 break;
 
-            case Mode::Form:
-                footer = emptyElement();
+            case Mode::Form: {
+                auto& draft = session->form_draft;
+                footer = vbox({
+                    hbox(text(" Account name > "), form_name_input->Render()),
+                    !draft.default_name.empty()
+                        ? text("   default: " + draft.default_name) | dim
+                        : emptyElement(),
+                    hbox(text(" API Key      > "), form_key_input->Render()),
+                    hbox(text(" Model        > "), form_model_input->Render()),
+                    !draft.default_model.empty()
+                        ? text("   default: " + draft.default_model) | dim
+                        : emptyElement(),
+                    draft.api_key.empty()
+                        ? text(" API key cannot be empty!") | color(Color::Red)
+                        : emptyElement(),
+                }) | border;
                 break;
+            }
         }
 
         return vbox({
