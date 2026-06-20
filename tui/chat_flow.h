@@ -5,6 +5,7 @@
 #include <atomic>
 #include <future>
 #include <thread>
+#include "types/accounts.h"
 #include "types/message.h"
 #include "types/theme.h"
 #include "providers/provider.h"
@@ -28,8 +29,9 @@ struct ChatSession {
     std::thread worker;
 
     Mode mode;
-    Form form_draft;
+    Form form;
+    AccountDraft account_draft;
     MenuSettings menu_settings;
 };
-
+    
 std::unique_ptr<ChatSession> chat_init();

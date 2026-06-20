@@ -38,3 +38,10 @@ public:
     virtual ~Provider() = default;
 };
 
+struct ProviderInfo {
+    std::string type;
+    std::string default_url;
+    std::string default_model;
+    std::string default_name;
+};
+

@@ -1,4 +1,5 @@
 #pragma once
+#include "types/accounts.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -10,12 +11,10 @@ enum class Mode {
 };
 
 struct Form {
-    std::string acc_name;
-    std::string api_key;
-    std::string model_name;
     std::string default_name;
     std::string default_model;
     std::function<void()> on_submit;
+    AccountDraft draft;
 };
 
 struct MenuSettings {

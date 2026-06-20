@@ -16,11 +16,13 @@ thread invariants:
 #include "loaders/config.h"
 #include "providers/provider.h"
 #include "providers/providers.h"
+#include "types/accounts.h"
 #include "render.h"
 #include "tools/handle_tool_calls.h"
 #include "logging/logger.h"
 #include "types/message.h"
 #include "types/roles.h"
+#include "accounts/build_account.h"
 #include <algorithm>
 #include <vector>
 #include <memory>
@@ -32,8 +34,6 @@ thread invariants:
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
-
-
 
 using namespace ftxui;
 
@@ -197,9 +197,9 @@ void start() {
     auto input_prompt = Input(&session->prompt.content,
         "Write something...", input_option);
 
-    auto form_name_input = Input(&session->form_draft.acc_name, "Account");
-    auto form_key_input = Input(&session->form_draft.api_key, "API key");
-    auto form_model_input = Input(&session->form_draft.model_name, "Model");
+    auto form_name_input = Input(&session->account_draft.acc_name, "Account name");
+    auto form_key_input = Input(&session->account_draft.api_key, "API key");
+    auto form_model_input = Input(&session->account_draft.model_name, "Model");
     auto form_container = Container::Vertical({
         form_name_input, form_key_input, form_model_input
     });
@@ -288,49 +288,32 @@ void start() {
 
                         session->menu_settings.on_select = [session = session.get(), providers_list](size_t cursor) {
                             const auto& provider = providers_list[cursor];
-                            const std::string type = provider["type"].get<std::string>();
-                            const std::string default_url = provider["default_api_url"].get<std::string>();
-                            const std::string default_model = provider["default_model"].get<std::string>();
-                            const std::string default_name = provider["name"].get<std::string>();
 
-                            log(LogLevel::Info, "Provider for setup: " + default_name);
+                            ProviderInfo provider_fields {
+                                provider["type"].get<std::string>(),
+                                provider["default_api_url"].get<std::string>(),
+                                provider["default_model"].get<std::string>(),
+                                provider["name"].get<std::string>(),
+                            };
+                            log(LogLevel::Info, "Provider for setup: " + provider_fields.default_name);
 
-                            session->form_draft.default_name = default_name;
-                            session->form_draft.default_model = default_model;
+                            session->form.default_name = provider_fields.default_name;
+                            session->form.default_model = provider_fields.default_model;
 
-                            session->form_draft.on_submit = [session, type, default_url, default_model, default_name]() {
-                                auto& draft = session->form_draft;
-                                std::string acc_name = draft.acc_name.empty() ? default_name : draft.acc_name;
-                                std::string model = draft.model_name.empty() ? default_model : draft.model_name;
-
+                            session->form.on_submit = [session, provider_fields]() {
+                                auto& draft = session->account_draft;
                                 nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                log(LogLevel::Info, "Accounts loaded");
                                 auto& accounts_list = accounts["accounts"];
 
-                                std::string base_name = acc_name;
-                                int i = 1;
-                                while (true) {
-                                    bool exists = false;
-                                    for (const auto& acc : accounts_list) {
-                                        if (acc["name"].get<std::string>() == acc_name) {
-                                            exists = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!exists) break;
-                                    acc_name = base_name + "-" + std::to_string(i++);
-                                }
+                                auto new_account = build_account(draft, provider_fields,
+                                    accounts_list);
+                                log(LogLevel::Debug, "New account builded");
+                                if (!new_account) return;
 
-                                nlohmann::json new_account = {
-                                    {"type", type},
-                                    {"name", acc_name},
-                                    {"api_key", draft.api_key},
-                                    {"api_url", default_url},
-                                    {"model", model}
-                                };
-
-                                accounts["accounts"].push_back(new_account);
+                                accounts_list.push_back(*new_account);
                                 save_accounts(accounts);
-                                log(LogLevel::Info, "New account created: " + acc_name);
+                                log(LogLevel::Info, "New account created: " + (*new_account)["name"].get<std::string>());
                             };
 
                             session->mode = Mode::Form;
@@ -410,9 +393,9 @@ void start() {
                     return true;
                 }
                 if (event == Event::Return) {
-                    if (session->form_draft.api_key.empty()) return true;
-                    session->form_draft.on_submit();
-                    session->form_draft = {};
+                    if (session->account_draft.api_key.empty()) return true;
+                    session->form.on_submit();
+                    session->account_draft = {};
                     session->mode = Mode::Main;
                     active_tab = 0;
                     screen.RequestAnimationFrame();
@@ -478,21 +461,15 @@ void start() {
                 break;
 
             case Mode::Form: {
-                auto& draft = session->form_draft;
                 footer = vbox({
-                    hbox(text(" Account name > "), form_name_input->Render()),
-                    !draft.default_name.empty()
-                        ? text("   default: " + draft.default_name) | dim
-                        : emptyElement(),
-                    hbox(text(" API Key      > "), form_key_input->Render()),
-                    hbox(text(" Model        > "), form_model_input->Render()),
-                    !draft.default_model.empty()
-                        ? text("   default: " + draft.default_model) | dim
-                        : emptyElement(),
-                    draft.api_key.empty()
-                        ? text(" API key cannot be empty!") | color(Color::Red)
-                        : emptyElement(),
-                }) | border;
+                    hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
+                            text("› ") | color(session->theme.prompt_color), form_name_input->Render()}),
+                    hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
+                    hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
+                    text("")
+                });
                 break;
             }
         }
