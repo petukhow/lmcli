@@ -24,6 +24,7 @@ thread invariants:
 #include "types/roles.h"
 #include "accounts/build_account.h"
 #include <algorithm>
+#include <optional>
 #include <vector>
 #include <memory>
 
@@ -183,6 +184,14 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
 
 void start() {
     auto session = chat_init();
+    auto accounts = load_accounts(ACCOUNTS_FILE);
+
+    if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
+        log(LogLevel::Error, "Broken or empty accounts.json config");
+    }
+
+    auto accounts_list = accounts["accounts"];
+
     if (!session) {
         log(LogLevel::Error, "Chat session not initialized");
         return;
@@ -251,15 +260,7 @@ void start() {
                     if (session->worker.joinable()) session->worker.join();
 
                     if (session->prompt.content == "/account") {
-                        auto accounts = load_accounts(ACCOUNTS_FILE);
                         auto config = load_config(CONFIG_FILE);
-
-                        if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
-                            log(LogLevel::Error, "Broken or empty accounts.json config");
-                            return true;
-                        }
-                        
-                        auto accounts_list = accounts["accounts"];
 
                         if (accounts_list.size() == 1) {
                             session->account = select_acc(accounts_list, 0, config);
@@ -393,7 +394,11 @@ void start() {
                     return true;
                 }
                 if (event == Event::Return) {
-                    if (session->account_draft.api_key.empty()) return true;
+                    if (session->account_draft.api_key.empty()) {
+                        session->form.key_error = "API key cannot be empty";
+                        return true; 
+                    } 
+
                     session->form.on_submit();
                     session->account_draft = {};
                     session->mode = Mode::Main;
@@ -406,6 +411,14 @@ void start() {
         return false;
     });
     auto renderer = Renderer(final_component, [&] {
+        if (session->mode == Mode::Form) {
+            if (name_exists(accounts_list, session->account_draft.acc_name)) {
+                session->form.name_error = "Account with this name already exists";
+            } else {
+                session->form.name_error = std::nullopt;
+            }
+        }
+
         Elements messages;
         for (const auto& msg : session->conversation) {
             if (msg.role == Role::User) {
@@ -468,6 +481,9 @@ void start() {
                             text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
                     hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
+                    text(""),
+                    session->form.key_error.has_value() ? text(*session->form.key_error) | color(Color::Red) : emptyElement(), 
+                    session->form.name_error.has_value() ? text(*session->form.name_error) | color(Color::Yellow) : emptyElement(),
                     text("")
                 });
                 break;

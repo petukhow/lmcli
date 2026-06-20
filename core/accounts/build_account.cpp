@@ -1,22 +1,23 @@
 #include <optional>
+#include <string>
 #include "json.hpp"
 #include "providers/provider.h"
 #include "types/accounts.h"
 
-static std::string make_unique_name(const nlohmann::json& accounts_list, const std::string& acc_name) {
-    int i = 1;
-    std::string base = acc_name;
-    while (true) {
-        bool exists = false;
-        for (const auto& acc : accounts_list) {
-            if (acc["name"].get<std::string>() == acc_name) {
-                exists = true;
-                break;
-            }
-        }
-        if (!exists) return acc_name;
-        return base + "-" + std::to_string(++i);
+bool name_exists(const nlohmann::json& accounts_list, std::string& acc_name) {
+    for (const auto& acc : accounts_list) {
+        if (acc["name"] == acc_name) return true;
     }
+    return false;
+}
+
+static std::string make_unique_name(const nlohmann::json& accounts_list, const std::string& acc_name) {
+    std::string unique = acc_name;
+    size_t i = 0;
+    while (name_exists(accounts_list, unique)) {
+        unique = acc_name + '-' + std::to_string(++i); 
+    }
+    return unique;
 }
 
 std::optional<nlohmann::json> build_account(const AccountDraft& draft, const ProviderInfo& provider,

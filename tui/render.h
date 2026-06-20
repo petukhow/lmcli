@@ -1,6 +1,7 @@
 #pragma once
 #include "types/accounts.h"
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,8 @@ enum class Mode {
 };
 
 struct Form {
+    std::optional<std::string> key_error = std::nullopt;
+    std::optional<std::string> name_error = std::nullopt;
     std::string default_name;
     std::string default_model;
     std::function<void()> on_submit;
