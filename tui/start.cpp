@@ -52,7 +52,7 @@ static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
             line = hbox(text("› "), line) | color(cs->theme.prompt_color);
         }
         else {
-            line = hbox(text("› "), line) | dim;
+            line = hbox(text("  "), line) | dim;
         }
         lines.push_back(line);
     }
@@ -501,6 +501,14 @@ void start() {
             }
         }
 
+        Elements errors;
+        if (session->form.name_error.has_value())
+            errors.push_back(hbox({text(""), text(*session->form.name_error) | color(Color::Yellow)}));
+        if (session->form.key_error.has_value())
+            errors.push_back(hbox({text(""), text(*session->form.key_error) | color(Color::Red)}));
+
+        auto errors_block = vbox(std::move(errors));
+
         Elements messages;
         for (const auto& msg : session->conversation) {
             if (msg.role == Role::User) {
@@ -563,9 +571,8 @@ void start() {
                             text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
                     hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
-                    text(""),
-                    session->form.key_error.has_value() ? text(*session->form.key_error) | color(Color::Red) : emptyElement(), 
-                    session->form.name_error.has_value() ? text(*session->form.name_error) | color(Color::Yellow) : emptyElement(),
+                    separator() | color(theme.separator_color),
+                    errors_block,
                     text("")
                 });
                 break;
