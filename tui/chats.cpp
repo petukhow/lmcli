@@ -7,11 +7,9 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 #include "types/message.h"
-#include "terminal.h"
 
 #include "ftxui/component/component.hpp"         
 #include "ftxui/component/component_base.hpp"
@@ -156,32 +154,4 @@ std::string create_chat(const std::string& chats_dir) {
     }
     chat_path = create_file_if_not_exists(full_chat_name, CHAT_DEFAULT);
     return chat_path;
-}
-
-std::string continue_chat(const std::string& chats_dir, const std::string& chat_name,
-    const std::vector<std::filesystem::directory_entry>& chats) {
-    const std::string full_chat_name = chats_dir + chat_name + ".json";
-
-    try {
-        size_t chat_index = std::stoi(chat_name);
-        if (chat_index >= 1 && chat_index <= chats.size()) {
-            return chats[chat_index-1].path().string();
-        } else {
-            std::cerr << "No chat with index " << chat_index << ".\n";
-            log(LogLevel::Error, "No chat with given index found.");
-        }
-
-    } catch (const std::invalid_argument&) {
-        if (std::filesystem::exists(full_chat_name)) {
-            return full_chat_name;
-    } else {
-        std::cerr << "No chat with given name found. Try again.\n";
-        log(LogLevel::Error, "No chat with given name found.");
-        return "";
-        }
-    }
-
-    clear_lines(chats.size() + 2);
-
-    return "";
 }

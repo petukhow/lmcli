@@ -24,9 +24,11 @@ thread invariants:
 #include "types/roles.h"
 #include "accounts/build_account.h"
 #include <algorithm>
+#include <filesystem>
 #include <optional>
 #include <vector>
 #include <memory>
+#include "utils/utils.h"
 
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
@@ -55,7 +57,7 @@ static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
         lines.push_back(line);
     }
     return vbox({
-        text("Select an account:"),
+        text(cs->menu_settings.title),
         vbox(lines),
         text("")
     });
@@ -64,6 +66,7 @@ static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
 static void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
     cs->menu_settings.menu_cursor = 0;
     cs->menu_settings.menu_items.clear();
+    cs->menu_settings.title = "Select an account:";
     cs->prompt.content.clear();
     for (const auto& account : accounts_list) {
         cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
@@ -73,6 +76,7 @@ static void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann
 static void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers) {
     cs->menu_settings.menu_cursor = 0;
     cs->menu_settings.menu_items.clear();
+    cs->menu_settings.title = "Select a provider:";
     cs->prompt.content.clear();
     for (const auto& provider : providers) {
         cs->menu_settings.menu_items.push_back(provider["name"].get<std::string>());
@@ -324,6 +328,82 @@ void start() {
                         return true;
                     }
 
+                    if (session->prompt.content == "/remove") {
+                        session->menu_settings.menu_cursor = 0;
+                        session->menu_settings.menu_items = {"Chat", "Chats", "Account"};
+                        session->menu_settings.title = "What to remove?";
+                        session->prompt.content.clear();
+
+                        session->menu_settings.on_select = [session = session.get()](size_t cursor) {
+                            if (cursor == 0) {
+                                const std::string chats_dir = get_chats_dir();
+                                auto chats = store_chats(chats_dir);
+                                if (chats.empty()) {
+                                    log(LogLevel::Info, "No chats to remove.");
+                                    return;
+                                }
+
+                                session->menu_settings.menu_cursor = 0;
+                                session->menu_settings.title = "Select a chat to remove:";
+                                for (const auto& chat : chats) {
+                                    session->menu_settings.menu_items.push_back(chat.path().stem().string());
+                                }
+
+                                session->menu_settings.on_select = [chats](size_t c) {
+                                    std::filesystem::remove(chats[c].path());
+                                    log(LogLevel::Info, "Chat removed: " + chats[c].path().stem().string());
+                                };
+                            } else if (cursor == 1) {
+                                const std::string chats_dir = get_chats_dir();
+                                auto chats = store_chats(chats_dir);
+                                if (chats.empty()) {
+                                    log(LogLevel::Info, "No chats to remove.");
+                                    return;
+                                }
+
+                                session->menu_settings.menu_cursor = 0;
+                                session->menu_settings.menu_items = {"Yes", "No"};
+                                session->menu_settings.title = "WARNING: This will remove all chats.";
+
+                                session->menu_settings.on_select = [chats_dir](size_t c) {
+                                    if (c == 0) {
+                                        for (const auto& chat : std::filesystem::directory_iterator(chats_dir)) {
+                                            std::filesystem::remove(chat);
+                                        }
+                                        log(LogLevel::Info, "All chats removed successfully");
+                                    }
+                                };
+                            } else if (cursor == 2) {
+                                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
+                                    log(LogLevel::Error, "No accounts to remove.");
+                                    return;
+                                }
+
+                                auto accounts_json = accounts["accounts"];
+                                session->menu_settings.menu_cursor = 0;
+                                session->menu_settings.title = "Select an account to remove:";
+                                for (const auto& account : accounts_json) {
+                                    session->menu_settings.menu_items.push_back(account["name"].get<std::string>());
+                                }
+
+                                session->menu_settings.on_select = [](size_t c) {
+                                    nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                    auto& accounts_list = accounts["accounts"];
+                                    if (c < accounts_list.size()) {
+                                        std::string name = accounts_list[c]["name"].get<std::string>();
+                                        accounts_list.erase(c);
+                                        save_accounts(accounts);
+                                        log(LogLevel::Info, "Account " + name + " removed.");
+                                    }
+                                };
+                            }
+                        };
+
+                        session->mode = Mode::Menu;
+                        return true;
+                    }
+
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
                     if (trimmed.empty()) {
@@ -375,12 +455,14 @@ void start() {
                     screen.RequestAnimationFrame();
                 }
                 if (event == Event::Return) {
-                    auto& c = session->menu_settings.menu_cursor;
-                    session->menu_settings.on_select(c);
+                    auto c = session->menu_settings.menu_cursor;
+                    auto on_select = std::move(session->menu_settings.on_select);
                     session->menu_settings = {};
+                    on_select(c);
+
                     if (session->mode == Mode::Form) {
                         active_tab = 1;
-                    } else {
+                    } else if (session->menu_settings.menu_items.empty()) {
                         session->mode = Mode::Main;
                     }
                     screen.RequestAnimationFrame();

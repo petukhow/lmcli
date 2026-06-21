@@ -24,4 +24,5 @@ struct MenuSettings {
     std::vector<std::string> menu_items;
     std::function<void(size_t)> on_select;
     size_t menu_cursor = 0;
+    std::string title;
 };
