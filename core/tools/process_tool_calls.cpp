@@ -34,3 +34,4 @@ std::vector<Message> handle_tool_calls(const Message& output, const std::functio
     }
     return result;
 }
+

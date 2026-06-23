@@ -6,6 +6,7 @@
 #include <future>
 #include <thread>
 #include "types/accounts.h"
+#include "types/config.h"
 #include "types/message.h"
 #include "types/theme.h"
 #include "providers/provider.h"
@@ -19,6 +20,8 @@ struct ChatSession {
     Theme theme;
 
     Message prompt;
+    std::string active_form; // form to render from command (setup, config)
+    std::string startup_error;
     std::string error_message;
     std::string streaming_buffer;
     std::string pending_command;
@@ -29,9 +32,10 @@ struct ChatSession {
     std::thread worker;
 
     Mode mode;
-    Form form;
+    FormSettings form;
     AccountDraft account_draft;
     MenuSettings menu_settings;
+    ConfigDraft config_draft;
 };
     
 std::unique_ptr<ChatSession> chat_init();

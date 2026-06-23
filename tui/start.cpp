@@ -18,12 +18,11 @@ thread invariants:
 #include "providers/providers.h"
 #include "types/accounts.h"
 #include "render.h"
-#include "tools/handle_tool_calls.h"
+#include "tools/process_tool_calls.h"
 #include "logging/logger.h"
 #include "types/message.h"
 #include "types/roles.h"
 #include "accounts/build_account.h"
-#include <algorithm>
 #include <filesystem>
 #include <optional>
 #include <vector>
@@ -40,81 +39,24 @@ thread invariants:
 
 using namespace ftxui;
 
-static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, const nlohmann::json& config) {
+static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json& config) {
+    config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
+    save_config(config);
     return Provider::create(accounts_list[cursor], config);
 }
 
-static Element render_menu(const std::unique_ptr<ChatSession>& cs) {
-    Elements lines;
-    for (size_t i = 0; i < cs->menu_settings.menu_items.size(); ++i) {
-        auto line = text(cs->menu_settings.menu_items[i]);
-        if (cs->menu_settings.menu_cursor == i) {
-            line = hbox(text("› "), line) | color(cs->theme.prompt_color);
-        }
-        else {
-            line = hbox(text("  "), line) | dim;
-        }
-        lines.push_back(line);
-    }
-    return vbox({
-        text(cs->menu_settings.title),
-        vbox(lines),
-        text("")
-    });
-}
-
-static void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
-    cs->menu_settings.menu_cursor = 0;
-    cs->menu_settings.menu_items.clear();
-    cs->menu_settings.title = "Select an account:";
-    cs->prompt.content.clear();
-    for (const auto& account : accounts_list) {
-        cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
-    }
-}
-
-static void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers) {
-    cs->menu_settings.menu_cursor = 0;
-    cs->menu_settings.menu_items.clear();
-    cs->menu_settings.title = "Select a provider:";
-    cs->prompt.content.clear();
-    for (const auto& provider : providers) {
-        cs->menu_settings.menu_items.push_back(provider["name"].get<std::string>());
-    }
-}
-
-static bool handle_scroll(Event event, float& scroll_pos) {
-    if ((event.is_mouse() && event.mouse().button == Mouse::WheelUp)
-        || event == Event::ArrowUp
-        || event == Event::PageUp
-    ) {
-        scroll_pos -= 0.05f;
-        scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
-        return true;
-    }
-    if ((event.is_mouse() && event.mouse().button == Mouse::WheelDown)
-        || event == Event::ArrowDown
-        || event == Event::PageDown
-    ) {
-        scroll_pos += 0.05f;
-        scroll_pos = std::clamp(scroll_pos, 0.0f, 1.0f);
-        return true;
-    }
-    return false;
-}
-
 static std::vector<Message> confirm_tool_calls(const Message& output,
-    ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
+    ftxui::ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
     return handle_tool_calls(output, [&](const std::string& cmd) {
-            std::promise<bool> promise;
-            auto future = promise.get_future();
-            screen.Post([&, cmd] {
-                session->pending_command = cmd;
-                session->active_promise = &promise;
-                screen.RequestAnimationFrame();
-            });
-            return future.get();
+        std::promise<bool> promise;
+        auto future = promise.get_future();
+        screen.Post([&, cmd] {
+            session->pending_command = cmd;
+            session->active_promise = &promise;
+            screen.RequestAnimationFrame();
         });
+        return future.get();
+    });
 }
 
 // A second thread for core logic in UI function (API requests, tool calls handling, context management)
@@ -188,18 +130,6 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
 
 void start() {
     auto session = chat_init();
-    auto accounts = load_accounts(ACCOUNTS_FILE);
-
-    if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
-        log(LogLevel::Error, "Broken or empty accounts.json config");
-    }
-
-    auto accounts_list = accounts["accounts"];
-
-    if (!session) {
-        log(LogLevel::Error, "Chat session not initialized");
-        return;
-    } 
 
     auto screen = ScreenInteractive::Fullscreen();
     InputOption input_option;
@@ -217,11 +147,93 @@ void start() {
         form_name_input, form_key_input, form_model_input
     });
 
+    auto config_prompt_input = Input(&session->config_draft.system_prompt, "System prompt");
+    auto config_limit_input = Input(&session->config_draft.limit, "Limit");
+    auto config_tokens_input = Input(&session->config_draft.max_tokens, "Max tokens");
+    auto config_logging_toggle = Checkbox("Logging", &session->config_draft.logging);
+    auto config_confirm_input = Input(&session->config_draft.confirm_required_raw, "confirm_required");
+    auto config_restricted_input = Input(&session->config_draft.restricted_raw, "restricted");
+
+    auto config_container = Container::Vertical({
+        config_prompt_input,
+        config_limit_input,
+        config_tokens_input,
+        config_logging_toggle,
+        config_confirm_input,
+        config_restricted_input,
+    });
+
     int active_tab = 0;
     auto component = Container::Tab({
         Container::Horizontal({input_prompt}),
-        form_container
+        form_container,
+        config_container,
     }, &active_tab);
+
+
+    auto open_setup = [&]() {
+        const auto& providers = load_providers(PROVIDERS_FILE);
+        if (providers.empty()) return;
+
+        auto providers_list = providers["providers"];
+        open_prov_menu(session, providers_list);
+
+        session->menu_settings.on_select = [&active_tab, session = session.get(), providers_list](size_t cursor) {
+            const auto& provider = providers_list[cursor];
+
+            ProviderInfo provider_fields {
+                provider["type"].get<std::string>(),
+                provider["default_api_url"].get<std::string>(),
+                provider["default_model"].get<std::string>(),
+                provider["name"].get<std::string>(),
+            };
+            log(LogLevel::Info, "Provider for setup: " + provider_fields.default_name);
+
+            session->form.on_submit = [session, provider_fields]() {
+                auto& draft = session->account_draft;
+                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                log(LogLevel::Info, "Accounts loaded");
+                auto& accounts_list = accounts["accounts"];
+
+                auto new_account = build_account(draft, provider_fields,
+                    accounts_list);
+                log(LogLevel::Debug, "New account builded");
+                if (!new_account) return;
+
+                auto config = load_config(CONFIG_FILE);
+                if (config["current_account"].get<std::string>().empty()) {
+                    config["current_account"] = (*new_account)["name"].get<std::string>();
+                    save_config(config);
+                    session->account = Provider::create(*new_account, config);
+                }
+
+                accounts_list.push_back(*new_account);
+                save_accounts(accounts);
+                log(LogLevel::Info, "New account created: " + (*new_account)["name"].get<std::string>());
+            };
+            session->mode = Mode::Form;
+            active_tab = 1;
+        };
+
+        session->mode = Mode::Menu;
+    };
+
+    if (!session->startup_error.empty()) {
+        open_setup();
+    }
+
+    auto accounts = load_accounts(ACCOUNTS_FILE);
+
+    if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
+        log(LogLevel::Error, "Broken or empty accounts.json config");
+    }
+
+    auto accounts_list = accounts["accounts"];
+
+    if (!session) {
+        log(LogLevel::Error, "Chat session not initialized");
+        return;
+    } 
 
     Element footer;
     const auto& theme = session->theme;
@@ -260,10 +272,11 @@ void start() {
                 }
 
                 if (event == Event::Return) {
+                    session->active_form = session->prompt.content;
                     if (session->busy) return true;
                     if (session->worker.joinable()) session->worker.join();
 
-                    if (session->prompt.content == "/account") {
+                    if (session->active_form == "/account") {
                         auto config = load_config(CONFIG_FILE);
 
                         if (accounts_list.size() == 1) {
@@ -274,7 +287,7 @@ void start() {
 
                         open_acc_menu(session, accounts_list);
 
-                        session->menu_settings.on_select = [session = session.get(), accounts_list, config](size_t cursor) {
+                        session->menu_settings.on_select = [session = session.get(), accounts_list, &config](int cursor) {
                             session->account = select_acc(accounts_list, cursor, config);
                             log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
                             return true;
@@ -284,55 +297,15 @@ void start() {
                         return true;
                     } 
 
-                    if (session->prompt.content == "/setup") {
-                        const auto providers = load_providers(PROVIDERS_FILE);
-                        if (providers.empty()) return true;
-
-                        auto providers_list = providers["providers"];
-                        open_prov_menu(session, providers_list);
-
-                        session->menu_settings.on_select = [session = session.get(), providers_list](size_t cursor) {
-                            const auto& provider = providers_list[cursor];
-
-                            ProviderInfo provider_fields {
-                                provider["type"].get<std::string>(),
-                                provider["default_api_url"].get<std::string>(),
-                                provider["default_model"].get<std::string>(),
-                                provider["name"].get<std::string>(),
-                            };
-                            log(LogLevel::Info, "Provider for setup: " + provider_fields.default_name);
-
-                            session->form.default_name = provider_fields.default_name;
-                            session->form.default_model = provider_fields.default_model;
-
-                            session->form.on_submit = [session, provider_fields]() {
-                                auto& draft = session->account_draft;
-                                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
-                                log(LogLevel::Info, "Accounts loaded");
-                                auto& accounts_list = accounts["accounts"];
-
-                                auto new_account = build_account(draft, provider_fields,
-                                    accounts_list);
-                                log(LogLevel::Debug, "New account builded");
-                                if (!new_account) return;
-
-                                accounts_list.push_back(*new_account);
-                                save_accounts(accounts);
-                                log(LogLevel::Info, "New account created: " + (*new_account)["name"].get<std::string>());
-                            };
-
-                            session->mode = Mode::Form;
-                        };
-
-                        session->mode = Mode::Menu;
+                    if (session->active_form == "/setup") {
+                        open_setup();
                         return true;
-                    }
+                    };
 
-                    if (session->prompt.content == "/remove") {
+                    if (session->active_form == "/remove") {
                         session->menu_settings.menu_cursor = 0;
                         session->menu_settings.menu_items = {"Chat", "Chats", "Account"};
                         session->menu_settings.title = "What to remove?";
-                        session->prompt.content.clear();
 
                         session->menu_settings.on_select = [session = session.get()](size_t cursor) {
                             if (cursor == 0) {
@@ -404,6 +377,82 @@ void start() {
                         return true;
                     }
 
+                    if (session->active_form == "/config") {
+                        auto config = load_config(CONFIG_FILE);
+                        session->config_draft.system_prompt = config["system_prompt"].get<std::string>();
+                        session->config_draft.limit = std::to_string(config["limit"].get<size_t>());
+                        session->config_draft.max_tokens = std::to_string(config["max_tokens"].get<size_t>());
+                        session->config_draft.logging = config["logging"].get<bool>();
+                        session->config_draft.confirm_required_raw = config["confirm_required"].dump();
+                        session->config_draft.restricted_raw = config["blacklist"].dump();
+
+                        session->form.on_submit = [session = session.get(), &active_tab]() {
+                            auto& draft = session->config_draft;
+                            
+                            try {
+                                int limit = std::stoi(draft.limit);
+                                if (limit < 0) {
+                                    draft.limit_error = "Limit must be a positive number";
+                                    return;
+                                }
+                                draft.limit_error = std::nullopt;
+                            } catch (const std::invalid_argument&) {
+                                draft.limit_error = "Limit must be a number";
+                                return;
+                            }
+
+                            try {
+                                int max_tokens = std::stoi(draft.max_tokens);
+                                if (max_tokens < 0) {
+                                    draft.max_tokens_error = "Max tokens must be a positive number";
+                                    return;
+                                }
+                                draft.max_tokens_error = std::nullopt;
+                            } catch (const std::invalid_argument&) {
+                                draft.max_tokens_error = "Max tokens must be a number";
+                                return;
+                            }
+
+                            nlohmann::json confirm_json, blacklist_json;
+                            try {
+                                confirm_json = nlohmann::json::parse(draft.confirm_required_raw);
+                                if (!confirm_json.is_array()) {
+                                    draft.confirm_required_error = "Must be a JSON array";
+                                    return;
+                                }
+                            } catch (const nlohmann::json::parse_error&) {
+                                draft.confirm_required_error = "Invalid JSON";
+                                return;
+                            }
+
+                            try {
+                                blacklist_json = nlohmann::json::parse(draft.restricted_raw);
+                                if (!blacklist_json.is_array()) {
+                                    draft.restricted_error = "Must be a JSON array";
+                                    return;
+                                }
+                            } catch (const nlohmann::json::parse_error&) {
+                                draft.restricted_error = "Invalid JSON";
+                                return;
+                            }
+
+                            nlohmann::json config = load_config(CONFIG_FILE);
+                            config["system_prompt"] = draft.system_prompt;
+                            config["limit"] = std::stoi(draft.limit);
+                            config["max_tokens"] = std::stoi(draft.max_tokens);
+                            config["logging"] = draft.logging;
+                            config["confirm_required"] = confirm_json;
+                            config["blacklist"] = blacklist_json;
+                            save_config(config);
+
+                            session->config_draft = {};
+                            active_tab = 0;
+                        };
+
+                        session->mode = Mode::Form;
+                        active_tab = 2;
+                    }
+
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
                     if (trimmed.empty()) {
@@ -422,6 +471,7 @@ void start() {
                     session->conversation.push_back({Role::User, session->prompt.content,
                         "", {}});
                     log(LogLevel::Info, "User prompted: " + session->prompt.content);
+                    session->active_form = session->prompt.content;
                     session->prompt.content.clear();
 
                     session->scroll_pos = 1.0f;
@@ -459,12 +509,10 @@ void start() {
                     auto on_select = std::move(session->menu_settings.on_select);
                     session->menu_settings = {};
                     on_select(c);
-
-                    if (session->mode == Mode::Form) {
-                        active_tab = 1;
-                    } else if (session->menu_settings.menu_items.empty()) {
+                    if (session->menu_settings.menu_items.empty() && session->mode != Mode::Form) {
                         session->mode = Mode::Main;
                     }
+
                     screen.RequestAnimationFrame();
                 }
                 return true;
@@ -476,13 +524,19 @@ void start() {
                     return true;
                 }
                 if (event == Event::Return) {
-                    if (session->account_draft.api_key.empty()) {
-                        session->form.key_error = "API key cannot be empty";
-                        return true; 
-                    } 
+                    if (session->active_form == "/setup") {
+                        if (session->account_draft.api_key.empty()) {
+                            session->account_draft.key_error = "API key cannot be empty";
+                            return true;
+                        }
+                    }
 
                     session->form.on_submit();
                     session->account_draft = {};
+                    session->config_draft = {};
+                    session->form = {};
+                    session->active_form = session->prompt.content;
+                    session->prompt.content.clear();
                     session->mode = Mode::Main;
                     active_tab = 0;
                     screen.RequestAnimationFrame();
@@ -495,19 +549,29 @@ void start() {
     auto renderer = Renderer(final_component, [&] {
         if (session->mode == Mode::Form) {
             if (name_exists(accounts_list, session->account_draft.acc_name)) {
-                session->form.name_error = "Account with this name already exists";
+                session->account_draft.name_error = "Account with this name already exists";
             } else {
-                session->form.name_error = std::nullopt;
+                session->account_draft.name_error = std::nullopt;
             }
         }
 
-        Elements errors;
-        if (session->form.name_error.has_value())
-            errors.push_back(hbox({text(""), text(*session->form.name_error) | color(Color::Yellow)}));
-        if (session->form.key_error.has_value())
-            errors.push_back(hbox({text(""), text(*session->form.key_error) | color(Color::Red)}));
+        Elements acc_errors;
+        Elements conf_errors;
+        if (session->active_form == "/setup") {
+            if (session->account_draft.name_error.has_value())
+                acc_errors.push_back(hbox({text(""), text(*session->account_draft.name_error) | color(Color::Yellow)}));
+            if (session->account_draft.key_error.has_value())
+                acc_errors.push_back(hbox({text(""), text(*session->account_draft.key_error) | color(Color::Red)}));
+        }
+        else if (session->active_form == "/config") {
+            if (session->config_draft.limit_error.has_value())
+                conf_errors.push_back(hbox({text(""), text(*session->config_draft.limit_error) | color(Color::Red)}));
+            if (session->config_draft.max_tokens_error.has_value())
+                conf_errors.push_back(hbox({text(""), text(*session->config_draft.max_tokens_error) | color(Color::Red)}));
+        }
 
-        auto errors_block = vbox(std::move(errors));
+        auto acc_errors_block = vbox(std::move(acc_errors));
+        auto conf_errors_block = vbox(std::move(conf_errors));
 
         Elements messages;
         for (const auto& msg : session->conversation) {
@@ -564,17 +628,39 @@ void start() {
                 break;
 
             case Mode::Form: {
-                footer = vbox({
-                    hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
-                            text("› ") | color(session->theme.prompt_color), form_name_input->Render()}),
-                    hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
-                    hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
-                    separator() | color(theme.separator_color),
-                    errors_block,
-                    text("")
-                });
+                if (session->active_form == "/setup") {
+                    footer = vbox({
+                        !session->startup_error.empty() ? paragraph(session->startup_error) | color(Color::Yellow) : emptyElement(),
+                        hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
+                                text("› ") | color(session->theme.prompt_color), form_name_input->Render()}),
+                        hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
+                                text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
+                        hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
+                                text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
+                        separator() | color(theme.separator_color),
+                        acc_errors_block,
+                        text("")
+                    });
+                }
+                else if (session->active_form == "/config") {
+                    footer = vbox({
+                        hbox({text("System prompt") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_prompt_input->Render()}),
+                        hbox({text("Limit") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_limit_input->Render()}),
+                        hbox({text("Max tokens") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_tokens_input->Render()}),
+                        hbox({text("Logging") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_logging_toggle->Render()}),
+                        hbox({text("Confirm required") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_confirm_input->Render()}),
+                        hbox({text("Restricted") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), config_restricted_input->Render()}),
+                        separator() | color(theme.separator_color),
+                        conf_errors_block,
+                        text("")
+                    });
+                }
                 break;
             }
         }

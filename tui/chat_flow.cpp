@@ -1,19 +1,21 @@
 #include "chat_flow.h"
 #include "json.hpp"
-#include "select_account.h"
 #include "constants.h"
 #include "chats.h"
 #include "loaders/config.h"
 #include "loaders/accounts.h"
 #include "loaders/json_io.h"
 #include "loaders/theme.h"
+#include "providers/provider.h"
 #include "types/roles.h"
 #include "logging/logger.h"
+#include <memory>
 
 using json = nlohmann::json;
 
 std::unique_ptr<ChatSession> chat_init() {
     std::vector<Message> conversation;
+    auto session = std::make_unique<ChatSession>();
     const auto config = load_config(CONFIG_FILE);
     const auto accounts = load_accounts(ACCOUNTS_FILE);
 
@@ -22,9 +24,22 @@ std::unique_ptr<ChatSession> chat_init() {
         return nullptr;
     }
 
-    auto account = select_account(accounts, config);
+    auto account_name = config["current_account"].get<std::string>();
+    if (account_name.empty()) session->startup_error = "No account found. Use /setup to add one.";
+
+    if (!accounts.contains("accounts") || accounts["accounts"].empty()) return nullptr;
+
+    std::unique_ptr<Provider> account = nullptr;
+
+    for (const auto& acc : accounts["accounts"]) {
+        if (acc["name"] == account_name) {
+            account = Provider::create(acc, config);
+            break;
+        }   
+    }
+
     if (!account) {
-        return nullptr;
+        session->startup_error = "No account configured. Use /setup to add one.";
     }
 
     const std::string chats_path = setup_chat();
@@ -52,9 +67,8 @@ std::unique_ptr<ChatSession> chat_init() {
 
     const auto theme = load_theme(config["theme"].get<std::string>());
 
-    auto session = std::make_unique<ChatSession>();
-    session->conversation = std::move(conversation);
     session->account = std::move(account);
+    session->conversation = std::move(conversation);
     session->chats_path = std::move(chats_path);
     session->limit = config["limit"];
     session->theme = std::move(theme);

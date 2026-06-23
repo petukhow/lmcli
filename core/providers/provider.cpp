@@ -13,35 +13,35 @@
 #include <optional>
 #include <string>
 
-std::unique_ptr<Provider> Provider::create(const nlohmann::json &accounts, const nlohmann::json &config) {
+std::unique_ptr<Provider> Provider::create(const nlohmann::json &account, const nlohmann::json &config) {
     std::unique_ptr<Provider> provider = nullptr;
 
-    if (accounts["type"].get<std::string>() == Providers::OpenAICompatible.get_value()) {
+    if (account["type"].get<std::string>() == Providers::OpenAICompatible.get_value()) {
         provider = std::make_unique<OpenAICompatible>(
-        accounts["api_key"].get<std::string>(),
-        accounts["api_url"].get<std::string>(),
-        accounts["model"].get<std::string>(),
+        account["api_key"].get<std::string>(),
+        account["api_url"].get<std::string>(),
+        account["model"].get<std::string>(),
         config["system_prompt"].get<std::string>(),
          config["limit"].get<size_t>(),
         config["max_tokens"].get<size_t>()
         );
     }
 
-    else if (accounts["type"].get<std::string>() == Providers::Anthropic.get_value()) {
+    else if (account["type"].get<std::string>() == Providers::Anthropic.get_value()) {
         provider = std::make_unique<Anthropic>(
-            accounts["api_key"].get<std::string>(),
-            accounts["api_url"].get<std::string>(),
-            accounts["model"].get<std::string>(),
+            account["api_key"].get<std::string>(),
+            account["api_url"].get<std::string>(),
+            account["model"].get<std::string>(),
             config["system_prompt"].get<std::string>(),
             config["limit"].get<size_t>(),
             config["max_tokens"].get<size_t>()
         );
     }
-    else if (accounts["type"].get<std::string>() == Providers::Google.get_value()) {
+    else if (account["type"].get<std::string>() == Providers::Google.get_value()) {
         provider = std::make_unique<Google>(
-            accounts["api_key"].get<std::string>(),
-            accounts["api_url"].get<std::string>(),
-            accounts["model"].get<std::string>(),
+            account["api_key"].get<std::string>(),
+            account["api_url"].get<std::string>(),
+            account["model"].get<std::string>(),
             config["system_prompt"].get<std::string>(),
             config["limit"].get<size_t>(),
             config["max_tokens"].get<size_t>()

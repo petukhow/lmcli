@@ -1,4 +1,4 @@
-#include "commands/commands.h"
+#include "commands.h"
 #include "logging/logger.h"
 #include <iostream>
 
@@ -20,34 +20,14 @@ int main(int argc, char* argv[]) {
 
     std::string command = argv[1];
 
-    if (command == "setup") {
-        // setup();
-    }
-    else if (command == "start") {
+    if (command == "start") {
         start();
     }
-    else if (command == "accounts") {
-        accounts();
-    } 
     else if (command == "help") {
         help();
     }
     else if (command == "init") {
         init();
-    }
-    else if (command == "remove") {
-        std::string subcommand;
-        if (argc == 3) {
-            subcommand = argv[2];
-        }
-        remove(subcommand);
-    }
-    else if (command == "config") {
-        std::string subcommand;
-        if (argc == 3) {
-            subcommand = argv[2];
-        }
-        config(subcommand);
     }
     else {
         std::cerr << "Unknown command: " << command << "\n";

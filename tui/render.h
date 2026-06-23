@@ -1,9 +1,16 @@
 #pragma once
-#include "types/accounts.h"
 #include <functional>
-#include <optional>
 #include <string>
 #include <vector>
+#include "json.hpp"
+
+#include "ftxui/dom/elements.hpp"
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/component_options.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
+
+struct ChatSession;
 
 enum class Mode {
     Main,
@@ -11,13 +18,8 @@ enum class Mode {
     Form
 };
 
-struct Form {
-    std::optional<std::string> key_error = std::nullopt;
-    std::optional<std::string> name_error = std::nullopt;
-    std::string default_name;
-    std::string default_model;
+struct FormSettings {
     std::function<void()> on_submit;
-    AccountDraft draft;
 };
 
 struct MenuSettings {
@@ -26,3 +28,11 @@ struct MenuSettings {
     size_t menu_cursor = 0;
     std::string title;
 };
+
+ftxui::Element render_menu(const std::unique_ptr<ChatSession>& cs);
+
+void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list);
+
+void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers);
+
+bool handle_scroll(ftxui::Event event, float& scroll_pos);

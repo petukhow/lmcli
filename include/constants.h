@@ -18,7 +18,8 @@ inline const nlohmann::json CONFIG_DEFAULT = {
         {"logging", true},
         {"blacklist", nlohmann::json::array({"reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"})},
         {"confirm_required", "all"},
-        {"theme", "tech"}
+        {"theme", "tech"},
+        {"current_account", ""}
 };
 inline const nlohmann::json TOOLS_DEFAULT = {
     {"tools", nlohmann::json::array({
