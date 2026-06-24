@@ -36,6 +36,7 @@ struct ChatSession {
     AccountDraft account_draft;
     MenuSettings menu_settings;
     ConfigDraft config_draft;
+    std::string chat_name_input;
 };
     
 std::unique_ptr<ChatSession> chat_init();

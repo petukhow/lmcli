@@ -14,6 +14,7 @@ thread invariants:
 #include "json.hpp"
 #include "loaders/accounts.h"
 #include "loaders/config.h"
+#include "loaders/json_io.h"
 #include "providers/provider.h"
 #include "providers/providers.h"
 #include "types/accounts.h"
@@ -170,11 +171,15 @@ void start() {
         config_restricted_input,
     });
 
+    auto chat_name_input = Input(&session->chat_name_input, "Chat name (empty for auto)");
+    auto chat_name_container = Container::Vertical({chat_name_input});
+
     int active_tab = 0;
     auto component = Container::Tab({
         Container::Horizontal({input_prompt}),
         form_container,
         config_container,
+        chat_name_container,
     }, &active_tab);
 
 
@@ -387,6 +392,78 @@ void start() {
                         return true;
                     }
 
+                    if (session->active_form == "/chats") {
+                        save_chat(session->chats_path, session->conversation);
+
+                        const std::string chats_dir = get_chats_dir();
+                        auto chats = store_chats(chats_dir);
+
+                        session->menu_settings.menu_cursor = 0;
+                        session->menu_settings.menu_items.clear();
+                        session->menu_settings.title = "Select a chat:";
+                        session->prompt.content.clear();
+
+                        for (const auto& chat : chats) {
+                            session->menu_settings.menu_items.push_back(chat.path().stem().string());
+                        }
+                        session->menu_settings.menu_items.push_back("New chat");
+
+                        auto switch_chat = [session = session.get()](const std::string& path) {
+                            auto chat_json = load_json(path);
+                            std::vector<Message> conversation;
+                            if (chat_json && chat_json->contains("conversation") && (*chat_json)["conversation"].is_array()) {
+                                conversation = (*chat_json)["conversation"].get<std::vector<Message>>();
+                            }
+
+                            auto config = load_config(CONFIG_FILE);
+                            if (!conversation.empty()) {
+                                if (conversation[0].content != config["system_prompt"].get<std::string>()) {
+                                    conversation[0].content = config["system_prompt"];
+                                }
+                            }
+                            if (conversation.empty()) {
+                                conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
+                            }
+
+                            session->conversation = std::move(conversation);
+                            session->chats_path = path;
+                            session->scroll_pos = 1.0f;
+                            session->error_message.clear();
+                            session->streaming_buffer.clear();
+                        };
+
+                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir, &active_tab, switch_chat](size_t cursor) {
+                            if (cursor == chats.size()) {
+                                session->chat_name_input.clear();
+                                session->form.on_submit = [session, chats_dir, switch_chat]() -> bool {
+                                    std::string name = session->chat_name_input;
+                                    name.erase(0, name.find_first_not_of(" \t"));
+                                    name.erase(name.find_last_not_of(" \t") + 1);
+
+                                    if (name.empty()) {
+                                        size_t files_amount = std::distance(
+                                            std::filesystem::directory_iterator(chats_dir),
+                                            std::filesystem::directory_iterator{});
+                                        name = "chat #" + std::to_string(files_amount);
+                                    }
+
+                                    std::string new_path = chats_dir + name + ".json";
+                                    create_file_if_not_exists(new_path, CHAT_DEFAULT);
+                                    switch_chat(new_path);
+                                    return true;
+                                };
+                                session->active_form = "/chats";
+                                session->mode = Mode::Form;
+                                active_tab = 3;
+                            } else {
+                                switch_chat(chats[cursor].path().string());
+                            }
+                        };
+
+                        session->mode = Mode::Menu;
+                        return true;
+                    }
+
                     if (session->active_form == "/config") {
                         auto config = load_config(CONFIG_FILE);
                         session->config_draft.system_prompt = config["system_prompt"].get<std::string>();
@@ -541,6 +618,18 @@ void start() {
                     screen.RequestAnimationFrame();
                     return true;
                 }
+                if (event == Event::Return && session->active_form == "/chats") {
+                    auto ok = session->form.on_submit();
+                    if (ok) {
+                        session->chat_name_input.clear();
+                        session->form = {};
+                        session->prompt.content.clear();
+                        session->mode = Mode::Main;
+                        active_tab = 0;
+                        screen.RequestAnimationFrame();
+                        return true;
+                    }
+                }
                 if (event == Event::CtrlS) {
                     if (session->active_form == "/setup") {
                         if (session->account_draft.api_key.empty()) {
@@ -673,6 +762,15 @@ void start() {
                         separator() | color(theme.separator_color),
                         acc_errors_block,
                         paragraph(" esc to exit") | color(Color::GrayDark),
+                        text("")
+                    });
+                }
+                else if (session->active_form == "/chats") {
+                    footer = vbox({
+                        hbox({text(" Chat name") | size(WIDTH, EQUAL, 11) | color(session->theme.prompt_color),
+                            text("› ") | color(session->theme.prompt_color), chat_name_input->Render()}),
+                        separator() | color(theme.separator_color),
+                        paragraph(" enter to create | esc to cancel") | color(Color::GrayDark),
                         text("")
                     });
                 }
