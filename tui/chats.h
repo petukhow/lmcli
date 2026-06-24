@@ -5,7 +5,7 @@
 
 bool save_chat(const std::string& filepath, const std::vector<Message>& chat);
 
-std::string setup_chat();
+std::optional<std::string> setup_chat();
 
 std::vector<std::filesystem::directory_entry> store_chats(const std::string& chats_dir);
 

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <vector>
 #include "types/message.h"
@@ -21,7 +22,7 @@
 using json = nlohmann::json;
 using namespace ftxui;
 
-std::string setup_chat() {
+std::optional<std::string> setup_chat() {
     const std::string chats_dir = get_chats_dir();
     const std::string chat_path;
     const auto chats = store_chats(chats_dir);
@@ -31,7 +32,7 @@ std::string setup_chat() {
     if (!std::filesystem::exists(chats_dir)) {
         std::cerr << "Chats directory doesn't exist. Try 'lmcli init'";
         log(LogLevel::Error, "Chats directory doesn't exist.");
-        return "";
+        return std::nullopt;
     }
 
     if (chats.empty()) full_chat_name = create_chat(chats_dir);
@@ -53,7 +54,7 @@ std::string setup_chat() {
     screen.Loop(menu);
 
     if (size_t(selected) == entries.size()-1) {
-        return "";
+        return std::nullopt;
     } else if (size_t(selected) == entries.size()-2) {
         full_chat_name = create_chat(chats_dir);
     } else {

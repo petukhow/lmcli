@@ -28,6 +28,7 @@ thread invariants:
 #include <vector>
 #include <memory>
 #include "utils/utils.h"
+#include <iostream>
 
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
@@ -37,9 +38,11 @@ thread invariants:
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 
-using namespace ftxui;
 
-static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json& config) {
+using namespace ftxui;
+using json = nlohmann::json;
+
+static std::unique_ptr<Provider> select_acc(const json& accounts_list, int cursor, json& config) {
     config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
     save_config(config);
     return Provider::create(accounts_list[cursor], config);
@@ -130,6 +133,10 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
 
 void start() {
     auto session = chat_init();
+    if (!session->startup_error.empty()) {
+        std::cerr << "Error: " << session->startup_error << "\n";
+        return;
+    }
 
     auto screen = ScreenInteractive::Fullscreen();
     InputOption input_option;
@@ -151,8 +158,8 @@ void start() {
     auto config_limit_input = Input(&session->config_draft.limit, "Limit");
     auto config_tokens_input = Input(&session->config_draft.max_tokens, "Max tokens");
     auto config_logging_toggle = Checkbox("Logging", &session->config_draft.logging);
-    auto config_confirm_input = Input(&session->config_draft.confirm_required_raw, "confirm_required");
-    auto config_restricted_input = Input(&session->config_draft.restricted_raw, "restricted");
+    auto config_confirm_input = Input(&session->config_draft.confirm_required_raw, "Commands which require confirmation (json array or 'all' value)");
+    auto config_restricted_input = Input(&session->config_draft.restricted_raw, "Restricted commands (json array)");
 
     auto config_container = Container::Vertical({
         config_prompt_input,
@@ -189,16 +196,16 @@ void start() {
             };
             log(LogLevel::Info, "Provider for setup: " + provider_fields.default_name);
 
-            session->form.on_submit = [session, provider_fields]() {
+            session->form.on_submit = [session, provider_fields]() -> bool {
                 auto& draft = session->account_draft;
-                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                json accounts = load_accounts(ACCOUNTS_FILE);
                 log(LogLevel::Info, "Accounts loaded");
                 auto& accounts_list = accounts["accounts"];
 
                 auto new_account = build_account(draft, provider_fields,
                     accounts_list);
                 log(LogLevel::Debug, "New account builded");
-                if (!new_account) return;
+                if (!new_account) return false;
 
                 auto config = load_config(CONFIG_FILE);
                 if (config["current_account"].get<std::string>().empty()) {
@@ -210,15 +217,18 @@ void start() {
                 accounts_list.push_back(*new_account);
                 save_accounts(accounts);
                 log(LogLevel::Info, "New account created: " + (*new_account)["name"].get<std::string>());
+                
+                return true;
             };
             session->mode = Mode::Form;
             active_tab = 1;
+            return true;
         };
 
         session->mode = Mode::Menu;
     };
 
-    if (!session->startup_error.empty()) {
+    if (!session->account) {
         open_setup();
     }
 
@@ -347,7 +357,7 @@ void start() {
                                     }
                                 };
                             } else if (cursor == 2) {
-                                nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                json accounts = load_accounts(ACCOUNTS_FILE);
                                 if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
                                     log(LogLevel::Error, "No accounts to remove.");
                                     return;
@@ -361,7 +371,7 @@ void start() {
                                 }
 
                                 session->menu_settings.on_select = [](size_t c) {
-                                    nlohmann::json accounts = load_accounts(ACCOUNTS_FILE);
+                                    json accounts = load_accounts(ACCOUNTS_FILE);
                                     auto& accounts_list = accounts["accounts"];
                                     if (c < accounts_list.size()) {
                                         std::string name = accounts_list[c]["name"].get<std::string>();
@@ -383,60 +393,69 @@ void start() {
                         session->config_draft.limit = std::to_string(config["limit"].get<size_t>());
                         session->config_draft.max_tokens = std::to_string(config["max_tokens"].get<size_t>());
                         session->config_draft.logging = config["logging"].get<bool>();
-                        session->config_draft.confirm_required_raw = config["confirm_required"].dump();
+                        if (config["confirm_required"].is_string()) {
+                            session->config_draft.confirm_required_raw = config["confirm_required"].get<std::string>();
+                        } else {
+                            session->config_draft.confirm_required_raw = config["confirm_required"].dump();
+                        }
                         session->config_draft.restricted_raw = config["blacklist"].dump();
 
-                        session->form.on_submit = [session = session.get(), &active_tab]() {
+                        session->form.on_submit = [session = session.get()]() -> bool {
                             auto& draft = session->config_draft;
-                            
+                            bool has_errors = false;
                             try {
                                 int limit = std::stoi(draft.limit);
                                 if (limit < 0) {
                                     draft.limit_error = "Limit must be a positive number";
-                                    return;
+                                    has_errors = true;
                                 }
-                                draft.limit_error = std::nullopt;
+                                else draft.limit_error = std::nullopt;
                             } catch (const std::invalid_argument&) {
                                 draft.limit_error = "Limit must be a number";
-                                return;
+                                has_errors = true;
                             }
 
                             try {
                                 int max_tokens = std::stoi(draft.max_tokens);
                                 if (max_tokens < 0) {
                                     draft.max_tokens_error = "Max tokens must be a positive number";
-                                    return;
+                                    has_errors = true;
                                 }
-                                draft.max_tokens_error = std::nullopt;
+                                else draft.max_tokens_error = std::nullopt;
                             } catch (const std::invalid_argument&) {
                                 draft.max_tokens_error = "Max tokens must be a number";
-                                return;
+                                has_errors = true;
                             }
 
-                            nlohmann::json confirm_json, blacklist_json;
-                            try {
-                                confirm_json = nlohmann::json::parse(draft.confirm_required_raw);
-                                if (!confirm_json.is_array()) {
-                                    draft.confirm_required_error = "Must be a JSON array";
-                                    return;
+                            json confirm_json, blacklist_json;
+                            if (draft.confirm_required_raw == "all") confirm_json = "all";
+                            else {
+                                try {
+                                    confirm_json = json::parse(draft.confirm_required_raw);
+                                    if (!confirm_json.is_array()) {
+                                        draft.confirm_required_error = "Confirm required commands must be a JSON array";
+                                        has_errors = true;
+                                    }
+                                } catch (const json::parse_error&) {
+                                    draft.confirm_required_error = "Confirm required commands field has invalid JSON";
+                                    has_errors = true;
                                 }
-                            } catch (const nlohmann::json::parse_error&) {
-                                draft.confirm_required_error = "Invalid JSON";
-                                return;
                             }
 
                             try {
-                                blacklist_json = nlohmann::json::parse(draft.restricted_raw);
+                                blacklist_json = json::parse(draft.restricted_raw);
                                 if (!blacklist_json.is_array()) {
-                                    draft.restricted_error = "Must be a JSON array";
-                                    return;
+                                    draft.restricted_error = "Restricted commands must be a JSON array";
+                                    has_errors = true;
                                 }
-                            } catch (const nlohmann::json::parse_error&) {
-                                draft.restricted_error = "Invalid JSON";
-                                return;
+                            } catch (const json::parse_error&) {
+                                draft.restricted_error = "Restricted commands field has invalid JSON";
+                                has_errors = true;
                             }
 
-                            nlohmann::json config = load_config(CONFIG_FILE);
+                            if (has_errors) return false;
+
+                            json config = load_config(CONFIG_FILE);
                             config["system_prompt"] = draft.system_prompt;
                             config["limit"] = std::stoi(draft.limit);
                             config["max_tokens"] = std::stoi(draft.max_tokens);
@@ -445,12 +464,12 @@ void start() {
                             config["blacklist"] = blacklist_json;
                             save_config(config);
 
-                            session->config_draft = {};
-                            active_tab = 0;
+                            return true;
                         };
 
                         session->mode = Mode::Form;
                         active_tab = 2;
+                        return true;
                     }
 
                     auto trimmed = session->prompt.content;
@@ -471,7 +490,6 @@ void start() {
                     session->conversation.push_back({Role::User, session->prompt.content,
                         "", {}});
                     log(LogLevel::Info, "User prompted: " + session->prompt.content);
-                    session->active_form = session->prompt.content;
                     session->prompt.content.clear();
 
                     session->scroll_pos = 1.0f;
@@ -523,7 +541,7 @@ void start() {
                     screen.RequestAnimationFrame();
                     return true;
                 }
-                if (event == Event::Return) {
+                if (event == Event::CtrlS) {
                     if (session->active_form == "/setup") {
                         if (session->account_draft.api_key.empty()) {
                             session->account_draft.key_error = "API key cannot be empty";
@@ -531,22 +549,31 @@ void start() {
                         }
                     }
 
-                    session->form.on_submit();
-                    session->account_draft = {};
-                    session->config_draft = {};
-                    session->form = {};
-                    session->active_form = session->prompt.content;
-                    session->prompt.content.clear();
-                    session->mode = Mode::Main;
-                    active_tab = 0;
-                    screen.RequestAnimationFrame();
-                    return true;
+                    auto ok = session->form.on_submit();
+                    if (ok) {
+                        session->config_draft = {};
+                        session->account_draft = {};
+                        session->form = {};
+                        session->prompt.content.clear();
+                        session->mode = Mode::Main;
+                        active_tab = 0;
+                        screen.RequestAnimationFrame();
+                        return true;
+                    }                    
                 }
                 return false;
         }
         return false;
     });
     auto renderer = Renderer(final_component, [&] {
+        InputOption config_inputs;
+        config_inputs.transform = [&](InputState state) {
+            if (state.focused) {
+                state.element |= color(session->theme.prompt_color);
+            }
+            return state.element;
+        };
+        
         if (session->mode == Mode::Form) {
             if (name_exists(accounts_list, session->account_draft.acc_name)) {
                 session->account_draft.name_error = "Account with this name already exists";
@@ -568,6 +595,10 @@ void start() {
                 conf_errors.push_back(hbox({text(""), text(*session->config_draft.limit_error) | color(Color::Red)}));
             if (session->config_draft.max_tokens_error.has_value())
                 conf_errors.push_back(hbox({text(""), text(*session->config_draft.max_tokens_error) | color(Color::Red)}));
+            if (session->config_draft.confirm_required_error.has_value())
+                conf_errors.push_back(hbox({text(""), text(*session->config_draft.confirm_required_error) | color(Color::Red)}));
+            if (session->config_draft.restricted_error.has_value())
+                conf_errors.push_back(hbox({text(""), text(*session->config_draft.restricted_error) | color(Color::Red)}));
         }
 
         auto acc_errors_block = vbox(std::move(acc_errors));
@@ -614,7 +645,9 @@ void start() {
                     !session->error_message.empty()
                         ? paragraph("✗ " + session->error_message) | color(Color::Red)
                         : emptyElement(),
-                    input_line,
+                    session->busy 
+                        ? input_line | dim
+                        : input_line,
                     separator() | color(theme.separator_color),
                     session->busy
                         ? paragraph(" esc to interrupt") | color(Color::GrayDark)
@@ -630,7 +663,7 @@ void start() {
             case Mode::Form: {
                 if (session->active_form == "/setup") {
                     footer = vbox({
-                        !session->startup_error.empty() ? paragraph(session->startup_error) | color(Color::Yellow) : emptyElement(),
+                        !session->account ? paragraph("You have no accounts. Create one to continue.") | color(Color::Yellow) : emptyElement(),
                         hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
                                 text("› ") | color(session->theme.prompt_color), form_name_input->Render()}),
                         hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
@@ -639,25 +672,28 @@ void start() {
                                 text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
                         separator() | color(theme.separator_color),
                         acc_errors_block,
+                        paragraph(" esc to exit") | color(Color::GrayDark),
                         text("")
                     });
                 }
                 else if (session->active_form == "/config") {
                     footer = vbox({
-                        hbox({text("System prompt") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("System prompt") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_prompt_input->Render()}),
-                        hbox({text("Limit") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("Limit") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_limit_input->Render()}),
-                        hbox({text("Max tokens") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("Max tokens") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_tokens_input->Render()}),
-                        hbox({text("Logging") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("Logging") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_logging_toggle->Render()}),
-                        hbox({text("Confirm required") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("Confirm required") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_confirm_input->Render()}),
-                        hbox({text("Restricted") | size(WIDTH, EQUAL, 16) | color(session->theme.prompt_color),
+                        hbox({text("Restricted commands") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), config_restricted_input->Render()}),
                         separator() | color(theme.separator_color),
                         conf_errors_block,
+                        text(""),
+                        paragraph("ctrl + S to save | esc to exit") | color(Color::GrayDark),
                         text("")
                     });
                 }

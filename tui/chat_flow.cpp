@@ -21,13 +21,11 @@ std::unique_ptr<ChatSession> chat_init() {
 
     if (config.is_null() || accounts.is_null()) {
         log(LogLevel::Error, "Failed to load config or accounts");
-        return nullptr;
+        session->startup_error = "Failed to load config or accounts.";
+        return session;
     }
 
-    auto account_name = config["current_account"].get<std::string>();
-    if (account_name.empty()) session->startup_error = "No account found. Use /setup to add one.";
-
-    if (!accounts.contains("accounts") || accounts["accounts"].empty()) return nullptr;
+    const auto account_name = config["current_account"].get<std::string>();
 
     std::unique_ptr<Provider> account = nullptr;
 
@@ -40,15 +38,20 @@ std::unique_ptr<ChatSession> chat_init() {
 
     if (!account) {
         session->startup_error = "No account configured. Use /setup to add one.";
+        return session;
     }
 
-    const std::string chats_path = setup_chat();
-    if (chats_path.empty()) return nullptr;
+    const std::optional<std::string> chats_path = setup_chat();
+    if (!chats_path) {
+        session->startup_error = "No chat with given name found.";
+        return session;
+    }
 
-    const auto chats = load_json(chats_path);
+    const auto chats = load_json(*chats_path);
 
     if (!chats.has_value()) {
-        return nullptr;
+        session->startup_error = "No chats found.";
+        return session;
     }
 
     if (chats->contains("conversation") && (*chats)["conversation"].is_array()) {
@@ -69,7 +72,7 @@ std::unique_ptr<ChatSession> chat_init() {
 
     session->account = std::move(account);
     session->conversation = std::move(conversation);
-    session->chats_path = std::move(chats_path);
+    session->chats_path = std::move(*chats_path);
     session->limit = config["limit"];
     session->theme = std::move(theme);
     return session;

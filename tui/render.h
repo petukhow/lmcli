@@ -19,7 +19,7 @@ enum class Mode {
 };
 
 struct FormSettings {
-    std::function<void()> on_submit;
+    std::function<bool()> on_submit;
 };
 
 struct MenuSettings {
