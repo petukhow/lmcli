@@ -15,7 +15,7 @@
 struct ChatSession {
     std::vector<Message> conversation;
     std::unique_ptr<Provider> account;
-    std::string chats_path;
+    std::optional<std::string> chats_path;
     size_t limit;
     Theme theme;
 

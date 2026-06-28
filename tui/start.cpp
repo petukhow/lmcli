@@ -393,7 +393,8 @@ void start() {
                     }
 
                     if (session->active_form == "/chats") {
-                        save_chat(session->chats_path, session->conversation);
+                        if (session->chats_path.has_value())
+                            save_chat(*session->chats_path, session->conversation);
 
                         const std::string chats_dir = get_chats_dir();
                         auto chats = store_chats(chats_dir);
@@ -770,7 +771,7 @@ void start() {
                         hbox({text(" Chat name") | size(WIDTH, EQUAL, 11) | color(session->theme.prompt_color),
                             text("› ") | color(session->theme.prompt_color), chat_name_input->Render()}),
                         separator() | color(theme.separator_color),
-                        paragraph(" enter to create | esc to cancel") | color(Color::GrayDark),
+                        paragraph("enter to create | esc to cancel") | color(Color::GrayDark),
                         text("")
                     });
                 }
@@ -791,7 +792,7 @@ void start() {
                         separator() | color(theme.separator_color),
                         conf_errors_block,
                         text(""),
-                        paragraph("ctrl + S to save | esc to exit") | color(Color::GrayDark),
+                        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
                         text("")
                     });
                 }
@@ -812,5 +813,7 @@ void start() {
         session->active_promise->set_value(false);
     }
     if (session->worker.joinable()) session->worker.join();
-    save_chat(session->chats_path, session->conversation);
+    
+    if (session->chats_path.has_value())
+        save_chat(*session->chats_path, session->conversation);
 }

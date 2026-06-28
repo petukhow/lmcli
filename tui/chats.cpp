@@ -97,17 +97,6 @@ std::vector<std::filesystem::directory_entry> store_chats(const std::string& cha
     return chats;
 }
 
-void print_chats(const std::vector<std::filesystem::directory_entry>& chats) {
-    if (!chats.empty()) {
-        std::cout << "Chats: \n";
-        for (size_t i = 0; i < chats.size(); ++i) {
-            std::cout << "[" + std::to_string(i+1) + "] ";
-            std::cout << chats[i].path().stem().string() << "\n";
-        }
-    } else {
-        log(LogLevel::Error, "Print chats request with no chats added.");
-    }
-}
 
 std::string create_chat(const std::string& chats_dir) {
     std::string chat_name; 
