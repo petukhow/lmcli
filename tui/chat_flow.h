@@ -26,6 +26,7 @@ struct ChatSession {
     std::string streaming_buffer;
     std::string pending_command;
     float scroll_pos = 1.0f;
+    int active_tab;
     std::atomic<bool> busy{false};
     std::atomic<bool> cancelled{false};
     std::promise<bool>* active_promise = nullptr;

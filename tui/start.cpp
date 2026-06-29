@@ -31,6 +31,8 @@ thread invariants:
 #include "utils/utils.h"
 #include <iostream>
 
+#include "handlers/remove.h"
+
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/screen_interactive.hpp>
@@ -205,13 +207,13 @@ void start() {
     auto chat_name_input = Input(&session->chat_name_input, "Chat name (empty for auto)");
     auto chat_name_container = Container::Vertical({chat_name_input});
 
-    int active_tab = 0;
+    session->active_tab = 0;
     auto component = Container::Tab({
         Container::Horizontal({input_prompt}),
         form_container,
         config_container,
         chat_name_container,
-    }, &active_tab);
+    }, &session->active_tab);
 
 
     auto open_setup = [&]() {
@@ -221,7 +223,7 @@ void start() {
         auto providers_list = providers["providers"];
         open_prov_menu(session, providers_list);
 
-        session->menu_settings.on_select = [&active_tab, session = session.get(), providers_list](size_t cursor) {
+        session->menu_settings.on_select = [session = session.get(), &active_tab = session->active_tab, providers_list](size_t cursor) {
             const auto& provider = providers_list[cursor];
 
             ProviderInfo provider_fields {
@@ -257,7 +259,7 @@ void start() {
                 return true;
             };
             session->mode = Mode::Form;
-            active_tab = 1;
+            session->active_tab = 1;
             return true;
         };
 
@@ -349,77 +351,7 @@ void start() {
                     };
 
                     if (session->active_form == "/remove") {
-                        session->menu_settings.menu_cursor = 0;
-                        session->menu_settings.menu_items = {"Chat", "Chats", "Account"};
-                        session->menu_settings.title = "What to remove?";
-
-                        session->menu_settings.on_select = [session = session.get()](size_t cursor) {
-                            if (cursor == 0) {
-                                const std::string chats_dir = get_chats_dir();
-                                auto chats = list_chats(chats_dir);
-                                if (chats.empty()) {
-                                    log(LogLevel::Info, "No chats to remove.");
-                                    return;
-                                }
-
-                                session->menu_settings.menu_cursor = 0;
-                                session->menu_settings.title = "Select a chat to remove:";
-                                for (const auto& chat : chats) {
-                                    session->menu_settings.menu_items.push_back(chat.path().stem().string());
-                                }
-
-                                session->menu_settings.on_select = [chats](size_t c) {
-                                    std::filesystem::remove(chats[c].path());
-                                    log(LogLevel::Info, "Chat removed: " + chats[c].path().stem().string());
-                                };
-                            } else if (cursor == 1) {
-                                const std::string chats_dir = get_chats_dir();
-                                auto chats = list_chats(chats_dir);
-                                if (chats.empty()) {
-                                    log(LogLevel::Info, "No chats to remove.");
-                                    return;
-                                }
-
-                                session->menu_settings.menu_cursor = 0;
-                                session->menu_settings.menu_items = {"Yes", "No"};
-                                session->menu_settings.title = "WARNING: This will remove all chats.";
-
-                                session->menu_settings.on_select = [chats_dir](size_t c) {
-                                    if (c == 0) {
-                                        for (const auto& chat : std::filesystem::directory_iterator(chats_dir)) {
-                                            std::filesystem::remove(chat);
-                                        }
-                                        log(LogLevel::Info, "All chats removed successfully");
-                                    }
-                                };
-                            } else if (cursor == 2) {
-                                json accounts = load_accounts(ACCOUNTS_FILE);
-                                if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
-                                    log(LogLevel::Error, "No accounts to remove.");
-                                    return;
-                                }
-
-                                auto accounts_json = accounts["accounts"];
-                                session->menu_settings.menu_cursor = 0;
-                                session->menu_settings.title = "Select an account to remove:";
-                                for (const auto& account : accounts_json) {
-                                    session->menu_settings.menu_items.push_back(account["name"].get<std::string>());
-                                }
-
-                                session->menu_settings.on_select = [](size_t c) {
-                                    json accounts = load_accounts(ACCOUNTS_FILE);
-                                    auto& accounts_list = accounts["accounts"];
-                                    if (c < accounts_list.size()) {
-                                        std::string name = accounts_list[c]["name"].get<std::string>();
-                                        accounts_list.erase(c);
-                                        save_accounts(accounts);
-                                        log(LogLevel::Info, "Account " + name + " removed.");
-                                    }
-                                };
-                            }
-                        };
-
-                        session->mode = Mode::Menu;
+                        open_remove_menu(*session);
                         return true;
                     }
 
@@ -529,7 +461,7 @@ void start() {
                         };
 
                         session->mode = Mode::Form;
-                        active_tab = 2;
+                        session->active_tab = 2;
                         return true;
                     }
 
@@ -610,7 +542,7 @@ void start() {
             case Mode::Form:
                 if (event == Event::Escape) {
                     session->mode = Mode::Main;
-                    active_tab = 0;
+                    session->active_tab = 0;
                     screen.RequestAnimationFrame();
                     return true;
                 }
@@ -621,7 +553,7 @@ void start() {
                         session->form = {};
                         session->prompt.content.clear();
                         session->mode = Mode::Main;
-                        active_tab = 0;
+                        session->active_tab = 0;
                         screen.RequestAnimationFrame();
                         return true;
                     }
@@ -641,7 +573,7 @@ void start() {
                         session->form = {};
                         session->prompt.content.clear();
                         session->mode = Mode::Main;
-                        active_tab = 0;
+                        session->active_tab = 0;
                         screen.RequestAnimationFrame();
                         return true;
                     }                    
