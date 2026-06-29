@@ -17,13 +17,13 @@
 using json = nlohmann::json;
 using namespace ftxui;
 
-bool save_chat(const std::string& filePath, const std::vector<Message>& chat) {
+bool save_chat(const std::string& filepath, const std::vector<Message>& chat) {
     std::ofstream conversation;
     const json j = {{"conversation", chat}};
     
     try {
         conversation.exceptions(std::ofstream::failbit);
-        conversation.open(filePath);
+        conversation.open(filepath);
         conversation << j.dump(4);
         return true;
     } catch (const std::exception& e) {

@@ -67,6 +67,13 @@ static void open_chat(ChatSession& cs, const std::string& path) {
     cs.streaming_buffer.clear();
 }
 
+static void close_chat(ChatSession& cs) {
+    if (cs.chats_path.has_value()) {
+        save_chat(*cs.chats_path, cs.conversation);
+    }
+    cs.chats_path.reset();
+}
+
 static std::unique_ptr<Provider> select_acc(const json& accounts_list, int cursor, json& config) {
     config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
     save_config(config);
@@ -432,26 +439,9 @@ void start() {
                             session->menu_settings.menu_items.push_back(chat.path().stem().string());
                         }
 
-                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir, &active_tab](size_t cursor) {
-                            if (cursor == chats.size()) {
-                                session->chat_name_input.clear();
-                                session->form.on_submit = [session, chats_dir]() -> bool {
-                                    std::string name = session->chat_name_input;
-                                    name.erase(0, name.find_first_not_of(" \t"));
-                                    name.erase(name.find_last_not_of(" \t") + 1);
-
-                                    if (name.empty()) {
-                                        create_chat(chats_dir);
-                                        return true;
-                                    }
-                                    return false;
-                                };
-                                session->active_form = "/chats";
-                                session->mode = Mode::Form;
-                                active_tab = 3;
-                            } else {
-                                open_chat(*session, chats[cursor].path().string());
-                            }
+                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir](size_t cursor) {
+                            close_chat(*session);
+                            open_chat(*session, chats[cursor].path().string());
                         };
 
                         session->mode = Mode::Menu;
@@ -543,11 +533,6 @@ void start() {
                         return true;
                     }
 
-                    if (!session->chats_path) {
-                        auto created = create_chat(get_chats_dir());
-                        open_chat(*session, created);
-                    }
-
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
                     if (trimmed.empty()) {
@@ -560,11 +545,21 @@ void start() {
 
                     if (session->prompt.content.empty()) return false;
                     if (session->prompt.content == "/exit") {
-                        if (session->chats_path.has_value()) session->chats_path.reset();
+                        if (session->chats_path) {
+                            close_chat(*session);
+                        } else {
+                            screen.Exit();
+                        }
                         session->prompt.content.clear();
                         screen.RequestAnimationFrame();
                         return true;
                     }
+
+                    if (!session->chats_path) {
+                        auto created = create_chat(get_chats_dir());
+                        open_chat(*session, created);
+                    }
+
                     session->conversation.push_back({Role::User, session->prompt.content,
                         "", {}});
                     log(LogLevel::Info, "User prompted: " + session->prompt.content);
@@ -816,5 +811,5 @@ void start() {
     if (session->worker.joinable()) session->worker.join();
     
     if (session->chats_path.has_value())
-        save_chat(*session->chats_path, session->conversation);
+        close_chat(*session);
 }
