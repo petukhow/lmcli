@@ -1,6 +1,6 @@
 #include "remove.h"
 #include <string>
-#include "chats.h"
+#include "../chats.h"
 #include "logging/logger.h"
 #include "chat_flow.h"
 #include "constants.h"

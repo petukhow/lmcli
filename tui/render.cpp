@@ -28,26 +28,6 @@ Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     });
 }
 
-void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list) {
-    cs->menu_settings.menu_cursor = 0;
-    cs->menu_settings.menu_items.clear();
-    cs->menu_settings.title = "Select an account:";
-    cs->prompt.content.clear();
-    for (const auto& account : accounts_list) {
-        cs->menu_settings.menu_items.push_back(account["name"].get<std::string>());
-    }
-}
-
-void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers) {
-    cs->menu_settings.menu_cursor = 0;
-    cs->menu_settings.menu_items.clear();
-    cs->menu_settings.title = "Select a provider:";
-    cs->prompt.content.clear();
-    for (const auto& provider : providers) {
-        cs->menu_settings.menu_items.push_back(provider["name"].get<std::string>());
-    }
-}
-
 bool handle_scroll(Event event, float& scroll_pos) {
     if ((event.is_mouse() && event.mouse().button == Mouse::WheelUp)
         || event == Event::ArrowUp

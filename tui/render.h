@@ -2,7 +2,6 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include "json.hpp"
 
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/screen_interactive.hpp>
@@ -30,9 +29,5 @@ struct MenuSettings {
 };
 
 ftxui::Element render_menu(const std::unique_ptr<ChatSession>& cs);
-
-void open_acc_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& accounts_list);
-
-void open_prov_menu(const std::unique_ptr<ChatSession>& cs, const nlohmann::json& providers);
 
 bool handle_scroll(ftxui::Event event, float& scroll_pos);

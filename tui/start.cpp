@@ -11,12 +11,10 @@ thread invariants:
 #include "chats.h"
 #include "commands.h"
 #include "constants.h"
+
 #include "json.hpp"
 #include "loaders/accounts.h"
-#include "loaders/config.h"
-#include "loaders/json_io.h"
 #include "providers/provider.h"
-#include "providers/providers.h"
 #include "types/accounts.h"
 #include "render.h"
 #include "tools/process_tool_calls.h"
@@ -24,7 +22,6 @@ thread invariants:
 #include "types/message.h"
 #include "types/roles.h"
 #include "accounts/build_account.h"
-#include <filesystem>
 #include <optional>
 #include <vector>
 #include <memory>
@@ -32,6 +29,10 @@ thread invariants:
 #include <iostream>
 
 #include "handlers/remove.h"
+#include "handlers/accounts.h"
+#include "handlers/config.h"
+#include "handlers/chats.h"
+#include "handlers/setup.h"
 
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
@@ -44,43 +45,6 @@ thread invariants:
 
 using namespace ftxui;
 using json = nlohmann::json;
-
-static void open_chat(ChatSession& cs, const std::string& path) {
-    auto chat_json = load_json(path);
-    std::vector<Message> conversation;
-    if (chat_json && chat_json->contains("conversation") && (*chat_json)["conversation"].is_array()) {
-        conversation = (*chat_json)["conversation"].get<std::vector<Message>>();
-    }
-
-    auto config = load_config(CONFIG_FILE);
-    if (!conversation.empty()) {
-        if (conversation[0].role == Role::System && conversation[0].content != config["system_prompt"].get<std::string>()) {
-            conversation[0].content = config["system_prompt"];
-        }
-    }
-    if (conversation.empty()) {
-        conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
-    }
-
-    cs.conversation = std::move(conversation);
-    cs.chats_path = path;
-    cs.scroll_pos = 1.0f;
-    cs.error_message.clear();
-    cs.streaming_buffer.clear();
-}
-
-static void close_chat(ChatSession& cs) {
-    if (cs.chats_path.has_value()) {
-        save_chat(*cs.chats_path, cs.conversation);
-    }
-    cs.chats_path.reset();
-}
-
-static std::unique_ptr<Provider> select_acc(const json& accounts_list, int cursor, json& config) {
-    config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
-    save_config(config);
-    return Provider::create(accounts_list[cursor], config);
-}
 
 static std::vector<Message> confirm_tool_calls(const Message& output,
     ftxui::ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
@@ -215,59 +179,8 @@ void start() {
         chat_name_container,
     }, &session->active_tab);
 
-
-    auto open_setup = [&]() {
-        const auto& providers = load_providers(PROVIDERS_FILE);
-        if (providers.empty()) return;
-
-        auto providers_list = providers["providers"];
-        open_prov_menu(session, providers_list);
-
-        session->menu_settings.on_select = [session = session.get(), &active_tab = session->active_tab, providers_list](size_t cursor) {
-            const auto& provider = providers_list[cursor];
-
-            ProviderInfo provider_fields {
-                provider["type"].get<std::string>(),
-                provider["default_api_url"].get<std::string>(),
-                provider["default_model"].get<std::string>(),
-                provider["name"].get<std::string>(),
-            };
-            log(LogLevel::Info, "Provider for setup: " + provider_fields.default_name);
-
-            session->form.on_submit = [session, provider_fields]() -> bool {
-                auto& draft = session->account_draft;
-                json accounts = load_accounts(ACCOUNTS_FILE);
-                log(LogLevel::Info, "Accounts loaded");
-                auto& accounts_list = accounts["accounts"];
-
-                auto new_account = build_account(draft, provider_fields,
-                    accounts_list);
-                log(LogLevel::Debug, "New account builded");
-                if (!new_account) return false;
-
-                auto config = load_config(CONFIG_FILE);
-                if (config["current_account"].get<std::string>().empty()) {
-                    config["current_account"] = (*new_account)["name"].get<std::string>();
-                    save_config(config);
-                    session->account = Provider::create(*new_account, config);
-                }
-
-                accounts_list.push_back(*new_account);
-                save_accounts(accounts);
-                log(LogLevel::Info, "New account created: " + (*new_account)["name"].get<std::string>());
-                
-                return true;
-            };
-            session->mode = Mode::Form;
-            session->active_tab = 1;
-            return true;
-        };
-
-        session->mode = Mode::Menu;
-    };
-
     if (!session->account) {
-        open_setup();
+        open_setup_menu(*session);
     }
 
     auto accounts = load_accounts(ACCOUNTS_FILE);
@@ -325,28 +238,12 @@ void start() {
                     if (session->worker.joinable()) session->worker.join();
 
                     if (session->active_form == "/account") {
-                        auto config = load_config(CONFIG_FILE);
-
-                        if (accounts_list.size() == 1) {
-                            session->account = select_acc(accounts_list, 0, config);
-                            log(LogLevel::Info, "Account selected: " + accounts_list[0]["name"].get<std::string>());
-                            return true;
-                        }
-
-                        open_acc_menu(session, accounts_list);
-
-                        session->menu_settings.on_select = [session = session.get(), accounts_list, &config](int cursor) {
-                            session->account = select_acc(accounts_list, cursor, config);
-                            log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
-                            return true;
-                        };
-
-                        session->mode = Mode::Menu;
+                        open_account_menu(*session);
                         return true;
                     } 
 
                     if (session->active_form == "/setup") {
-                        open_setup();
+                        open_setup_menu(*session);
                         return true;
                     };
 
@@ -356,112 +253,12 @@ void start() {
                     }
 
                     if (session->active_form == "/chats") {
-                        if (session->chats_path.has_value())
-                            save_chat(*session->chats_path, session->conversation);
-
-                        const std::string chats_dir = get_chats_dir();
-                        auto chats = list_chats(chats_dir);
-
-                        session->menu_settings.menu_cursor = 0;
-                        session->menu_settings.menu_items.clear();
-                        session->menu_settings.title = "Select a chat:";
-                        session->prompt.content.clear();
-
-                        for (const auto& chat : chats) {
-                            session->menu_settings.menu_items.push_back(chat.path().stem().string());
-                        }
-
-                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir](size_t cursor) {
-                            close_chat(*session);
-                            open_chat(*session, chats[cursor].path().string());
-                        };
-
-                        session->mode = Mode::Menu;
+                        open_chats_menu(*session);
                         return true;
                     }
 
                     if (session->active_form == "/config") {
-                        auto config = load_config(CONFIG_FILE);
-                        session->config_draft.system_prompt = config["system_prompt"].get<std::string>();
-                        session->config_draft.limit = std::to_string(config["limit"].get<size_t>());
-                        session->config_draft.max_tokens = std::to_string(config["max_tokens"].get<size_t>());
-                        session->config_draft.logging = config["logging"].get<bool>();
-                        if (config["confirm_required"].is_string()) {
-                            session->config_draft.confirm_required_raw = config["confirm_required"].get<std::string>();
-                        } else {
-                            session->config_draft.confirm_required_raw = config["confirm_required"].dump();
-                        }
-                        session->config_draft.restricted_raw = config["blacklist"].dump();
-
-                        session->form.on_submit = [session = session.get()]() -> bool {
-                            auto& draft = session->config_draft;
-                            bool has_errors = false;
-                            try {
-                                int limit = std::stoi(draft.limit);
-                                if (limit < 0) {
-                                    draft.limit_error = "Limit must be a positive number";
-                                    has_errors = true;
-                                }
-                                else draft.limit_error = std::nullopt;
-                            } catch (const std::invalid_argument&) {
-                                draft.limit_error = "Limit must be a number";
-                                has_errors = true;
-                            }
-
-                            try {
-                                int max_tokens = std::stoi(draft.max_tokens);
-                                if (max_tokens < 0) {
-                                    draft.max_tokens_error = "Max tokens must be a positive number";
-                                    has_errors = true;
-                                }
-                                else draft.max_tokens_error = std::nullopt;
-                            } catch (const std::invalid_argument&) {
-                                draft.max_tokens_error = "Max tokens must be a number";
-                                has_errors = true;
-                            }
-
-                            json confirm_json, blacklist_json;
-                            if (draft.confirm_required_raw == "all") confirm_json = "all";
-                            else {
-                                try {
-                                    confirm_json = json::parse(draft.confirm_required_raw);
-                                    if (!confirm_json.is_array()) {
-                                        draft.confirm_required_error = "Confirm required commands must be a JSON array";
-                                        has_errors = true;
-                                    }
-                                } catch (const json::parse_error&) {
-                                    draft.confirm_required_error = "Confirm required commands field has invalid JSON";
-                                    has_errors = true;
-                                }
-                            }
-
-                            try {
-                                blacklist_json = json::parse(draft.restricted_raw);
-                                if (!blacklist_json.is_array()) {
-                                    draft.restricted_error = "Restricted commands must be a JSON array";
-                                    has_errors = true;
-                                }
-                            } catch (const json::parse_error&) {
-                                draft.restricted_error = "Restricted commands field has invalid JSON";
-                                has_errors = true;
-                            }
-
-                            if (has_errors) return false;
-
-                            json config = load_config(CONFIG_FILE);
-                            config["system_prompt"] = draft.system_prompt;
-                            config["limit"] = std::stoi(draft.limit);
-                            config["max_tokens"] = std::stoi(draft.max_tokens);
-                            config["logging"] = draft.logging;
-                            config["confirm_required"] = confirm_json;
-                            config["blacklist"] = blacklist_json;
-                            save_config(config);
-
-                            return true;
-                        };
-
-                        session->mode = Mode::Form;
-                        session->active_tab = 2;
+                        open_config_menu(*session);
                         return true;
                     }
 
