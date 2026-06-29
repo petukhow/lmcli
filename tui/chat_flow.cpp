@@ -1,13 +1,10 @@
 #include "chat_flow.h"
 #include "json.hpp"
 #include "constants.h"
-#include "chats.h"
 #include "loaders/config.h"
 #include "loaders/accounts.h"
-#include "loaders/json_io.h"
 #include "loaders/theme.h"
 #include "providers/provider.h"
-#include "types/roles.h"
 #include "logging/logger.h"
 #include <memory>
 
@@ -41,38 +38,11 @@ std::unique_ptr<ChatSession> chat_init() {
         return session;
     }
 
-    const std::optional<std::string> chats_path = setup_chat();
-    if (!chats_path) {
-        session->startup_error = "No chat with given name found.";
-        return session;
-    }
-
-    const auto chats = load_json(*chats_path);
-
-    if (!chats.has_value()) {
-        session->startup_error = "No chats found.";
-        return session;
-    }
-
-    if (chats->contains("conversation") && (*chats)["conversation"].is_array()) {
-        conversation = (*chats)["conversation"].get<std::vector<Message>>();
-    }
-
-    if (!conversation.empty()) {
-        if (conversation[0].content != config["system_prompt"].get<std::string>()) {
-            conversation[0].content = config["system_prompt"];
-        }
-    }
-
-    if (conversation.empty()) {
-        conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
-    }
-
     const auto theme = load_theme(config["theme"].get<std::string>());
 
     session->account = std::move(account);
+    session->chats_path = std::nullopt;
     session->conversation = std::move(conversation);
-    session->chats_path = std::move(*chats_path);
     session->limit = config["limit"];
     session->theme = std::move(theme);
     return session;

@@ -43,6 +43,30 @@ thread invariants:
 using namespace ftxui;
 using json = nlohmann::json;
 
+static void open_chat(ChatSession& cs, const std::string& path) {
+    auto chat_json = load_json(path);
+    std::vector<Message> conversation;
+    if (chat_json && chat_json->contains("conversation") && (*chat_json)["conversation"].is_array()) {
+        conversation = (*chat_json)["conversation"].get<std::vector<Message>>();
+    }
+
+    auto config = load_config(CONFIG_FILE);
+    if (!conversation.empty()) {
+        if (conversation[0].role == Role::System && conversation[0].content != config["system_prompt"].get<std::string>()) {
+            conversation[0].content = config["system_prompt"];
+        }
+    }
+    if (conversation.empty()) {
+        conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
+    }
+
+    cs.conversation = std::move(conversation);
+    cs.chats_path = path;
+    cs.scroll_pos = 1.0f;
+    cs.error_message.clear();
+    cs.streaming_buffer.clear();
+}
+
 static std::unique_ptr<Provider> select_acc(const json& accounts_list, int cursor, json& config) {
     config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
     save_config(config);
@@ -325,7 +349,7 @@ void start() {
                         session->menu_settings.on_select = [session = session.get()](size_t cursor) {
                             if (cursor == 0) {
                                 const std::string chats_dir = get_chats_dir();
-                                auto chats = store_chats(chats_dir);
+                                auto chats = list_chats(chats_dir);
                                 if (chats.empty()) {
                                     log(LogLevel::Info, "No chats to remove.");
                                     return;
@@ -343,7 +367,7 @@ void start() {
                                 };
                             } else if (cursor == 1) {
                                 const std::string chats_dir = get_chats_dir();
-                                auto chats = store_chats(chats_dir);
+                                auto chats = list_chats(chats_dir);
                                 if (chats.empty()) {
                                     log(LogLevel::Info, "No chats to remove.");
                                     return;
@@ -397,7 +421,7 @@ void start() {
                             save_chat(*session->chats_path, session->conversation);
 
                         const std::string chats_dir = get_chats_dir();
-                        auto chats = store_chats(chats_dir);
+                        auto chats = list_chats(chats_dir);
 
                         session->menu_settings.menu_cursor = 0;
                         session->menu_settings.menu_items.clear();
@@ -407,57 +431,26 @@ void start() {
                         for (const auto& chat : chats) {
                             session->menu_settings.menu_items.push_back(chat.path().stem().string());
                         }
-                        session->menu_settings.menu_items.push_back("New chat");
 
-                        auto switch_chat = [session = session.get()](const std::string& path) {
-                            auto chat_json = load_json(path);
-                            std::vector<Message> conversation;
-                            if (chat_json && chat_json->contains("conversation") && (*chat_json)["conversation"].is_array()) {
-                                conversation = (*chat_json)["conversation"].get<std::vector<Message>>();
-                            }
-
-                            auto config = load_config(CONFIG_FILE);
-                            if (!conversation.empty()) {
-                                if (conversation[0].content != config["system_prompt"].get<std::string>()) {
-                                    conversation[0].content = config["system_prompt"];
-                                }
-                            }
-                            if (conversation.empty()) {
-                                conversation.push_back({Role::System, config["system_prompt"].get<std::string>(), "", {}});
-                            }
-
-                            session->conversation = std::move(conversation);
-                            session->chats_path = path;
-                            session->scroll_pos = 1.0f;
-                            session->error_message.clear();
-                            session->streaming_buffer.clear();
-                        };
-
-                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir, &active_tab, switch_chat](size_t cursor) {
+                        session->menu_settings.on_select = [session = session.get(), chats, chats_dir, &active_tab](size_t cursor) {
                             if (cursor == chats.size()) {
                                 session->chat_name_input.clear();
-                                session->form.on_submit = [session, chats_dir, switch_chat]() -> bool {
+                                session->form.on_submit = [session, chats_dir]() -> bool {
                                     std::string name = session->chat_name_input;
                                     name.erase(0, name.find_first_not_of(" \t"));
                                     name.erase(name.find_last_not_of(" \t") + 1);
 
                                     if (name.empty()) {
-                                        size_t files_amount = std::distance(
-                                            std::filesystem::directory_iterator(chats_dir),
-                                            std::filesystem::directory_iterator{});
-                                        name = "chat #" + std::to_string(files_amount);
+                                        create_chat(chats_dir);
+                                        return true;
                                     }
-
-                                    std::string new_path = chats_dir + name + ".json";
-                                    create_file_if_not_exists(new_path, CHAT_DEFAULT);
-                                    switch_chat(new_path);
-                                    return true;
+                                    return false;
                                 };
                                 session->active_form = "/chats";
                                 session->mode = Mode::Form;
                                 active_tab = 3;
                             } else {
-                                switch_chat(chats[cursor].path().string());
+                                open_chat(*session, chats[cursor].path().string());
                             }
                         };
 
@@ -550,6 +543,11 @@ void start() {
                         return true;
                     }
 
+                    if (!session->chats_path) {
+                        auto created = create_chat(get_chats_dir());
+                        open_chat(*session, created);
+                    }
+
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);
                     if (trimmed.empty()) {
@@ -562,7 +560,9 @@ void start() {
 
                     if (session->prompt.content.empty()) return false;
                     if (session->prompt.content == "/exit") {
-                        screen.Exit();
+                        if (session->chats_path.has_value()) session->chats_path.reset();
+                        session->prompt.content.clear();
+                        screen.RequestAnimationFrame();
                         return true;
                     }
                     session->conversation.push_back({Role::User, session->prompt.content,
@@ -801,7 +801,8 @@ void start() {
         }
 
         return vbox({
-            vbox(messages) | focusPositionRelative(0, session->scroll_pos) | yframe | flex,
+            session->chats_path ? vbox(messages) | focusPositionRelative(0, session->scroll_pos) | yframe | flex
+                : paragraph("Hello, world!") | color(session->theme.prompt_color),
             separator() | color(theme.separator_color),
             footer
         });

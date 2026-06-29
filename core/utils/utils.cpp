@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "constants.h"
 #include "logging/logger.h"
 #include <cstddef>
 #include <cstring>
@@ -6,6 +7,7 @@
 #include <fstream>
 #include <filesystem>
 #include <optional>
+#include <system_error>
 #include "linenoise.h"
 #include "json.hpp"
 #include "loaders/json_io.h"
@@ -127,7 +129,11 @@ std::string get_chats_dir() {
         log(LogLevel::Info, "Fallback reached in get_chats_dir!");
         return "./";  // Fallback to current directory
     }
-    return std::string(home) + "/.config/lmcli/chats/";
+    std::string chats_dir = std::string(home) + "/.config/" + APP_NAME + "/chats/";
+    std::error_code ec;
+    std::filesystem::create_directories(chats_dir, ec);
+    if (ec) log(LogLevel::Error, ec.message());
+    return chats_dir;
 }
 
 std::string get_chats_path(const std::string& filename) {
