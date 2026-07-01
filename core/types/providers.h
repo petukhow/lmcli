@@ -1,34 +1,21 @@
 #pragma once
+#include <string_view>
 #include <string>
 #include "json.hpp"
 
-class Providers {
-private:
-    std::string value;
-
-public:
-    Providers(const std::string& value)
-        : value(value) {}
-
-    Providers() : value("") {}
-
-    bool operator==(const Providers& other) const {
-        return value == other.value;
-    }
-
-    static Providers Anthropic;
-    static Providers OpenAICompatible;
-    static Providers Google;
-
-    std::string get_value() const {
-        return value;
-    }
+enum class Providers {
+    Anthropic, 
+    OpenAICompatible,
+    Google
 };
 
-inline void to_json(nlohmann::json& j, const Providers& r) {
-    j = r.get_value();
+std::string_view provider_to_string(const Providers& p);
+Providers string_to_provider(const std::string& s);
+
+inline void to_json(nlohmann::json& j, const Providers& p) {
+    j = std::string(provider_to_string(p));
 }
 
-inline void from_json(const nlohmann::json& j, Providers& r) {
-    r = Providers(j.get<std::string>());
+inline void from_json(const nlohmann::json& j, Providers& p) {
+    p = string_to_provider(j.get<std::string>());
 }

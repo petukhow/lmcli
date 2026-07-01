@@ -27,8 +27,7 @@ thread invariants:
 #include "utils/utils.h"
 #include <iostream>
 
-#include "handlers/remove.h"
-#include "handlers/accounts.h"
+#include "handlers/dispatch_commands.h"
 #include "handlers/config.h"
 #include "handlers/chats.h"
 #include "handlers/setup.h"
@@ -40,7 +39,6 @@ thread invariants:
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
-
 
 using namespace ftxui;
 using json = nlohmann::json;
@@ -240,30 +238,7 @@ void start() {
                     if (session->busy) return true;
                     if (session->worker.joinable()) session->worker.join();
 
-                    if (session->active_form == "/account") {
-                        open_account_menu(*session);
-                        return true;
-                    } 
-
-                    if (session->active_form == "/setup") {
-                        open_setup_menu(*session);
-                        return true;
-                    };
-
-                    if (session->active_form == "/remove") {
-                        open_remove_menu(*session);
-                        return true;
-                    }
-
-                    if (session->active_form == "/chats") {
-                        open_chats_menu(*session);
-                        return true;
-                    }
-
-                    if (session->active_form == "/config") {
-                        open_config_menu(*session);
-                        return true;
-                    }
+                    dispatch_commands(*session);
 
                     auto trimmed = session->prompt.content;
                     trimmed.erase(trimmed.find_last_not_of(" \n\r\t") + 1);

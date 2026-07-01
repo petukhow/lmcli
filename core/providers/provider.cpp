@@ -1,7 +1,6 @@
 #include "logging/logger.h"
 #include "utils/http_utils.h"
 #include "open_ai_compatible.h"
-#include "types/providers.h"
 #include "google.h"
 #include "anthropic.h"
 #include "provider.h"
@@ -12,47 +11,36 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
-std::unique_ptr<Provider> Provider::create(const nlohmann::json &account, const nlohmann::json &config) {
-    std::unique_ptr<Provider> provider = nullptr;
-
-    if (account["type"].get<std::string>() == Providers::OpenAICompatible.get_value()) {
-        provider = std::make_unique<OpenAICompatible>(
+template <typename T>
+std::unique_ptr<Provider> make_provider(const nlohmann::json& account, const nlohmann::json& config) {
+    return std::make_unique<T>(
         account["api_key"].get<std::string>(),
         account["api_url"].get<std::string>(),
         account["model"].get<std::string>(),
         config["system_prompt"].get<std::string>(),
-         config["limit"].get<size_t>(),
+        config["limit"].get<size_t>(),
         config["max_tokens"].get<size_t>()
-        );
+    );
+}
+
+static std::unordered_map<std::string, std::function<std::unique_ptr<Provider>(const nlohmann::json& account,
+    const nlohmann::json& config)>> providers = 
+{
+    {"anthropic", make_provider<Anthropic>},
+    {"openai-compatible", make_provider<OpenAICompatible>},
+    {"google", make_provider<Google>},
+};
+
+std::unique_ptr<Provider> Provider::create(const nlohmann::json &account, const nlohmann::json &config) {
+    if (auto it = providers.find(account["type"].get<std::string>()); it != providers.end()) {
+        return it->second(account, config);
     }
 
-    else if (account["type"].get<std::string>() == Providers::Anthropic.get_value()) {
-        provider = std::make_unique<Anthropic>(
-            account["api_key"].get<std::string>(),
-            account["api_url"].get<std::string>(),
-            account["model"].get<std::string>(),
-            config["system_prompt"].get<std::string>(),
-            config["limit"].get<size_t>(),
-            config["max_tokens"].get<size_t>()
-        );
-    }
-    else if (account["type"].get<std::string>() == Providers::Google.get_value()) {
-        provider = std::make_unique<Google>(
-            account["api_key"].get<std::string>(),
-            account["api_url"].get<std::string>(),
-            account["model"].get<std::string>(),
-            config["system_prompt"].get<std::string>(),
-            config["limit"].get<size_t>(),
-            config["max_tokens"].get<size_t>()
-        );
-    }
-    else {
-        log(LogLevel::Error, "Unknown account type");
-        return nullptr;
-    }
+    log(LogLevel::Error, "Unknown account type");
 
-    return provider;
+    return nullptr;
 }
 
 StreamContext Provider::perform_request(const std::string& body, const CurlSlist& headers,
