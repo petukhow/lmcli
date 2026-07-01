@@ -1,12 +1,17 @@
+#include "handlers/setup.h"
 #include "constants.h"
 #include "chat_flow.h"
 #include "providers/providers.h"
 #include "render.h"
-#include "loaders/config.h"
 #include "loaders/accounts.h"
-#include "logging/logger.h"
+#include "loaders/config.h"
 #include "accounts/build_account.h"
-#include <ftxui/dom/elements.hpp>
+#include "logging/logger.h"
+
+#include "ftxui/dom/elements.hpp"
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/component_options.hpp>
+#include <ftxui/screen/color.hpp>
 
 void open_setup_menu(ChatSession& session) {
     const auto& providers = load_providers(PROVIDERS_FILE);
@@ -61,4 +66,43 @@ void open_setup_menu(ChatSession& session) {
         session.active_tab = 1;
     };
     session.mode = Mode::Menu;
+}
+
+using namespace ftxui;
+using json = nlohmann::json;
+
+Element build_acc_errors_block(ChatSession& session, const json& accounts_list) {
+    if (session.mode == Mode::Form) {
+        if (name_exists(accounts_list, session.account_draft.acc_name)) {
+            session.account_draft.name_error = "Account with this name already exists";
+        } else {
+            session.account_draft.name_error = std::nullopt;
+        }
+    }
+
+    Elements acc_errors;
+    if (session.active_form == "/setup" || !session.account) {
+        if (session.account_draft.name_error.has_value())
+            acc_errors.push_back(hbox({text(""), text(*session.account_draft.name_error) | color(Color::Yellow)}));
+        if (session.account_draft.key_error.has_value())
+            acc_errors.push_back(hbox({text(""), text(*session.account_draft.key_error) | color(Color::Red)}));
+    }
+    return vbox(std::move(acc_errors));
+}
+
+Element render_setup_form(const ChatSession& session, const SetupFields& setup_fields, const Element& acc_errors_block) {
+    Element footer = vbox({
+        !session.account ? paragraph("You have no accounts. Create one to continue.") | color(Color::Yellow) : emptyElement(),
+        hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color), 
+                text("› ") | color(session.theme.prompt_color), setup_fields.form_name_input->Render()}),
+        hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color),
+                text("› ") | color(session.theme.prompt_color), setup_fields.form_key_input->Render()}),
+        hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color),
+                text("› ") | color(session.theme.prompt_color), setup_fields.form_model_input->Render()}),
+        separator() | color(session.theme.separator_color),
+        acc_errors_block,
+        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
+        text("")
+    });
+    return footer;
 }

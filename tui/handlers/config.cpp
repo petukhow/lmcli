@@ -1,7 +1,11 @@
+#include "handlers/config.h"
 #include "constants.h"
 #include "chat_flow.h"
 #include "loaders/config.h"
 #include "json.hpp"
+
+#include "ftxui/dom/elements.hpp"
+#include <ftxui/screen/color.hpp>
 
 using json = nlohmann::json;
 
@@ -87,4 +91,43 @@ void open_config_menu(ChatSession& session) {
 
     session.mode = Mode::Form;
     session.active_tab = 2;
+}
+
+using namespace ftxui;
+
+Element build_conf_errors_block(const ChatSession& session) {
+    Elements conf_errors;
+    if (session.active_form == "/config") {
+        if (session.config_draft.limit_error.has_value())
+            conf_errors.push_back(hbox({text(""), text(*session.config_draft.limit_error) | color(Color::Red)}));
+        if (session.config_draft.max_tokens_error.has_value())
+            conf_errors.push_back(hbox({text(""), text(*session.config_draft.max_tokens_error) | color(Color::Red)}));
+        if (session.config_draft.confirm_required_error.has_value())
+            conf_errors.push_back(hbox({text(""), text(*session.config_draft.confirm_required_error) | color(Color::Red)}));
+        if (session.config_draft.restricted_error.has_value())
+            conf_errors.push_back(hbox({text(""), text(*session.config_draft.restricted_error) | color(Color::Red)}));
+    }
+    return vbox(std::move(conf_errors));
+}
+
+Element render_config_form(const ChatSession& session, const ConfigFields& config_fields, const Element& conf_errors_block) {
+    return vbox({
+        hbox({text("System prompt") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_prompt_input->Render()}),
+        hbox({text("Limit") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_limit_input->Render()}),
+        hbox({text("Max tokens") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_tokens_input->Render()}),
+        hbox({text("Logging") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_logging_toggle->Render()}),
+        hbox({text("Confirm required") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_confirm_input->Render()}),
+        hbox({text("Restricted commands") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), config_fields.config_restricted_input->Render()}),
+        separator() | color(session.theme.separator_color),
+        conf_errors_block,
+        text(""),
+        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
+        text("")
+    });
 }

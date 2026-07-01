@@ -21,7 +21,6 @@ thread invariants:
 #include "logging/logger.h"
 #include "types/message.h"
 #include "types/roles.h"
-#include "accounts/build_account.h"
 #include <optional>
 #include <vector>
 #include <memory>
@@ -145,27 +144,31 @@ void start() {
     auto input_prompt = Input(&session->prompt.content,
         "Write something...", input_option);
 
-    auto form_name_input = Input(&session->account_draft.acc_name, "Account name");
-    auto form_key_input = Input(&session->account_draft.api_key, "API key");
-    auto form_model_input = Input(&session->account_draft.model_name, "Model");
-    auto form_container = Container::Vertical({
-        form_name_input, form_key_input, form_model_input
-    });
+    SetupFields setup_fields {
+        Input(&session->account_draft.acc_name, "Account name"),
+        Input(&session->account_draft.api_key, "API key"),
+        Input(&session->account_draft.model_name, "Model"),
+        Container::Vertical({
+            setup_fields.form_name_input, setup_fields.form_key_input, setup_fields.form_model_input
+        }),
+    };
 
-    auto config_prompt_input = Input(&session->config_draft.system_prompt, "System prompt");
-    auto config_limit_input = Input(&session->config_draft.limit, "Limit");
-    auto config_tokens_input = Input(&session->config_draft.max_tokens, "Max tokens");
-    auto config_logging_toggle = Checkbox("Logging", &session->config_draft.logging);
-    auto config_confirm_input = Input(&session->config_draft.confirm_required_raw, "Commands which require confirmation (json array or 'all' value)");
-    auto config_restricted_input = Input(&session->config_draft.restricted_raw, "Restricted commands (json array)");
-
-    auto config_container = Container::Vertical({
-        config_prompt_input,
-        config_limit_input,
-        config_tokens_input,
-        config_logging_toggle,
-        config_confirm_input,
-        config_restricted_input,
+    ConfigFields config_fields {
+        Input(&session->config_draft.system_prompt, "System prompt"),
+        Input(&session->config_draft.limit, "Limit"),
+        Input(&session->config_draft.max_tokens, "Max tokens"),
+        Checkbox("Logging", &session->config_draft.logging),
+        Input(&session->config_draft.confirm_required_raw, "Commands which require confirmation (json array or 'all' value)"),
+        Input(&session->config_draft.restricted_raw, "Restricted commands (json array)"),
+        nullptr,
+    };
+    config_fields.config_container = Container::Vertical({
+        config_fields.config_prompt_input,
+        config_fields.config_limit_input,
+        config_fields.config_tokens_input,
+        config_fields.config_logging_toggle,
+        config_fields.config_confirm_input,
+        config_fields.config_restricted_input,
     });
 
     auto chat_name_input = Input(&session->chat_name_input, "Chat name (empty for auto)");
@@ -174,8 +177,8 @@ void start() {
     session->active_tab = 0;
     auto component = Container::Tab({
         Container::Horizontal({input_prompt}),
-        form_container,
-        config_container,
+        setup_fields.form_container,
+        config_fields.config_container,
         chat_name_container,
     }, &session->active_tab);
 
@@ -395,35 +398,8 @@ void start() {
             return state.element;
         };
         
-        if (session->mode == Mode::Form) {
-            if (name_exists(accounts_list, session->account_draft.acc_name)) {
-                session->account_draft.name_error = "Account with this name already exists";
-            } else {
-                session->account_draft.name_error = std::nullopt;
-            }
-        }
-
-        Elements acc_errors;
-        Elements conf_errors;
-        if (session->active_form == "/setup" || !session->account) {
-            if (session->account_draft.name_error.has_value())
-                acc_errors.push_back(hbox({text(""), text(*session->account_draft.name_error) | color(Color::Yellow)}));
-            if (session->account_draft.key_error.has_value())
-                acc_errors.push_back(hbox({text(""), text(*session->account_draft.key_error) | color(Color::Red)}));
-        }
-        else if (session->active_form == "/config") {
-            if (session->config_draft.limit_error.has_value())
-                conf_errors.push_back(hbox({text(""), text(*session->config_draft.limit_error) | color(Color::Red)}));
-            if (session->config_draft.max_tokens_error.has_value())
-                conf_errors.push_back(hbox({text(""), text(*session->config_draft.max_tokens_error) | color(Color::Red)}));
-            if (session->config_draft.confirm_required_error.has_value())
-                conf_errors.push_back(hbox({text(""), text(*session->config_draft.confirm_required_error) | color(Color::Red)}));
-            if (session->config_draft.restricted_error.has_value())
-                conf_errors.push_back(hbox({text(""), text(*session->config_draft.restricted_error) | color(Color::Red)}));
-        }
-
-        auto acc_errors_block = vbox(std::move(acc_errors));
-        auto conf_errors_block = vbox(std::move(conf_errors));
+        auto acc_errors_block = build_acc_errors_block(*session, accounts_list);
+        auto conf_errors_block = build_conf_errors_block(*session);
 
         Elements messages;
         for (const auto& msg : session->conversation) {
@@ -483,49 +459,13 @@ void start() {
 
             case Mode::Form: {
                 if (session->active_form == "/setup" || !session->account) {
-                    footer = vbox({
-                        !session->account ? paragraph("You have no accounts. Create one to continue.") | color(Color::Yellow) : emptyElement(),
-                        hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
-                                text("› ") | color(session->theme.prompt_color), form_name_input->Render()}),
-                        hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
-                                text("› ") | color(session->theme.prompt_color), form_key_input->Render()}),
-                        hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color),
-                                text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
-                        separator() | color(theme.separator_color),
-                        acc_errors_block,
-                        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
-                        text("")
-                    });
+                    footer = render_setup_form(*session, setup_fields, acc_errors_block);
                 }
                 else if (session->active_form == "/chats") {
-                    footer = vbox({
-                        hbox({text(" Chat name") | size(WIDTH, EQUAL, 11) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), chat_name_input->Render()}),
-                        separator() | color(theme.separator_color),
-                        paragraph("enter to create | esc to cancel") | color(Color::GrayDark),
-                        text("")
-                    });
+                    footer = render_chats_form(*session, chat_name_input);
                 }
                 else if (session->active_form == "/config") {
-                    footer = vbox({
-                        hbox({text("System prompt") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_prompt_input->Render()}),
-                        hbox({text("Limit") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_limit_input->Render()}),
-                        hbox({text("Max tokens") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_tokens_input->Render()}),
-                        hbox({text("Logging") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_logging_toggle->Render()}),
-                        hbox({text("Confirm required") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_confirm_input->Render()}),
-                        hbox({text("Restricted commands") | size(WIDTH, EQUAL, 20) | color(session->theme.prompt_color),
-                            text("› ") | color(session->theme.prompt_color), config_restricted_input->Render()}),
-                        separator() | color(theme.separator_color),
-                        conf_errors_block,
-                        text(""),
-                        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
-                        text("")
-                    });
+                    footer = render_config_form(*session, config_fields, conf_errors_block);
                 }
                 break;
             }

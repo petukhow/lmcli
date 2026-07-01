@@ -6,6 +6,9 @@
 #include "loaders/config.h"
 #include "constants.h"
 
+#include "ftxui/dom/elements.hpp"
+#include <ftxui/screen/color.hpp>
+
 void open_chat(ChatSession& cs, const std::string& path) {
     auto chat_json = load_json(path);
     std::vector<Message> conversation;
@@ -59,4 +62,15 @@ void open_chats_menu(ChatSession& session) {
     };
 
     session.mode = Mode::Menu;
+}
+
+using namespace ftxui;
+Element render_chats_form(const ChatSession& session, const Component& chat_name_input) {
+    return vbox({
+        hbox({text(" Chat name") | size(WIDTH, EQUAL, 11) | color(session.theme.prompt_color),
+            text("› ") | color(session.theme.prompt_color), chat_name_input->Render()}),
+        separator() | color(session.theme.separator_color),
+        paragraph("enter to create | esc to cancel") | color(Color::GrayDark),
+        text("")
+    });
 }
