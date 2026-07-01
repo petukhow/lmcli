@@ -6,18 +6,21 @@
 #include "loaders/accounts.h"
 #include "logging/logger.h"
 #include "accounts/build_account.h"
+#include <ftxui/dom/elements.hpp>
 
 void open_setup_menu(ChatSession& session) {
     const auto& providers = load_providers(PROVIDERS_FILE);
+    session.mode = Mode::Main;
     if (providers.empty()) return;
 
     auto providers_list = providers["providers"];
     session.menu_settings.menu_cursor = 0;
     session.menu_settings.menu_items.clear();
-    session.menu_settings.title = "Select a provider:";
+    session.menu_settings.title = session.startup_error + "\nSelect a provider:";
     session.prompt.content.clear();
-    for (const auto& provider : providers)
+    for (const auto& provider : providers_list) {
         session.menu_settings.menu_items.push_back(provider["name"].get<std::string>());
+    }
 
     session.menu_settings.on_select = [&session, providers_list](size_t cursor) {
         const auto& provider = providers_list[cursor];
@@ -57,4 +60,5 @@ void open_setup_menu(ChatSession& session) {
         session.mode = Mode::Form;
         session.active_tab = 1;
     };
+    session.mode = Mode::Menu;
 }

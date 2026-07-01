@@ -32,7 +32,7 @@ struct ChatSession {
     std::promise<bool>* active_promise = nullptr;
     std::thread worker;
 
-    Mode mode;
+    Mode mode = Mode::Main;
     FormSettings form;
     AccountDraft account_draft;
     MenuSettings menu_settings;

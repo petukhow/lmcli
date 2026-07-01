@@ -328,7 +328,14 @@ void start() {
                     auto c = session->menu_settings.menu_cursor;
                     auto on_select = std::move(session->menu_settings.on_select);
                     session->menu_settings = {};
+                    log(LogLevel::Debug, "menu Return, cursor=" + std::to_string(c) + " has_on_select=" + std::to_string((bool)on_select));
                     on_select(c);
+                    log(LogLevel::Debug, "after on_select: mode=" + std::to_string((int)session->mode) + " active_tab=" + std::to_string(session->active_tab));
+                    if (session->menu_settings.menu_items.empty() && session->mode != Mode::Form) {
+                        session->mode = Mode::Main;
+                    }
+                    log(LogLevel::Debug, "after fallback: mode=" + std::to_string((int)session->mode));
+                    screen.RequestAnimationFrame();
                     if (session->menu_settings.menu_items.empty() && session->mode != Mode::Form) {
                         session->mode = Mode::Main;
                     }
@@ -398,7 +405,7 @@ void start() {
 
         Elements acc_errors;
         Elements conf_errors;
-        if (session->active_form == "/setup") {
+        if (session->active_form == "/setup" || !session->account) {
             if (session->account_draft.name_error.has_value())
                 acc_errors.push_back(hbox({text(""), text(*session->account_draft.name_error) | color(Color::Yellow)}));
             if (session->account_draft.key_error.has_value())
@@ -475,7 +482,7 @@ void start() {
                 break;
 
             case Mode::Form: {
-                if (session->active_form == "/setup") {
+                if (session->active_form == "/setup" || !session->account) {
                     footer = vbox({
                         !session->account ? paragraph("You have no accounts. Create one to continue.") | color(Color::Yellow) : emptyElement(),
                         hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session->theme.prompt_color), 
@@ -486,7 +493,7 @@ void start() {
                                 text("› ") | color(session->theme.prompt_color), form_model_input->Render()}),
                         separator() | color(theme.separator_color),
                         acc_errors_block,
-                        paragraph(" esc to exit") | color(Color::GrayDark),
+                        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
                         text("")
                     });
                 }

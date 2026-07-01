@@ -5,24 +5,23 @@
 #include "loaders/accounts.h"
 #include "json.hpp"
 
-static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json& config) {
+static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list, int cursor, nlohmann::json config) {
     config["current_account"] = accounts_list[cursor]["name"].get<std::string>();
     save_config(config);
     return Provider::create(accounts_list[cursor], config);
 }
 
 void open_account_menu(ChatSession& session) {
-    auto config = load_config(CONFIG_FILE);
     auto accounts = load_accounts(ACCOUNTS_FILE);
 
     if (!accounts.contains("accounts") || accounts["accounts"].empty()) {
         log(LogLevel::Error, "Broken or empty accounts.json config");
     }
 
-    auto accounts_list = accounts["accounts"];
+    auto& accounts_list = accounts["accounts"];
 
     if (accounts_list.size() == 1) {
-        session.account = select_acc(accounts_list, 0, config);
+        session.account = select_acc(accounts_list, 0, load_config(CONFIG_FILE));
         log(LogLevel::Info, "Account selected: " + accounts_list[0]["name"].get<std::string>());
     }
 
@@ -34,8 +33,8 @@ void open_account_menu(ChatSession& session) {
         session.menu_settings.menu_items.push_back(account["name"].get<std::string>());
     }
 
-    session.menu_settings.on_select = [&session, accounts_list, &config](int cursor) {
-        session.account = select_acc(accounts_list, cursor, config);
+    session.menu_settings.on_select = [&session, accounts_list](int cursor) {
+        session.account = select_acc(accounts_list, cursor, load_config(CONFIG_FILE));
         log(LogLevel::Info, "Account selected: " + accounts_list[cursor]["name"].get<std::string>());
     };
 

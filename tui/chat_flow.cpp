@@ -26,16 +26,13 @@ std::unique_ptr<ChatSession> chat_init() {
 
     std::unique_ptr<Provider> account = nullptr;
 
-    for (const auto& acc : accounts["accounts"]) {
-        if (acc["name"] == account_name) {
-            account = Provider::create(acc, config);
-            break;
-        }   
-    }
-
-    if (!account) {
-        session->startup_error = "No account configured. Use /setup to add one.";
-        return session;
+    if (!account_name.empty()) {
+        for (const auto& acc : accounts["accounts"]) {
+            if (acc["name"] == account_name) {
+                account = Provider::create(acc, config);
+                break;
+            }   
+        }
     }
 
     const auto theme = load_theme(config["theme"].get<std::string>());
