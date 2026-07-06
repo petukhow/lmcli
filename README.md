@@ -1,16 +1,16 @@
 # lmcli
 
-A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) from a single interface.
+A terminal UI for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) from a single interface.
 
 ## Features
 
-- **Multi-provider support** — Anthropic, OpenAI, Groq, and any OpenAI-compatible API
+- **Multi-provider support** — Anthropic, OpenAI, Groq, Google, OpenRouter, and any OpenAI-compatible API
 - **Configurable** — System prompts, token limits, and conversation history
 - **Account switching** — Easily switch between different API accounts
-- **Interactive chat** — Simple conversational interface with context management
-- **TUI/CLI modes** — Choose a terminal mode you want
-- **Agent mode** — Models can call tools across multiple turns
-- **Streaming responses** — Get model's answer instantly token-by-token
+- **Interactive TUI** — FTXUI-based chat interface with context management
+- **Agent mode** — Models can call tools (e.g. shell commands) across multiple turns, with confirmation/blacklist safety checks
+- **Streaming responses** — Get the model's answer instantly token-by-token
+- **Custom themes** — Create, edit, and switch color themes with named colors or hex codes
 
 ## Supported Providers
 
@@ -25,7 +25,7 @@ A CLI tool for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) fr
 ### Prerequisites
 
 - C++17 compiler (GCC 8+, Clang 7+)
-- CMake 3.10+
+- CMake 3.15+
 - libcurl
 - [nlohmann/json](https://github.com/nlohmann/json) (included in repo)
 
@@ -49,48 +49,43 @@ lmcli init
 
 This creates the config directory at `~/.config/lmcli/` with template files.
 
-### 2. Add an API account
-```bash
-lmcli setup
-```
-
-Follow the prompts to:
-- Select a provider (Anthropic, OpenAI, Groq, etc.)
-- Enter your API key
-- Choose a model (or use the default)
-
-### 3. Start chatting
+### 2. Start lmcli
 ```bash
 lmcli start
+# or just: lmcli
 ```
 
-Select an account and begin your conversation. Type `/exit` to quit.
+### 3. Add an API account
+Inside the app, run:
+```
+/setup
+```
+Follow the prompts to select a provider, enter your API key, and choose a model (or use the default).
+
+### 4. Chat
+Once an account is selected, just type a message and press enter. Type `/exit` to quit.
 
 ## Usage
+
 ```
-lmcli [COMMAND] [SUBCOMMAND]
+lmcli [COMMAND]
 
 Commands:
-  init                              Initialize config directory and files
-  setup                             Add a new provider account
-  start                             Start a chat session
-  accounts                          List configured accounts
-  remove [account|chat|chats]       Remove account or chat(s)
-  config [prompt|limit|max-tokens]  Show and edit current config settings
-  help                              Show help message
-  
-Examples:
-  lmcli init                # First-time setup
-  lmcli setup               # Add a new account
-  lmcli start               # Begin chatting (or just 'lmcli')
-  lmcli accounts            # View your accounts
-  lmcli remove account      # Remove an account
-  lmcli remove chat         # Remove a chat
-  lmcli remove chats        # Remove all chats
-  lmcli config prompt       # Check and edit system prompt
-  lmcli config limit        # Check and edit messages limit
-  lmcli config max-tokens   # Check and edit max tokens limit
+  start   Start a chat session (default when no command is given)
+  init    Initialize config directory and files
+  help    Show help message
 ```
+
+Everything else — accounts, chats, settings, themes — is handled from in-chat commands, typed directly into the prompt:
+
+| Command    | Description                                              |
+|------------|-----------------------------------------------------------|
+| `/setup`   | Add a new provider account                                |
+| `/account` | Switch between configured accounts (press `d` `d` to delete one) |
+| `/chats`   | Browse, open, or create saved chats (press `d` `d` to delete one) |
+| `/config`  | Edit settings (system prompt, limits, confirmations, ...)  |
+| `/theme`   | Create, edit, clone, or switch color themes (press `d` `d` to delete one) |
+| `/exit`    | Quit lmcli, or close the current chat                      |
 
 ## Configuration
 
@@ -99,49 +94,75 @@ Configuration files are stored in `~/.config/lmcli/`:
 ### `config.json`
 ```json
 {
-  "system_prompt": "You are a helpful assistant.",
+  "system_prompt": "You're a helpful assistant.",
   "limit": 20,
-  "max_tokens": 1024, 
-  "logging": "all", // Logs (if enabled) are stored in `~/.local/state/lmcli/`
+  "max_tokens": 1024,
+  "logging": true,
   "blacklist": ["reboot", "shutdown", "poweroff", "halt", "init 0", "init 6"],
-  "confirm_required": ["rm", "mv", "dd", "mkfs", "fdisk", "parted", "chmod 777", "chown"],
-  "theme": "tech"
+  "confirm_required": "all",
+  "theme": "tech",
+  "current_account": ""
 }
 ```
 
 - **system_prompt**: Default system message for all conversations
 - **limit**: Maximum number of messages to keep in context (older messages are pruned). Set to 0 to disable
 - **max_tokens**: Maximum tokens per API response
-- **Logging**: Store logs locally
-- **blacklist**: Blacklisted commands (Commands the model is not allowed to execute)
-- **confirm_required**: These commands require user's confirmation
+- **logging**: Store logs locally (logs are written to `~/.local/state/lmcli/`)
+- **blacklist**: Commands the model is never allowed to execute
+- **confirm_required**: `"all"` to require confirmation for every tool call, or a JSON array of specific commands that require confirmation
+- **theme**: Name of the active theme (see `themes.json` below)
+
+All of the above can be edited live from the `/config` command.
 
 ### `accounts.json`
-Stores your configured API accounts (API keys, models, endpoints).
+Stores your configured API accounts (API keys, models, endpoints). Managed via `/setup` and `/account`.
 
 ### `providers.json`
 Defines available providers and their default settings. You can edit this to add custom OpenAI-compatible endpoints.
 
-### `tools.json` 
-Stores available tools for models.
+### `themes.json`
+Stores your custom color themes, managed via `/theme`. Each theme defines colors for the user/assistant text, prompt, status bar, borders, streaming text, and separators:
+```json
+{
+  "themes": [
+    {
+      "name": "tech",
+      "user_color": "cyan",
+      "assistant_color": "white",
+      "status_color": "yellow",
+      "border_color": "white",
+      "prompt_color": "cyan",
+      "streaming_color": "white",
+      "separator_color": "gray"
+    }
+  ]
+}
+```
+Colors can be one of the built-in names (`black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `gray`, and their `_light` variants) or a hex code like `#ff8800`.
 
-## Examples
+### `tools.json`
+Stores available tools for models (e.g. `exec_bash`).
 
-### Using Anthropic's Claude
-```bash
-$ lmcli setup
-Select a provider to set up (type '/exit' to quit):
--- Anthropic
--- OpenAI
--- Groq
-> Anthropic
+## Example
 
-$ lmcli start
-Select an account from the list below (type '/exit' to quit):
--- my-claude
-> my-claude
+```
+$ lmcli
+lmcli
+v1.0.0
 
-Prompt (or '/exit' to end the conversation):
-You: Hello!
-Model: Hi! How can I help you today?
+Type a message to start chatting, or use:
+  /setup   configure an account
+  /chats   browse saved chats
+  /config  edit settings
+  /theme   create or switch color themes
+  /exit    quit
+
+› /setup
+```
+After picking a provider and entering an API key, just start typing to chat:
+```
+› Hello!
+
+Hi! How can I help you today?
 ```
