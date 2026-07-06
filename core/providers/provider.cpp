@@ -14,7 +14,7 @@
 #include <unordered_map>
 
 template <typename T>
-std::unique_ptr<Provider> make_provider(const nlohmann::json& account, const nlohmann::json& config) {
+static std::unique_ptr<Provider> make_provider(const nlohmann::json& account, const nlohmann::json& config) {
     return std::make_unique<T>(
         account["api_key"].get<std::string>(),
         account["api_url"].get<std::string>(),
@@ -27,11 +27,11 @@ std::unique_ptr<Provider> make_provider(const nlohmann::json& account, const nlo
 
 static std::unordered_map<std::string, std::function<std::unique_ptr<Provider>(const nlohmann::json& account,
     const nlohmann::json& config)>> providers = 
-{
-    {"anthropic", make_provider<Anthropic>},
-    {"openai-compatible", make_provider<OpenAICompatible>},
-    {"google", make_provider<Google>},
-};
+        {
+            {"anthropic", make_provider<Anthropic>},
+            {"openai-compatible", make_provider<OpenAICompatible>},
+            {"google", make_provider<Google>},
+        };
 
 std::unique_ptr<Provider> Provider::create(const nlohmann::json &account, const nlohmann::json &config) {
     if (auto it = providers.find(account["type"].get<std::string>()); it != providers.end()) {

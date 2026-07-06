@@ -2,6 +2,7 @@
 #include "json.hpp"
 
 inline const std::string APP_NAME = "lmcli";
+inline const std::string APP_VERSION = "1.0.0";
 
 inline const std::string CONFIG_FILE = "config.json";
 inline const std::string ACCOUNTS_FILE = "accounts.json";
@@ -74,3 +75,17 @@ inline const nlohmann::json PROVIDERS_DEFAULT = {
     })}
 };
 inline const nlohmann::json CHAT_DEFAULT = {{"conversation", nlohmann::json::array({})}};
+inline const nlohmann::json THEMES_DEFAULT = {
+    {"themes", nlohmann::json::array({
+        {
+            {"name", "tech"},
+            {"user_color", "cyan"},
+            {"assistant_color", "white"},
+            {"status_color", "yellow"},
+            {"border_color", "white"},
+            {"prompt_color", "cyan"},
+            {"streaming_color", "white"},
+            {"separator_color", "gray"}
+        }
+    })}
+};

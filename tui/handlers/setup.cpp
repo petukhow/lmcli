@@ -54,6 +54,7 @@ void open_setup_menu(ChatSession& session) {
                 config["current_account"] = (*new_account)["name"].get<std::string>();
                 save_config(config);
                 session.account = Provider::create(*new_account, config);
+                session.account_name = (*new_account)["name"].get<std::string>();
             }
 
             accounts_list.push_back(*new_account);

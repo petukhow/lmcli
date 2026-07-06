@@ -38,6 +38,7 @@ std::unique_ptr<ChatSession> chat_init() {
     const auto theme = load_theme(config["theme"].get<std::string>());
 
     session->account = std::move(account);
+    session->account_name = account_name;
     session->chats_path = std::nullopt;
     session->conversation = std::move(conversation);
     session->limit = config["limit"];

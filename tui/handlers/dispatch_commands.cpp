@@ -1,18 +1,18 @@
 #include "chat_flow.h"
 #include "accounts.h"
 #include "chats.h"
-#include "remove.h"
 #include "setup.h"
 #include "config.h"
+#include "theme.h"
 #include <unordered_map>
 
-static std::unordered_map<std::string, void(*)(ChatSession&)> commands = 
+static std::unordered_map<std::string, void(*)(ChatSession&)> commands =
     {
         {"/account", open_account_menu},
         {"/setup", open_setup_menu},
-        {"/remove", open_remove_menu},
         {"/chats", open_chats_menu},
         {"/config", open_config_menu},
+        {"/theme", open_theme_menu},
     };
 
 bool dispatch_commands(ChatSession& session) {

@@ -5,6 +5,8 @@
 #include "loaders/json_io.h"
 #include "loaders/config.h"
 #include "constants.h"
+#include "logging/logger.h"
+#include <filesystem>
 
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/screen/color.hpp>
@@ -59,6 +61,27 @@ void open_chats_menu(ChatSession& session) {
     session.menu_settings.on_select = [&session, chats, chats_dir](size_t cursor) {
         close_chat(session);
         open_chat(session, chats[cursor].path().string());
+    };
+
+    session.menu_settings.on_delete = [&session, chats_dir](size_t cursor) {
+        auto chats = list_chats(chats_dir);
+        if (cursor >= chats.size()) return;
+
+        const std::string deleted_path = chats[cursor].path().string();
+        const std::string deleted_stem = chats[cursor].path().stem().string();
+
+        if (session.chats_path.has_value() && *session.chats_path == deleted_path) {
+            session.chats_path.reset();
+            session.conversation.clear();
+        }
+
+        std::filesystem::remove(deleted_path);
+
+        session.menu_settings.menu_items.erase(session.menu_settings.menu_items.begin() + static_cast<long>(cursor));
+        auto& c = session.menu_settings.menu_cursor;
+        if (c >= session.menu_settings.menu_items.size() && c > 0) c--;
+
+        log(LogLevel::Info, "Chat removed: " + deleted_stem);
     };
 
     session.mode = Mode::Menu;

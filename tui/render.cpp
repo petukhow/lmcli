@@ -12,8 +12,15 @@ using namespace ftxui;
 Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     Elements lines;
     for (size_t i = 0; i < cs->menu_settings.menu_items.size(); ++i) {
-        auto line = text(cs->menu_settings.menu_items[i]);
-        if (cs->menu_settings.menu_cursor == i) {
+        bool confirming = cs->menu_settings.delete_confirm_index.has_value()
+            && *cs->menu_settings.delete_confirm_index == i;
+        std::string label = cs->menu_settings.menu_items[i];
+        if (confirming) label += "  (press 'd' again to delete)";
+
+        auto line = text(label);
+        if (confirming) {
+            line = hbox(text("› "), line) | color(Color::Red);
+        } else if (cs->menu_settings.menu_cursor == i) {
             line = hbox(text("› "), line) | color(cs->theme.prompt_color);
         }
         else {
@@ -24,6 +31,9 @@ Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     return vbox({
         text(cs->menu_settings.title),
         vbox(lines),
+        cs->menu_settings.on_delete
+            ? paragraph("Press 'd' to delete the highlighted item") | color(Color::GrayDark)
+            : emptyElement(),
         text("")
     });
 }

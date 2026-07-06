@@ -31,6 +31,7 @@ thread invariants:
 #include "handlers/config.h"
 #include "handlers/chats.h"
 #include "handlers/setup.h"
+#include "handlers/theme.h"
 
 #include "ftxui/component/component.hpp"
 #include "ftxui/dom/elements.hpp"
@@ -172,12 +173,35 @@ void start() {
     auto chat_name_input = Input(&session->chat_name_input, "Chat name (empty for auto)");
     auto chat_name_container = Container::Vertical({chat_name_input});
 
+    ThemeFields theme_fields {
+        Input(&session->theme_draft.name, "Theme name"),
+        Input(&session->theme_draft.user_color, "e.g. cyan"),
+        Input(&session->theme_draft.assistant_color, "e.g. white"),
+        Input(&session->theme_draft.status_color, "e.g. yellow"),
+        Input(&session->theme_draft.border_color, "e.g. white"),
+        Input(&session->theme_draft.prompt_color, "e.g. cyan"),
+        Input(&session->theme_draft.streaming_color, "e.g. white"),
+        Input(&session->theme_draft.separator_color, "e.g. gray"),
+        nullptr,
+    };
+    theme_fields.theme_container = Container::Vertical({
+        theme_fields.name_input,
+        theme_fields.user_color_input,
+        theme_fields.assistant_color_input,
+        theme_fields.status_color_input,
+        theme_fields.border_color_input,
+        theme_fields.prompt_color_input,
+        theme_fields.streaming_color_input,
+        theme_fields.separator_color_input,
+    });
+
     session->active_tab = 0;
     auto component = Container::Tab({
         Container::Horizontal({input_prompt}),
         setup_fields.form_container,
         config_fields.config_container,
         chat_name_container,
+        theme_fields.theme_container,
     }, &session->active_tab);
 
     if (!session->account) {
@@ -295,12 +319,25 @@ void start() {
                 if (event == Event::ArrowDown) {
                     auto& c = session->menu_settings.menu_cursor;
                     if (c + 1 < session->menu_settings.menu_items.size()) ++c;
+                    session->menu_settings.delete_confirm_index = std::nullopt;
                     screen.RequestAnimationFrame();
                 }
                 if (event == Event::ArrowUp) {
                     auto& c = session->menu_settings.menu_cursor;
                     if (c > 0) --c;
+                    session->menu_settings.delete_confirm_index = std::nullopt;
                     screen.RequestAnimationFrame();
+                }
+                if (event == Event::Character("d") && session->menu_settings.on_delete) {
+                    auto cursor = session->menu_settings.menu_cursor;
+                    if (session->menu_settings.delete_confirm_index == cursor) {
+                        session->menu_settings.on_delete(cursor);
+                        session->menu_settings.delete_confirm_index = std::nullopt;
+                    } else {
+                        session->menu_settings.delete_confirm_index = cursor;
+                    }
+                    screen.RequestAnimationFrame();
+                    return true;
                 }
                 if (event == Event::Return) {
                     auto c = session->menu_settings.menu_cursor;
@@ -349,6 +386,7 @@ void start() {
                     if (ok) {
                         session->config_draft = {};
                         session->account_draft = {};
+                        session->theme_draft = {};
                         session->form = {};
                         session->prompt.content.clear();
                         session->mode = Mode::Main;
@@ -372,6 +410,7 @@ void start() {
         
         auto acc_errors_block = build_acc_errors_block(*session, accounts_list);
         auto conf_errors_block = build_conf_errors_block(*session);
+        auto theme_errors_block = build_theme_errors_block(*session);
 
         Elements messages;
         for (const auto& msg : session->conversation) {
@@ -439,13 +478,52 @@ void start() {
                 else if (session->active_form == "/config") {
                     footer = render_config_form(*session, config_fields, conf_errors_block);
                 }
+                else if (session->active_form == "/theme") {
+                    footer = render_theme_form(*session, theme_fields, theme_errors_block);
+                }
                 break;
             }
         }
 
+        Element welcome = vbox({
+            text(APP_NAME) | bold | color(theme.prompt_color),
+            text("v" + APP_VERSION) | color(Color::GrayDark),
+            text(""),
+            text("Type a message to start chatting, or use:") | color(Color::GrayDark),
+            hbox({text("  /setup   ") | color(theme.prompt_color), text("configure an account") | color(Color::GrayDark)}),
+            hbox({text("  /chats   ") | color(theme.prompt_color), text("browse saved chats") | color(Color::GrayDark)}),
+            hbox({text("  /config  ") | color(theme.prompt_color), text("edit settings") | color(Color::GrayDark)}),
+            hbox({text("  /theme   ") | color(theme.prompt_color), text("create or switch color themes") | color(Color::GrayDark)}),
+            hbox({text("  /exit    ") | color(theme.prompt_color), text("quit") | color(Color::GrayDark)}),
+            filler(),
+        });
+
+        Element content = session->chats_path
+            ? vbox(messages) | focusPositionRelative(0, session->scroll_pos) | yframe | flex
+            : welcome | flex;
+
+        std::string account_label = session->account_name.empty()
+            ? "no account" : session->account_name;
+        Element account_corner = vbox({
+            filler(),
+            hbox({filler(), text(" " + account_label + " ") | color(theme.status_color) | dim}),
+        });
+
+        Element scroll_indicator = emptyElement();
+        if (session->chats_path && !session->conversation.empty()) {
+            bool can_up = session->scroll_pos > 0.0f;
+            bool can_down = session->scroll_pos < 1.0f;
+            scroll_indicator = hbox({
+                filler(),
+                vbox({
+                    can_up ? text("▲") | color(theme.status_color) : text(" "),
+                    can_down ? text("▼") | color(theme.status_color) : text(" "),
+                }),
+            });
+        }
+
         return vbox({
-            session->chats_path ? vbox(messages) | focusPositionRelative(0, session->scroll_pos) | yframe | flex
-                : paragraph("Hello, world!") | color(session->theme.prompt_color),
+            dbox({content, account_corner, scroll_indicator}) | flex,
             separator() | color(theme.separator_color),
             footer
         });
