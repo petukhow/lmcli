@@ -26,6 +26,6 @@ void init() {
 
     std::cout << "\n✓ Initialization complete!\n";
     std::cout << "Next steps:\n";
-    std::cout << "  1. Run 'lmcli setup' to add an account\n";
-    std::cout << "  2. Run 'lmcli start' to begin chatting\n";
+    std::cout << "  1. Run 'lmcli start' to begin chatting\n";
+    std::cout << "  2. Use the /setup command to add an account\n";
 }
