@@ -28,6 +28,7 @@ struct ChatSession {
     std::string pending_command;
     float scroll_pos = 1.0f;
     int active_tab;
+    bool exit_confirm_pending = false;
     std::atomic<bool> busy{false};
     std::atomic<bool> cancelled{false};
     std::promise<bool>* active_promise = nullptr;

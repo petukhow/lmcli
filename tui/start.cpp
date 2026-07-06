@@ -227,6 +227,26 @@ void start() {
         switch (session->mode) {
             case Mode::Main:
                 screen.RequestAnimationFrame();
+                if (event == Event::Tab) {
+                    if (session->busy) return true;
+                    if (session->exit_confirm_pending) {
+                        session->exit_confirm_pending = false;
+                        if (session->chats_path) {
+                            close_chat(*session);
+                        } else {
+                            screen.Exit();
+                        }
+                    } else {
+                        session->exit_confirm_pending = true;
+                    }
+                    screen.RequestAnimationFrame();
+                    return true;
+                }
+                if (session->exit_confirm_pending) {
+                    session->exit_confirm_pending = false;
+                    screen.RequestAnimationFrame();
+                }
+
                 if (event == Event::Escape) {
                     if (session->busy) {
                         session->cancelled = true;
@@ -457,12 +477,17 @@ void start() {
                         ? input_line | dim
                         : input_line,
                     separator() | color(theme.separator_color),
-                    session->busy
-                        ? paragraph(" esc to interrupt") | color(Color::GrayDark)
-                        : emptyElement(),
+                    session->exit_confirm_pending
+                        ? vbox({
+                            paragraph("· · ·  press Tab again to exit  · · ·") | color(Color::Yellow),
+                            text(""),
+                        })
+                        : (session->busy
+                            ? paragraph(" esc to interrupt") | color(Color::GrayDark)
+                            : emptyElement()),
                 });
                 break;
-            }   
+            }
 
             case Mode::Menu: 
                 footer = render_menu(session);

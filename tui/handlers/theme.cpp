@@ -209,6 +209,9 @@ static Element color_row(const ChatSession& session, const std::string& label,
 
 Element render_theme_form(const ChatSession& session, const ThemeFields& theme_fields, const Element& theme_errors_block) {
     const auto& draft = session.theme_draft;
+    const bool has_errors = session.active_form == "/theme" &&
+        (session.theme_draft.name_error.has_value() || session.theme_draft.color_error.has_value());
+
     return vbox({
         hbox({text("Theme name") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
             text("› ") | color(session.theme.prompt_color), theme_fields.name_input->Render()}),
@@ -220,8 +223,7 @@ Element render_theme_form(const ChatSession& session, const ThemeFields& theme_f
         color_row(session, "Streaming color", theme_fields.streaming_color_input, draft.streaming_color),
         color_row(session, "Separator color", theme_fields.separator_color_input, draft.separator_color),
         separator() | color(session.theme.separator_color),
-        theme_errors_block,
-        text(""),
+        has_errors ? vbox({theme_errors_block, text("")}) : emptyElement(),
         paragraph("Available colors: " + valid_color_names()) | color(Color::GrayDark),
         paragraph("Сtrl + S to save & apply | esc to exit") | color(Color::GrayDark),
         text("")

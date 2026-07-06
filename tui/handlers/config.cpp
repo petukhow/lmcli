@@ -112,6 +112,13 @@ Element build_conf_errors_block(const ChatSession& session) {
 }
 
 Element render_config_form(const ChatSession& session, const ConfigFields& config_fields, const Element& conf_errors_block) {
+    const bool has_errors = session.active_form == "/config" && (
+        session.config_draft.limit_error.has_value() ||
+        session.config_draft.max_tokens_error.has_value() ||
+        session.config_draft.confirm_required_error.has_value() ||
+        session.config_draft.restricted_error.has_value()
+    );
+
     return vbox({
         hbox({text("System prompt") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
             text("› ") | color(session.theme.prompt_color), config_fields.config_prompt_input->Render()}),
@@ -126,8 +133,7 @@ Element render_config_form(const ChatSession& session, const ConfigFields& confi
         hbox({text("Restricted commands") | size(WIDTH, EQUAL, 20) | color(session.theme.prompt_color),
             text("› ") | color(session.theme.prompt_color), config_fields.config_restricted_input->Render()}),
         separator() | color(session.theme.separator_color),
-        conf_errors_block,
-        text(""),
+        has_errors ? vbox({conf_errors_block, text("")}) : emptyElement(),
         paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
         text("")
     });

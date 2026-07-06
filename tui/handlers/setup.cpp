@@ -92,16 +92,19 @@ Element build_acc_errors_block(ChatSession& session, const json& accounts_list) 
 }
 
 Element render_setup_form(const ChatSession& session, const SetupFields& setup_fields, const Element& acc_errors_block) {
+    const bool has_errors = (session.active_form == "/setup" || !session.account) &&
+        (session.account_draft.name_error.has_value() || session.account_draft.key_error.has_value());
+
     Element footer = vbox({
         !session.account ? paragraph("You have no accounts. Create one to continue.") | color(Color::Yellow) : emptyElement(),
-        hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color), 
+        hbox({text("Account name") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color),
                 text("› ") | color(session.theme.prompt_color), setup_fields.form_name_input->Render()}),
         hbox({text("API Key") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color),
                 text("› ") | color(session.theme.prompt_color), setup_fields.form_key_input->Render()}),
         hbox({text("Model") | size(WIDTH, EQUAL, 14) | color(session.theme.prompt_color),
                 text("› ") | color(session.theme.prompt_color), setup_fields.form_model_input->Render()}),
         separator() | color(session.theme.separator_color),
-        acc_errors_block,
+        has_errors ? vbox({acc_errors_block, text("")}) : emptyElement(),
         paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
         text("")
     });
