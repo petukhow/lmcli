@@ -1,10 +1,5 @@
 # lmcli
 
-![Lines of code](https://img.shields.io/tokei/lines/github/petukhow/lmcli)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/petukhow/lmcli)
-![GitHub last commit](https://img.shields.io/github/last-commit/petukhow/lmcli)
-![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
-
 A terminal UI for chatting with multiple LLM providers (Anthropic, OpenAI, etc.) from a single interface.
 
 ## Features
