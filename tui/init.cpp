@@ -24,7 +24,7 @@ void init() {
     create_config_file_if_not_exists(config_dir + CONFIG_FILE, CONFIG_DEFAULT);
     create_config_file_if_not_exists(config_dir + ACCOUNTS_FILE, ACCOUNTS_DEFAULT);
 
-    std::cout << "\n✓ Initialization complete!\n";
+    std::cout << "✓ Initialization complete!\n";
     std::cout << "Next steps:\n";
     std::cout << "  1. Run 'lmcli start' to begin chatting\n";
     std::cout << "  2. Use the /setup command to add an account\n";
