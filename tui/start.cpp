@@ -94,8 +94,8 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
 
     if (session->cancelled) {
         log(LogLevel::Info, "Request cancelled by user");
-        auto partial = session->streaming_buffer;
-        screen.Post([&, local_conv, partial] {
+        screen.Post([&, local_conv] {
+            auto partial = session->streaming_buffer;
             session->conversation = local_conv;
             if (!partial.empty()) {
                 session->conversation.push_back(
@@ -147,9 +147,7 @@ void start() {
         Input(&session->account_draft.acc_name, "Account name"),
         Input(&session->account_draft.api_key, "API key"),
         Input(&session->account_draft.model_name, "Model"),
-        Container::Vertical({
-            setup_fields.form_name_input, setup_fields.form_key_input, setup_fields.form_model_input
-        }),
+        nullptr,
     };
 
     ConfigFields config_fields {
