@@ -10,6 +10,7 @@
 using json = nlohmann::json;
 
 void open_config_menu(ChatSession& session) {
+    session.prompt.content.clear();
     auto config = load_config(CONFIG_FILE);
     session.config_draft.system_prompt = config["system_prompt"].get<std::string>();
     session.config_draft.limit = std::to_string(config["limit"].get<size_t>());
