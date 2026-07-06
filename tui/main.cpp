@@ -1,24 +1,30 @@
 #include "commands.h"
 #include "logging/logger.h"
+#include "utils/utils.h"
+#include "constants.h"
+#include <filesystem>
 #include <iostream>
 
-int main(int argc, char* argv[]) {
-    if (!logger_init()) {
-        std::cerr << "Warning: config not loaded, logging enabled by default.\n";
+static void ensure_initialized() {
+    if (!std::filesystem::exists(get_config_path(CONFIG_FILE))) {
+        init();
     }
+}
 
-    if (argc == 1) {
-        start();
-        return 0;
-    }
-    
+int main(int argc, char* argv[]) {
     if (argc > 3) {
         std::cerr << "Usage: lmcli [COMMAND] [SUBCOMMAND]\n";
         std::cerr << "See 'lmcli help' for available commands and subcommands.\n";
         return 1;
     }
 
-    std::string command = argv[1];
+    const std::string command = argc > 1 ? argv[1] : "start";
+
+    if (command == "start") ensure_initialized();
+
+    if (!logger_init()) {
+        std::cerr << "Warning: config not loaded, logging enabled by default.\n";
+    }
 
     if (command == "start") {
         start();
