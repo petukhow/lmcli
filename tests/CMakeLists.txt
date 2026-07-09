@@ -17,10 +17,9 @@ add_executable(tests
 
 target_include_directories(tests PRIVATE
     ${CMAKE_SOURCE_DIR}/core
-    ${CMAKE_SOURCE_DIR}/cli
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/vendor
-    $(CMAKE_SOURCE_DIR)/tui
+    ${CMAKE_SOURCE_DIR}/tui
 )
 
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain CURL::libcurl ftxui::screen)
