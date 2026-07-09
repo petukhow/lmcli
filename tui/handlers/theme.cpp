@@ -122,6 +122,7 @@ static bool submit_theme_form(ChatSession& session, const std::string& original_
 }
 
 void open_theme_menu(ChatSession& session) {
+    session.prompt.content.clear();
     auto themes_data = load_themes_file();
     auto themes_list = themes_data["themes"];
 

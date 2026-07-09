@@ -43,32 +43,42 @@ void close_chat(ChatSession& cs) {
 }
 
 void open_chats_menu(ChatSession& session) {
+    session.prompt.content.clear();
     if (session.chats_path.has_value())
         save_chat(*session.chats_path, session.conversation);
 
     const std::string chats_dir = get_chats_dir();
     auto chats = list_chats(chats_dir);
+    if (!chats) {
+        session.menu_settings.title = "No chats found.";
+    } else {
+        session.menu_settings.menu_cursor = 0;
+        session.menu_settings.menu_items.clear();
+        session.menu_settings.title = "Select a chat:";
+        session.prompt.content.clear();
 
-    session.menu_settings.menu_cursor = 0;
-    session.menu_settings.menu_items.clear();
-    session.menu_settings.title = "Select a chat:";
-    session.prompt.content.clear();
-
-    for (const auto& chat : chats) {
-        session.menu_settings.menu_items.push_back(chat.path().stem().string());
+        for (const auto& chat : *chats) {
+            session.menu_settings.menu_items.push_back(chat.path().stem().string());
+        }
     }
-
-    session.menu_settings.on_select = [&session, chats, chats_dir](size_t cursor) {
+    
+    session.menu_settings.on_select = [&session, chats_dir](size_t cursor) {
+        auto chats = list_chats(chats_dir);
+        session.mode = Mode::Menu;
+        if (!chats) return;
         close_chat(session);
-        open_chat(session, chats[cursor].path().string());
+        open_chat(session, chats.value()[cursor].path().string());
     };
 
     session.menu_settings.on_delete = [&session, chats_dir](size_t cursor) {
         auto chats = list_chats(chats_dir);
-        if (cursor >= chats.size()) return;
+        session.mode = Mode::Menu;
+        if (!chats) return;
+        
+        if (cursor >= chats.value().size()) return;
 
-        const std::string deleted_path = chats[cursor].path().string();
-        const std::string deleted_stem = chats[cursor].path().stem().string();
+        const std::string deleted_path = chats.value()[cursor].path().string();
+        const std::string deleted_stem = chats.value()[cursor].path().stem().string();
 
         if (session.chats_path.has_value() && *session.chats_path == deleted_path) {
             session.chats_path.reset();

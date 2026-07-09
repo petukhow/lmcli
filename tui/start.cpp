@@ -147,7 +147,9 @@ void start() {
         Input(&session->account_draft.acc_name, "Account name"),
         Input(&session->account_draft.api_key, "API key"),
         Input(&session->account_draft.model_name, "Model"),
-        nullptr,
+        Container::Vertical({
+            setup_fields.form_name_input, setup_fields.form_key_input, setup_fields.form_model_input
+        }),
     };
 
     ConfigFields config_fields {

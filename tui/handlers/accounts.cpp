@@ -12,6 +12,7 @@ static std::unique_ptr<Provider> select_acc(const nlohmann::json& accounts_list,
 }
 
 void open_account_menu(ChatSession& session) {
+    session.prompt.content.clear();
     auto accounts = load_accounts(ACCOUNTS_FILE);
 
     if (!accounts.contains("accounts") || accounts["accounts"].empty()) {

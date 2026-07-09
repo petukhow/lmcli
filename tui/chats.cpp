@@ -32,7 +32,7 @@ bool save_chat(const std::string& filepath, const std::vector<Message>& chat) {
     }
 }
 
-std::vector<std::filesystem::directory_entry> list_chats(const std::string& chats_dir) {
+std::optional<std::vector<std::filesystem::directory_entry>> list_chats(const std::string& chats_dir) {
     std::vector<std::filesystem::directory_entry> chats;
 
     if (!std::filesystem::exists(chats_dir)) {
@@ -44,6 +44,8 @@ std::vector<std::filesystem::directory_entry> list_chats(const std::string& chat
         for (const auto& file : std::filesystem::directory_iterator(chats_dir)) {
             chats.push_back(file);
         }
+    } else {
+        return std::nullopt;
     }
     return chats;
 }
