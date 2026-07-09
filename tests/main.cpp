@@ -9,6 +9,7 @@
 #include "types/theme.h"
 #include "loaders/json_io.h"
 #include "json.hpp"
+#include "types/tools.h"
 
 TEST_CASE("Anthropic extract_delta with valid response") {
     auto anthropic = Anthropic("", "", "", "", 0, 0);
@@ -254,4 +255,34 @@ TEST_CASE("save_json then load_json round-trips the same data") {
     CHECK(*result == data);
 
     std::filesystem::remove(path);
+}
+
+TEST_CASE("ToolInfo round-trip preserves thought_signature") {
+    ToolInfo original;
+    original.id = "something";
+    original.name = "tool call";
+    original.arguments = "args";
+    original.thought_signature = "base64";
+
+    nlohmann::json j = original;
+    ToolInfo restored = j.get<ToolInfo>();
+
+    CHECK(restored.id == original.id);
+    CHECK(restored.name == original.name);
+    CHECK(restored.arguments == original.arguments);
+    REQUIRE(restored.thought_signature.has_value());
+    CHECK(*restored.thought_signature == "base64");
+}
+
+TEST_CASE("ToolInfo round-trip without signature stays nullopt") {
+    ToolInfo original;
+    original.id = "id-1";
+    original.name = "exec_bash";
+    original.arguments = "{}";
+
+    nlohmann::json j = original;
+    CHECK_FALSE(j.contains("thought_signature"));
+
+    ToolInfo restored = j.get<ToolInfo>();
+    CHECK_FALSE(restored.thought_signature.has_value());
 }
