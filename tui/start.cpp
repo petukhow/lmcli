@@ -24,6 +24,7 @@ thread invariants:
 #include <optional>
 #include <vector>
 #include <memory>
+#include <chrono>
 #include "utils/utils.h"
 #include <iostream>
 
@@ -43,6 +44,10 @@ thread invariants:
 
 using namespace ftxui;
 using json = nlohmann::json;
+
+static const std::vector<std::string> kSpinnerFrames = {
+    "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
+};
 
 static std::vector<Message> confirm_tool_calls(const Message& output,
     ftxui::ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
@@ -419,6 +424,18 @@ void start() {
         }
         return false;
     });
+    std::atomic<int> spinner_frame{0};
+    std::atomic<bool> spinner_stop{false};
+    std::thread spinner_thread([&] {
+        while (!spinner_stop) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(80));
+            if (session->busy) {
+                spinner_frame++;
+                screen.Post([&] { screen.RequestAnimationFrame(); });
+            }
+        }
+    });
+
     auto renderer = Renderer(final_component, [&] {
         InputOption config_inputs;
         config_inputs.transform = [&](InputState state) {
@@ -457,33 +474,30 @@ void start() {
             }));
         }
 
-        if (!session->pending_command.empty()) {
-            messages.push_back(
-                paragraph("Allow: " + session->pending_command + "? (y/n)")
-                    | color(theme.status_color) | xflex);
-        }
-
         switch (session->mode) {
             case Mode::Main: {                  
                 auto input_line = hbox({
-                    text("› ") | color(Color::GreenLight),
+                    session->busy
+                        ? text(kSpinnerFrames[spinner_frame % kSpinnerFrames.size()] + " ")
+                            | color(theme.status_color)
+                        : text("› ") | color(Color::GreenLight),
                     input_prompt->Render() | xflex,
                 });
                 footer = vbox({
                     !session->error_message.empty()
                         ? paragraph("✗ " + session->error_message) | color(Color::Red)
                         : emptyElement(),
-                    session->busy 
+                    session->busy
                         ? input_line | dim
                         : input_line,
                     separator() | color(theme.separator_color),
                     session->exit_confirm_pending
                         ? vbox({
-                            paragraph("· · ·  press Tab again to exit  · · ·") | color(Color::Yellow),
+                            paragraph(" press Tab again to exit") | color(Color::White),
                             text(""),
                         })
                         : (session->busy
-                            ? paragraph(" esc to interrupt") | color(Color::GrayDark)
+                            ? paragraph(" esc to interrupt · tab for 2 times to exit") | color(Color::GrayDark)
                             : emptyElement()),
                 });
                 break;
@@ -508,6 +522,29 @@ void start() {
                 }
                 break;
             }
+        }
+
+        if (!session->pending_command.empty()) {
+            auto bar = [&](Element content) {
+                return hbox({
+                    text(" ") | bgcolor(theme.status_color),
+                    text(" "),
+                    content,
+                });
+            };
+            footer = vbox({
+                bar(text("run this command?") | bold | color(theme.status_color)),
+                bar(text("")),
+                bar(paragraph(session->pending_command) | color(theme.prompt_color)),
+                bar(text("")),
+                bar(hbox({
+                    text("y") | bold | color(Color::Green),
+                    text(" allow    ") | color(Color::GrayDark),
+                    text("n") | bold | color(Color::Red),
+                    text(" deny") | color(Color::GrayDark),
+                })),
+                text(""),
+            });
         }
 
         Element welcome = vbox({
@@ -555,7 +592,10 @@ void start() {
     });
 
     screen.Loop(renderer);
-    
+
+    spinner_stop = true;
+    spinner_thread.join();
+
     if (!session->pending_command.empty()) {
         session->active_promise->set_value(false);
     }
