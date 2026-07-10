@@ -50,6 +50,24 @@ static const std::vector<std::string> kSpinnerFrames = {
     "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
 };
 
+// A single "key: label" keybinding hint, meant to be rendered in a row via
+// render_hints(). Adding a new keybinding hint anywhere is just one more entry in a hints vector
+struct Hint {
+    std::string key;
+    std::string label;
+    Color key_color = Color::GrayDark;
+};
+
+static Element render_hints(const std::vector<Hint>& hints) {
+    Elements parts;
+    for (size_t i = 0; i < hints.size(); ++i) {
+        if (i > 0) parts.push_back(text(" · ") | color(Color::GrayDark));
+        parts.push_back(text(hints[i].key) | bold | color(hints[i].key_color));
+        parts.push_back(text(" " + hints[i].label) | color(Color::GrayDark));
+    }
+    return hbox(std::move(parts));
+}
+
 static std::vector<Message> confirm_tool_calls(const Message& output,
     ftxui::ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
     return handle_tool_calls(output, [&](const std::string& cmd) {
@@ -57,6 +75,7 @@ static std::vector<Message> confirm_tool_calls(const Message& output,
         auto future = promise.get_future();
         screen.Post([&, cmd] {
             session->pending_command = cmd;
+            session->pending_command_scroll = 0.0f;
             session->active_promise = &promise;
             screen.RequestAnimationFrame();
         });
@@ -77,9 +96,32 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
 
     while (!output.tool_calls.empty() && !session->cancelled) {
         local_conv.push_back({Role::Assistant, "", "", output.tool_calls});
+
+        // Show the tool call in the transcript right away, instead of waiting
+        // for the whole round (including the follow-up API call) to finish.
+        {
+            auto snapshot = local_conv;
+            screen.Post([&, snapshot] {
+                session->conversation = snapshot;
+                session->streaming_buffer.clear();
+                if (session->chats_path) save_chat(*session->chats_path, session->conversation);
+                screen.RequestAnimationFrame();
+            });
+        }
+
         auto results = confirm_tool_calls(output, screen, session);
 
         for (const auto& msg : results) local_conv.push_back(msg);
+
+        // Show the tool result as soon as it's available too.
+        {
+            auto snapshot = local_conv;
+            screen.Post([&, snapshot] {
+                session->conversation = snapshot;
+                if (session->chats_path) save_chat(*session->chats_path, session->conversation);
+                screen.RequestAnimationFrame();
+            });
+        }
 
         log(LogLevel::Debug, "Number of tool calls: " + std::to_string(output.tool_calls.size()));
 
@@ -268,7 +310,8 @@ void start() {
                     return false;
                 }
 
-                if (handle_scroll(event, session->scroll_pos)) {
+                if (handle_scroll(event, session->pending_command.empty()
+                        ? session->scroll_pos : session->pending_command_scroll)) {
                     screen.RequestAnimationFrame();
                     return true;
                 }
@@ -489,10 +532,7 @@ void start() {
                         paragraph(label) | color(theme.status_color) | xflex,
                     }));
                 }
-                messages.push_back(vbox({
-                    vbox(calls),
-                    text(""),
-                }));
+                messages.push_back(vbox(calls));
             } else if (msg.role == Role::Tool) {
                 Element body;
                 if (session->show_tool_output) {
@@ -533,6 +573,15 @@ void start() {
                         : text("› ") | color(Color::GreenLight),
                     input_prompt->Render() | xflex,
                 });
+                std::vector<Hint> hints;
+                if (session->busy) hints.push_back({"esc", "interrupt", Color::Red});
+                hints.push_back({"ctrl+o", "toggle output", theme.status_color});
+                hints.push_back({
+                    "tab",
+                    session->exit_confirm_pending ? "press again to exit" : "exit",
+                    session->exit_confirm_pending ? Color::Yellow : Color::GrayDark,
+                });
+
                 footer = vbox({
                     !session->error_message.empty()
                         ? paragraph("✗ " + session->error_message) | color(Color::Red)
@@ -541,14 +590,7 @@ void start() {
                         ? input_line | dim
                         : input_line,
                     separator() | color(theme.separator_color),
-                    session->exit_confirm_pending
-                        ? vbox({
-                            paragraph(" press Tab again to exit") | color(Color::White),
-                            text(""),
-                        })
-                        : (session->busy
-                            ? paragraph(" esc to interrupt · tab for 2 times to exit") | color(Color::GrayDark)
-                            : emptyElement()),
+                    hbox({ text(" "), render_hints(hints) }),
                 });
                 break;
             }
@@ -585,13 +627,15 @@ void start() {
             footer = vbox({
                 bar(text("run this command?") | bold | color(theme.status_color)),
                 bar(text("")),
-                bar(paragraph(session->pending_command) | color(theme.prompt_color)),
+                bar(paragraph(session->pending_command) | color(theme.prompt_color)
+                    | focusPositionRelative(0, session->pending_command_scroll)
+                    | yframe
+                    | size(HEIGHT, LESS_THAN, 6)),
                 bar(text("")),
-                bar(hbox({
-                    text("y") | bold | color(Color::Green),
-                    text(" allow    ") | color(Color::GrayDark),
-                    text("n") | bold | color(Color::Red),
-                    text(" deny") | color(Color::GrayDark),
+                bar(render_hints({
+                    {"y", "allow", Color::Green},
+                    {"n", "deny", Color::Red},
+                    {"↑↓", "scroll", Color::GrayDark},
                 })),
                 text(""),
             });

@@ -26,6 +26,7 @@ struct ChatSession {
     std::string error_message;
     std::string streaming_buffer;
     std::string pending_command;
+    float pending_command_scroll = 0.0f;
     float scroll_pos = 1.0f;
     int active_tab;
     bool exit_confirm_pending = false;
