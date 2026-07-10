@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 #include "loaders/json_io.h"
 #include "constants.h"
 
@@ -27,9 +28,19 @@ void log(LogLevel level, const std::string& event) {
           << " [" << level_str << "] "
           << event << "\n";
 
-    std::ofstream file(get_log_path(LOGS_FILE), std::ios::app);
+    const std::string log_path = get_log_path(LOGS_FILE);
+    const bool existed = std::filesystem::exists(log_path);
+
+    std::ofstream file(log_path, std::ios::app);
     if (file.is_open()) {
         file << entry.str();
+    }
+    file.close();
+
+    if (!existed) {
+        std::filesystem::permissions(log_path,
+            std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+            std::filesystem::perm_options::replace);
     }
 }
 

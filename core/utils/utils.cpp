@@ -101,6 +101,10 @@ void create_config_file_if_not_exists(const std::string& config_dir, const nlohm
     }
 
     file << file_template;
+    file.close();
+    std::filesystem::permissions(config_dir,
+        std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+        std::filesystem::perm_options::replace);
 }
 
 std::string create_file_if_not_exists(const std::string& chats_dir, const nlohmann::json& file_template) {

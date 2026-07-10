@@ -2,6 +2,7 @@
 #include "json.hpp"
 #include "logging/logger.h"
 #include <fstream>
+#include <filesystem>
 #include "json_io.h"
 
 std::optional<nlohmann::json> load_json(const std::string& filepath) {
@@ -21,7 +22,6 @@ std::optional<nlohmann::json> load_json(const std::string& filepath) {
 
     try {
         parsed = nlohmann::json::parse(str);
-        log(LogLevel::Debug, "Parsing " + str);
     } catch (const nlohmann::json::parse_error& e) {
         log(LogLevel::Error, "Parse error: " + std::string(e.what()));
         return std::nullopt;
@@ -39,6 +39,10 @@ void save_json(const std::string& filepath, const nlohmann::json& data) {
         accs.exceptions(std::ofstream::failbit);
         accs.open(filepath);
         accs << data.dump(4);
+        accs.close();
+        std::filesystem::permissions(filepath,
+            std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+            std::filesystem::perm_options::replace);
         log(LogLevel::Info, filepath + " saved");
     } catch (const std::exception& e) {
         log(LogLevel::Error, "Failed to save in file " + filepath + ":" + std::string(e.what()));
