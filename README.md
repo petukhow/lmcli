@@ -134,7 +134,7 @@ Stores your custom color themes, managed via `/theme`. Each theme defines colors
       "name": "tech",
       "user_color": "cyan",
       "assistant_color": "white",
-      "status_color": "yellow",
+      "status_color": "white",
       "border_color": "white",
       "prompt_color": "cyan",
       "streaming_color": "white",

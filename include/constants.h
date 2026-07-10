@@ -81,7 +81,7 @@ inline const nlohmann::json THEMES_DEFAULT = {
             {"name", "tech"},
             {"user_color", "cyan"},
             {"assistant_color", "white"},
-            {"status_color", "yellow"},
+            {"status_color", "white"},
             {"border_color", "white"},
             {"prompt_color", "cyan"},
             {"streaming_color", "white"},
