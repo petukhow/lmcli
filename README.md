@@ -89,7 +89,7 @@ Everything else — accounts, chats, settings, themes — is handled from in-cha
 | `/theme`   | Create, edit, clone, or switch color themes (press `d` `d` to delete one) |
 | `/exit`    | Quit lmcli, or close the current chat                      |
 
-`ctrl+o` toggles whether tool call output (e.g. `exec_bash` results) is shown inline or collapsed to a one-line summary — handy when a tool call dumps a large file and you just want to keep reading the conversation.
+`alt+o` toggles whether tool call output (e.g. `exec_bash` results) is shown inline or collapsed to a one-line summary — handy when a tool call dumps a large file and you just want to keep reading the conversation.
 
 ## Configuration
 
@@ -98,7 +98,7 @@ Configuration files are stored in `~/.config/lmcli/`:
 ### `config.json`
 ```json
 {
-  "system_prompt": "You're a helpful assistant.",
+  "system_prompt": "You're a helpful assistant. Respond in plain text only — no markdown formatting (no asterisks, no backticks, no headers).",
   "limit": 20,
   "max_tokens": 1024,
   "logging": true,
@@ -151,6 +151,10 @@ Stores available tools for models (e.g. `exec_bash`).
 ## Safety notes
 
 Agent mode lets the model run shell commands on your machine via `exec_bash`. The `blacklist` and `confirm_required` settings are a basic guardrail, not a sandbox — they match on substrings, so a determined or confused model can still phrase its way around them. Don't run agent mode unattended on anything you're not prepared to have modified, and review commands before confirming them.
+
+## Known limitations
+
+- Model responses are rendered as plain text — markdown formatting (bold, code blocks, headers, etc.) from the model is not parsed and will show up as raw characters (`**`, `` ` ``, `#`). The default system prompt asks models to avoid markdown, but this isn't enforced.
 
 ## Example
 

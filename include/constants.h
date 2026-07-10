@@ -13,7 +13,7 @@ inline const std::string LOGS_FILE = "lmcli.log";
 
 inline const nlohmann::json ACCOUNTS_DEFAULT = {{"accounts", nlohmann::json::array({})}};
 inline const nlohmann::json CONFIG_DEFAULT = {
-        {"system_prompt", "You're a helpful assistant."},
+        {"system_prompt", "You're a helpful assistant. Respond in plain text only — no markdown formatting (no asterisks, no backticks, no headers)."},
         {"limit", 20},
         {"max_tokens", 1024},
         {"logging", true},
