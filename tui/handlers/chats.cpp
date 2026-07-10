@@ -103,7 +103,7 @@ Element render_chats_form(const ChatSession& session, const Component& chat_name
         hbox({text(" Chat name") | size(WIDTH, EQUAL, 11) | color(session.theme.prompt_color),
             text("› ") | color(session.theme.prompt_color), chat_name_input->Render()}),
         separator() | color(session.theme.separator_color),
-        paragraph("enter to create | esc to cancel") | color(Color::GrayDark),
+        paragraph("enter to create · esc to cancel") | color(Color::GrayDark),
         text("")
     });
 }

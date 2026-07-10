@@ -134,7 +134,7 @@ Element render_config_form(const ChatSession& session, const ConfigFields& confi
             text("› ") | color(session.theme.prompt_color), config_fields.config_restricted_input->Render()}),
         separator() | color(session.theme.separator_color),
         has_errors ? vbox({conf_errors_block, text("")}) : emptyElement(),
-        paragraph("Сtrl + S to save | esc to exit") | color(Color::GrayDark),
+        paragraph("Сtrl + S to save · esc to exit") | color(Color::GrayDark),
         text("")
     });
 }

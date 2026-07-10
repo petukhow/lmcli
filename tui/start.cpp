@@ -25,6 +25,7 @@ thread invariants:
 #include <vector>
 #include <memory>
 #include <chrono>
+#include <algorithm>
 #include "utils/utils.h"
 #include <iostream>
 
@@ -107,6 +108,8 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
                     {Role::Assistant, partial, "", {}});
             }
             session->streaming_buffer.clear();
+            session->busy = false;
+            if (session->chats_path) save_chat(*session->chats_path, session->conversation);
             screen.RequestAnimationFrame();
         });
     } else if (output.is_failed) {
@@ -118,6 +121,8 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
             session->prompt.content = failed_prompt;
             session->error_message = err;
             session->streaming_buffer.clear();
+            session->busy = false;
+            if (session->chats_path) save_chat(*session->chats_path, session->conversation);
             screen.RequestAnimationFrame();
         });
     } else {
@@ -126,6 +131,8 @@ static void worker(const std::unique_ptr<ChatSession>& session, ScreenInteractiv
         screen.Post([&, local_conv] {
             session->conversation = local_conv;
             session->streaming_buffer.clear();
+            session->busy = false;
+            if (session->chats_path) save_chat(*session->chats_path, session->conversation);
             screen.RequestAnimationFrame();
         });
     }
@@ -282,6 +289,12 @@ void start() {
                     return true;
                 }
 
+                if (event == Event::Special({15})) { // Ctrl+O
+                    session->show_tool_output = !session->show_tool_output;
+                    screen.RequestAnimationFrame();
+                    return true;
+                }
+
                 if (event == Event::Return) {
                     session->active_form = session->prompt.content;
                     if (session->busy) return true;
@@ -320,6 +333,7 @@ void start() {
                         "", {}});
                     log(LogLevel::Info, "User prompted: " + session->prompt.content);
                     session->prompt.content.clear();
+                    if (session->chats_path) save_chat(*session->chats_path, session->conversation);
 
                     session->scroll_pos = 1.0f;
                     session->cancelled = false;
@@ -327,10 +341,12 @@ void start() {
                     session->worker = std::thread([&]{
                         try {
                             worker(session, screen);
-                            session->busy = false;
                         } catch (const std::exception& e) {
                             log(LogLevel::Error, "Thread crashed: " + std::string(e.what()));
-                            session->busy = false;
+                            screen.Post([&] {
+                                session->busy = false;
+                                screen.RequestAnimationFrame();
+                            });
                         }}
                     );
                     return true;
@@ -457,6 +473,40 @@ void start() {
                         text("› ") | color(theme.prompt_color),
                         paragraph(msg.content) | color(theme.user_color) | xflex,
                     }),
+                    text(""),
+                }));
+            } else if (msg.role == Role::Assistant && !msg.tool_calls.empty()) {
+                Elements calls;
+                for (const auto& call : msg.tool_calls) {
+                    std::string label = call.arguments;
+                    if (call.name == "exec_bash") {
+                        try {
+                            label = json::parse(call.arguments).value("command", call.arguments);
+                        } catch (const json::parse_error&) {}
+                    }
+                    calls.push_back(hbox({
+                        text(" ▸ ") | color(theme.status_color),
+                        paragraph(label) | color(theme.status_color) | xflex,
+                    }));
+                }
+                messages.push_back(vbox({
+                    vbox(calls),
+                    text(""),
+                }));
+            } else if (msg.role == Role::Tool) {
+                Element body;
+                if (session->show_tool_output) {
+                    body = paragraph(msg.content) | color(Color::GrayDark) | xflex;
+                } else {
+                    size_t lines = 1 + std::count(msg.content.begin(), msg.content.end(), '\n');
+                    body = text("[" + std::to_string(lines) + " line" + (lines == 1 ? "" : "s")
+                        + " hidden – ctrl+o to show]") | color(Color::GrayDark);
+                }
+                messages.push_back(vbox({
+                    hbox({
+                        text("   "),
+                        body,
+                    }) | dim,
                     text(""),
                 }));
             } else if (msg.role == Role::Assistant) {

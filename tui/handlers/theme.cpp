@@ -226,7 +226,7 @@ Element render_theme_form(const ChatSession& session, const ThemeFields& theme_f
         separator() | color(session.theme.separator_color),
         has_errors ? vbox({theme_errors_block, text("")}) : emptyElement(),
         paragraph("Available colors: " + valid_color_names()) | color(Color::GrayDark),
-        paragraph("Сtrl + S to save & apply | esc to exit") | color(Color::GrayDark),
+        paragraph("Сtrl + S to save & apply · esc to exit") | color(Color::GrayDark),
         text("")
     });
 }
