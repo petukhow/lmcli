@@ -332,7 +332,7 @@ void start() {
                     return true;
                 }
 
-                if (event == Event::AltO) {
+                if (event == Event::F2) {
                     session->show_tool_output = !session->show_tool_output;
                     screen.RequestAnimationFrame();
                     return true;
@@ -540,7 +540,7 @@ void start() {
                 } else {
                     size_t lines = 1 + std::count(msg.content.begin(), msg.content.end(), '\n');
                     body = text("[" + std::to_string(lines) + " line" + (lines == 1 ? "" : "s")
-                        + " hidden – alt+o to show]") | color(Color::GrayDark);
+                        + " hidden – f2 to show]") | color(Color::GrayDark);
                 }
                 messages.push_back(vbox({
                     hbox({
@@ -575,7 +575,7 @@ void start() {
                 });
                 std::vector<Hint> hints;
                 if (session->busy) hints.push_back({"esc", "interrupt", Color::Red});
-                hints.push_back({"alt+o", "toggle output", theme.status_color});
+                hints.push_back({"f2", "toggle output", theme.status_color});
                 hints.push_back({
                     "tab",
                     session->exit_confirm_pending ? "press again to exit" : "exit",

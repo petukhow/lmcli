@@ -89,7 +89,7 @@ Everything else — accounts, chats, settings, themes — is handled from in-cha
 | `/theme`   | Create, edit, clone, or switch color themes (press `d` `d` to delete one) |
 | `/exit`    | Quit lmcli, or close the current chat                      |
 
-`alt+o` toggles whether tool call output (e.g. `exec_bash` results) is shown inline or collapsed to a one-line summary — handy when a tool call dumps a large file and you just want to keep reading the conversation.
+`f2` toggles whether tool call output (e.g. `exec_bash` results) is shown inline or collapsed to a one-line summary — handy when a tool call dumps a large file and you just want to keep reading the conversation.
 
 ## Configuration
 
