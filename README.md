@@ -29,7 +29,15 @@ A terminal UI for chatting with multiple LLM providers (Anthropic, OpenAI, etc.)
 - libcurl
 - [nlohmann/json](https://github.com/nlohmann/json) (included in repo)
 
-### Building from source
+### Install script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/petukhow/lmcli/master/install.sh | bash
+```
+
+This clones the repo, builds it, and installs it to `/usr/local` (asks for `sudo` at the install step). It checks for `git`, `cmake`, a C++17 compiler, and `libcurl` up front and tells you what's missing rather than installing anything for you. If you'd rather not pipe a script into `bash`, it's a plain, short file — read it first: [`install.sh`](install.sh).
+
+### Building from source manually
 ```bash
 git clone https://github.com/petukhow/lmcli.git
 cd lmcli
@@ -42,27 +50,21 @@ The binary will be located at `build/bin/lmcli`.
 
 ## Quick Start
 
-### 1. Initialize configuration
+### 1. Start lmcli
 ```bash
-lmcli init
+lmcli
+# or explicitly: lmcli start
 ```
+On first run, this automatically creates the config directory at `~/.config/lmcli/` with template files — no separate init step needed. (`lmcli init` also exists if you want to (re)create the config files without starting a chat.)
 
-This creates the config directory at `~/.config/lmcli/` with template files.
-
-### 2. Start lmcli
-```bash
-lmcli start
-# or just: lmcli
-```
-
-### 3. Add an API account
+### 2. Add an API account
 Inside the app, run:
 ```
 /setup
 ```
 Follow the prompts to select a provider, enter your API key, and choose a model (or use the default).
 
-### 4. Chat
+### 3. Chat
 Once an account is selected, just type a message and press enter. Type `/exit` to quit.
 
 ## Usage
