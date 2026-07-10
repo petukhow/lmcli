@@ -8,7 +8,7 @@ A terminal UI for chatting with multiple LLM providers (Anthropic, OpenAI, etc.)
 - **Configurable** — System prompts, token limits, and conversation history
 - **Account switching** — Easily switch between different API accounts
 - **Interactive TUI** — FTXUI-based chat interface with context management
-- **Agent mode** — Models can call tools (e.g. shell commands) across multiple turns, with confirmation/blacklist safety checks
+- **Agent mode** — Models can call tools (e.g. shell commands) across multiple turns, with confirmation/blacklist safety checks (see [Safety notes](#safety-notes) below)
 - **Streaming responses** — Get the model's answer instantly token-by-token
 - **Custom themes** — Create, edit, and switch color themes with named colors or hex codes
 
@@ -116,7 +116,7 @@ Configuration files are stored in `~/.config/lmcli/`:
 All of the above can be edited live from the `/config` command.
 
 ### `accounts.json`
-Stores your configured API accounts (API keys, models, endpoints). Managed via `/setup` and `/account`.
+Stores your configured API accounts (API keys, models, endpoints), written with `0600` permissions. Managed via `/setup` and `/account`.
 
 ### `providers.json`
 Defines available providers and their default settings. You can edit this to add custom OpenAI-compatible endpoints.
@@ -143,6 +143,10 @@ Colors can be one of the built-in names (`black`, `red`, `green`, `yellow`, `blu
 
 ### `tools.json`
 Stores available tools for models (e.g. `exec_bash`).
+
+## Safety notes
+
+Agent mode lets the model run shell commands on your machine via `exec_bash`. The `blacklist` and `confirm_required` settings are a basic guardrail, not a sandbox — they match on substrings, so a determined or confused model can still phrase its way around them. Don't run agent mode unattended on anything you're not prepared to have modified, and review commands before confirming them.
 
 ## Example
 
