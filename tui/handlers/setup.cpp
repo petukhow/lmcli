@@ -105,7 +105,10 @@ Element render_setup_form(const ChatSession& session, const SetupFields& setup_f
                 text("› ") | color(session.theme.prompt_color), setup_fields.form_model_input->Render()}),
         separator() | color(session.theme.separator_color),
         has_errors ? vbox({acc_errors_block, text("")}) : emptyElement(),
-        paragraph("Сtrl + S to save · esc to exit") | color(Color::GrayDark),
+        render_hints({
+            {"ctrl+s", "save", session.theme.status_color},
+            {"esc", "exit", session.theme.status_color},
+        }),
         text("")
     });
     return footer;

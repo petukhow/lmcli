@@ -18,9 +18,6 @@ void help() {
     std::cout << "  /theme    Create, edit, or switch color themes\n";
     std::cout << "  /exit     Quit lmcli\n\n";
 
-    std::cout << "KEYBOARD SHORTCUTS:\n";
-    std::cout << "  f2        Toggle tool call output (hide/show command results)\n\n";
-
     std::cout << "EXAMPLES:\n";
     std::cout << "  lmcli         # Start chat (default)\n";
     std::cout << "  lmcli init    # Initialize configuration\n";

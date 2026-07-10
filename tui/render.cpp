@@ -9,6 +9,16 @@
 
 using namespace ftxui;
 
+Element render_hints(const std::vector<Hint>& hints) {
+    Elements parts;
+    for (size_t i = 0; i < hints.size(); ++i) {
+        if (i > 0) parts.push_back(text(" · ") | color(Color::GrayDark));
+        parts.push_back(text(hints[i].key) | bold | color(hints[i].key_color));
+        parts.push_back(text(" " + hints[i].label) | color(Color::GrayDark));
+    }
+    return hbox(std::move(parts));
+}
+
 Element render_menu(const std::unique_ptr<ChatSession>& cs) {
     Elements lines;
     for (size_t i = 0; i < cs->menu_settings.menu_items.size(); ++i) {
@@ -28,12 +38,11 @@ Element render_menu(const std::unique_ptr<ChatSession>& cs) {
         }
         lines.push_back(line);
     }
+    const std::vector<Hint> delete_hint = {{"d", "delete", cs->theme.status_color}};
     return vbox({
         text(cs->menu_settings.title),
         vbox(lines),
-        cs->menu_settings.on_delete
-            ? paragraph("Press 'd' to delete the highlighted item") | color(Color::GrayDark)
-            : emptyElement(),
+        cs->menu_settings.on_delete ? render_hints(delete_hint) : emptyElement(),
         text("")
     });
 }

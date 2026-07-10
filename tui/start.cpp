@@ -25,7 +25,6 @@ thread invariants:
 #include <vector>
 #include <memory>
 #include <chrono>
-#include <algorithm>
 #include "utils/utils.h"
 #include <iostream>
 
@@ -49,24 +48,6 @@ using json = nlohmann::json;
 static const std::vector<std::string> kSpinnerFrames = {
     "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
 };
-
-// A single "key: label" keybinding hint, meant to be rendered in a row via
-// render_hints(). Adding a new keybinding hint anywhere is just one more entry in a hints vector
-struct Hint {
-    std::string key;
-    std::string label;
-    Color key_color = Color::GrayDark;
-};
-
-static Element render_hints(const std::vector<Hint>& hints) {
-    Elements parts;
-    for (size_t i = 0; i < hints.size(); ++i) {
-        if (i > 0) parts.push_back(text(" · ") | color(Color::GrayDark));
-        parts.push_back(text(hints[i].key) | bold | color(hints[i].key_color));
-        parts.push_back(text(" " + hints[i].label) | color(Color::GrayDark));
-    }
-    return hbox(std::move(parts));
-}
 
 static std::vector<Message> confirm_tool_calls(const Message& output,
     ftxui::ScreenInteractive& screen, const std::unique_ptr<ChatSession>& session) {
@@ -332,12 +313,6 @@ void start() {
                     return true;
                 }
 
-                if (event == Event::F2) {
-                    session->show_tool_output = !session->show_tool_output;
-                    screen.RequestAnimationFrame();
-                    return true;
-                }
-
                 if (event == Event::Return) {
                     session->active_form = session->prompt.content;
                     if (session->busy) return true;
@@ -534,18 +509,10 @@ void start() {
                 }
                 messages.push_back(vbox(calls));
             } else if (msg.role == Role::Tool) {
-                Element body;
-                if (session->show_tool_output) {
-                    body = paragraph(msg.content) | color(Color::GrayDark) | xflex;
-                } else {
-                    size_t lines = 1 + std::count(msg.content.begin(), msg.content.end(), '\n');
-                    body = text("[" + std::to_string(lines) + " line" + (lines == 1 ? "" : "s")
-                        + " hidden – f2 to show]") | color(Color::GrayDark);
-                }
                 messages.push_back(vbox({
                     hbox({
                         text("   "),
-                        body,
+                        paragraph(msg.content) | color(Color::GrayDark) | xflex,
                     }) | dim,
                     text(""),
                 }));
@@ -575,7 +542,6 @@ void start() {
                 });
                 std::vector<Hint> hints;
                 if (session->busy) hints.push_back({"esc", "interrupt", Color::Red});
-                hints.push_back({"f2", "toggle output", theme.status_color});
                 hints.push_back({
                     "tab",
                     session->exit_confirm_pending ? "press again to exit" : "exit",
